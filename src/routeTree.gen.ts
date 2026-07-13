@@ -9,9 +9,15 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as PalavrasBloqueadasRouteImport } from './routes/palavras-bloqueadas'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 
+const PalavrasBloqueadasRoute = PalavrasBloqueadasRouteImport.update({
+  id: '/palavras-bloqueadas',
+  path: '/palavras-bloqueadas',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -25,32 +31,43 @@ const OfertaIdRoute = OfertaIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
   '/oferta/$id': typeof OfertaIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
   '/oferta/$id': typeof OfertaIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
   '/oferta/$id': typeof OfertaIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/oferta/$id'
+  fullPaths: '/' | '/palavras-bloqueadas' | '/oferta/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/oferta/$id'
-  id: '__root__' | '/' | '/oferta/$id'
+  to: '/' | '/palavras-bloqueadas' | '/oferta/$id'
+  id: '__root__' | '/' | '/palavras-bloqueadas' | '/oferta/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  PalavrasBloqueadasRoute: typeof PalavrasBloqueadasRoute
   OfertaIdRoute: typeof OfertaIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/palavras-bloqueadas': {
+      id: '/palavras-bloqueadas'
+      path: '/palavras-bloqueadas'
+      fullPath: '/palavras-bloqueadas'
+      preLoaderRoute: typeof PalavrasBloqueadasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -70,6 +87,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  PalavrasBloqueadasRoute: PalavrasBloqueadasRoute,
   OfertaIdRoute: OfertaIdRoute,
 }
 export const routeTree = rootRouteImport
