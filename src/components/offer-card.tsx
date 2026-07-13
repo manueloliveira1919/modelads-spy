@@ -103,10 +103,19 @@ export function StatusBadge({ status }: { status: Offer["status"] }) {
       </span>
     );
   }
+  if (status === "crescendo") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-warm px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-warm-foreground">
+        <TrendingUp className="h-3 w-3" />
+        Crescendo
+      </span>
+    );
+  }
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-warm px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-warm-foreground">
-      <TrendingUp className="h-3 w-3" />
-      Crescendo
+    <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-secondary-foreground">
+      <Sparkles className="h-3 w-3" />
+      Testando
     </span>
   );
 }
+
