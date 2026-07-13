@@ -45,7 +45,9 @@ export function OfferCard({ offer }: { offer: Offer }) {
 
         <div className="flex flex-wrap gap-1.5">
           <Chip>{offer.category}</Chip>
-          <Chip icon={<Layers className="h-3 w-3" />}>{offer.structure}</Chip>
+          {offer.structure && (
+            <Chip icon={<Layers className="h-3 w-3" />}>{offer.structure}</Chip>
+          )}
         </div>
 
         <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
@@ -56,13 +58,22 @@ export function OfferCard({ offer }: { offer: Offer }) {
           <span
             className={cn(
               "inline-flex items-center gap-1.5 font-medium",
-              hot ? "text-hot" : "text-warm",
+              offer.status === "escaladissima" && "text-hot",
+              offer.status === "crescendo" && "text-warm",
+              offer.status === "testando" && "text-muted-foreground",
             )}
           >
-            {hot ? <Flame className="h-3.5 w-3.5" /> : <TrendingUp className="h-3.5 w-3.5" />}
+            {offer.status === "escaladissima" ? (
+              <Flame className="h-3.5 w-3.5" />
+            ) : offer.status === "crescendo" ? (
+              <TrendingUp className="h-3.5 w-3.5" />
+            ) : (
+              <Sparkles className="h-3.5 w-3.5" />
+            )}
             {offer.activeAds} anúncios
           </span>
         </div>
+
       </div>
     </Link>
   );
