@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtmRouteImport } from './routes/utm'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PalavrasBloqueadasRouteImport } from './routes/palavras-bloqueadas'
+import { Route as OfertasRouteImport } from './routes/ofertas'
 import { Route as FerramentasRouteImport } from './routes/ferramentas'
 import { Route as EmBreveRouteImport } from './routes/em-breve'
 import { Route as IndexRouteImport } from './routes/index'
@@ -30,6 +31,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const PalavrasBloqueadasRoute = PalavrasBloqueadasRouteImport.update({
   id: '/palavras-bloqueadas',
   path: '/palavras-bloqueadas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfertasRoute = OfertasRouteImport.update({
+  id: '/ofertas',
+  path: '/ofertas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const FerramentasRoute = FerramentasRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/em-breve': typeof EmBreveRoute
   '/ferramentas': typeof FerramentasRoute
+  '/ofertas': typeof OfertasRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/utm': typeof UtmRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/em-breve': typeof EmBreveRoute
   '/ferramentas': typeof FerramentasRoute
+  '/ofertas': typeof OfertasRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/utm': typeof UtmRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/em-breve': typeof EmBreveRoute
   '/ferramentas': typeof FerramentasRoute
+  '/ofertas': typeof OfertasRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/utm': typeof UtmRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/em-breve'
     | '/ferramentas'
+    | '/ofertas'
     | '/palavras-bloqueadas'
     | '/sitemap.xml'
     | '/utm'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/em-breve'
     | '/ferramentas'
+    | '/ofertas'
     | '/palavras-bloqueadas'
     | '/sitemap.xml'
     | '/utm'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/em-breve'
     | '/ferramentas'
+    | '/ofertas'
     | '/palavras-bloqueadas'
     | '/sitemap.xml'
     | '/utm'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EmBreveRoute: typeof EmBreveRoute
   FerramentasRoute: typeof FerramentasRoute
+  OfertasRoute: typeof OfertasRoute
   PalavrasBloqueadasRoute: typeof PalavrasBloqueadasRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UtmRoute: typeof UtmRoute
@@ -142,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/palavras-bloqueadas'
       fullPath: '/palavras-bloqueadas'
       preLoaderRoute: typeof PalavrasBloqueadasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ofertas': {
+      id: '/ofertas'
+      path: '/ofertas'
+      fullPath: '/ofertas'
+      preLoaderRoute: typeof OfertasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ferramentas': {
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmBreveRoute: EmBreveRoute,
   FerramentasRoute: FerramentasRoute,
+  OfertasRoute: OfertasRoute,
   PalavrasBloqueadasRoute: PalavrasBloqueadasRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UtmRoute: UtmRoute,
