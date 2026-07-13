@@ -2,8 +2,9 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   LayoutDashboard,
-  ShieldAlert,
-  Link2,
+  Megaphone,
+  Heart,
+  Wrench,
   Sparkles,
   Menu,
   X,
@@ -13,8 +14,9 @@ import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/palavras-bloqueadas", label: "Palavras Bloqueadas", icon: ShieldAlert },
-  { to: "/utm", label: "Gerador de UTM", icon: Link2 },
+  { to: "/ofertas", label: "Ofertas", icon: Megaphone },
+  { to: "/favoritos", label: "Favoritos", icon: Heart },
+  { to: "/ferramentas", label: "Ferramentas", icon: Wrench },
   { to: "/em-breve", label: "Em Breve", icon: Sparkles },
 ] as const;
 
