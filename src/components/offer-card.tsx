@@ -1,7 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, Flame, TrendingUp, Layers } from "lucide-react";
-import type { Offer } from "@/lib/mock-data";
+import { Clock, Flame, TrendingUp, Layers, Sparkles } from "lucide-react";
+import type { Offer } from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
+
 
 export function OfferCard({ offer }: { offer: Offer }) {
   const hot = offer.status === "escaladissima";
