@@ -16,6 +16,7 @@ import { Route as OfertasRouteImport } from './routes/ofertas'
 import { Route as FerramentasRouteImport } from './routes/ferramentas'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as EmBreveRouteImport } from './routes/em-breve'
+import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 
@@ -54,6 +55,11 @@ const EmBreveRoute = EmBreveRouteImport.update({
   path: '/em-breve',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BuscarRoute = BuscarRouteImport.update({
+  id: '/buscar',
+  path: '/buscar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -67,6 +73,7 @@ const OfertaIdRoute = OfertaIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/buscar': typeof BuscarRoute
   '/em-breve': typeof EmBreveRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/buscar': typeof BuscarRoute
   '/em-breve': typeof EmBreveRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
@@ -90,6 +98,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/buscar': typeof BuscarRoute
   '/em-breve': typeof EmBreveRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/buscar'
     | '/em-breve'
     | '/favoritos'
     | '/ferramentas'
@@ -114,6 +124,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/buscar'
     | '/em-breve'
     | '/favoritos'
     | '/ferramentas'
@@ -125,6 +136,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/buscar'
     | '/em-breve'
     | '/favoritos'
     | '/ferramentas'
@@ -137,6 +149,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BuscarRoute: typeof BuscarRoute
   EmBreveRoute: typeof EmBreveRoute
   FavoritosRoute: typeof FavoritosRoute
   FerramentasRoute: typeof FerramentasRoute
@@ -198,6 +211,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmBreveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/buscar': {
+      id: '/buscar'
+      path: '/buscar'
+      fullPath: '/buscar'
+      preLoaderRoute: typeof BuscarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -217,6 +237,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BuscarRoute: BuscarRoute,
   EmBreveRoute: EmBreveRoute,
   FavoritosRoute: FavoritosRoute,
   FerramentasRoute: FerramentasRoute,
@@ -229,13 +250,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
