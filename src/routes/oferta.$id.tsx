@@ -77,13 +77,20 @@ function OfferDetail() {
     }
   }
 
+  const statusLabel =
+    offer.status === "escaladissima"
+      ? "Escaladíssima"
+      : offer.status === "crescendo"
+        ? "Crescendo"
+        : "Testando";
   const pageDataText = `Página: ${offer.page}
 Categoria: ${offer.category}
-Estrutura: ${offer.structure}
+Estrutura: ${offer.structure ?? "—"}
 Idioma/País: ${offer.language}
 Tempo ativo: ${offer.activeDays} dias
 Anúncios ativos: ${offer.activeAds}
-Status: ${offer.status === "escaladissima" ? "Escaladíssima" : "Crescendo"}`;
+Status: ${statusLabel}`;
+
 
   return (
     <AppShell>
