@@ -14,6 +14,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PalavrasBloqueadasRouteImport } from './routes/palavras-bloqueadas'
 import { Route as OfertasRouteImport } from './routes/ofertas'
 import { Route as FerramentasRouteImport } from './routes/ferramentas'
+import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as EmBreveRouteImport } from './routes/em-breve'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
@@ -43,6 +44,11 @@ const FerramentasRoute = FerramentasRouteImport.update({
   path: '/ferramentas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FavoritosRoute = FavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const EmBreveRoute = EmBreveRouteImport.update({
   id: '/em-breve',
   path: '/em-breve',
@@ -62,6 +68,7 @@ const OfertaIdRoute = OfertaIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/em-breve': typeof EmBreveRoute
+  '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
   '/ofertas': typeof OfertasRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -72,6 +79,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/em-breve': typeof EmBreveRoute
+  '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
   '/ofertas': typeof OfertasRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -83,6 +91,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/em-breve': typeof EmBreveRoute
+  '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
   '/ofertas': typeof OfertasRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -95,6 +104,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/em-breve'
+    | '/favoritos'
     | '/ferramentas'
     | '/ofertas'
     | '/palavras-bloqueadas'
@@ -105,6 +115,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/em-breve'
+    | '/favoritos'
     | '/ferramentas'
     | '/ofertas'
     | '/palavras-bloqueadas'
@@ -115,6 +126,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/em-breve'
+    | '/favoritos'
     | '/ferramentas'
     | '/ofertas'
     | '/palavras-bloqueadas'
@@ -126,6 +138,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   EmBreveRoute: typeof EmBreveRoute
+  FavoritosRoute: typeof FavoritosRoute
   FerramentasRoute: typeof FerramentasRoute
   OfertasRoute: typeof OfertasRoute
   PalavrasBloqueadasRoute: typeof PalavrasBloqueadasRoute
@@ -171,6 +184,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FerramentasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/favoritos': {
+      id: '/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/em-breve': {
       id: '/em-breve'
       path: '/em-breve'
@@ -198,6 +218,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   EmBreveRoute: EmBreveRoute,
+  FavoritosRoute: FavoritosRoute,
   FerramentasRoute: FerramentasRoute,
   OfertasRoute: OfertasRoute,
   PalavrasBloqueadasRoute: PalavrasBloqueadasRoute,
