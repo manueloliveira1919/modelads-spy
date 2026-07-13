@@ -1,5 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
   Clock,
@@ -12,24 +13,33 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge } from "@/components/offer-card";
-import { OFFERS } from "@/lib/mock-data";
+import { getOffer } from "@/lib/offers.functions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
+const offerQuery = (id: string) =>
+  queryOptions({
+    queryKey: ["offer", id],
+    queryFn: () => getOffer({ data: { id } }),
+    staleTime: 60_000,
+  });
+
 export const Route = createFileRoute("/oferta/$id")({
-  loader: ({ params }) => {
-    const offer = OFFERS.find((o) => o.id === params.id);
-    if (!offer) throw notFound();
-    return { offer };
+  loader: async ({ params, context }) => {
+    const res = await context.queryClient.ensureQueryData(offerQuery(params.id));
+    if (!res.offer) throw notFound();
   },
-  head: ({ loaderData }) => ({
-    meta: [
-      {
-        title: loaderData ? `${loaderData.offer.page} — Modelads` : "Oferta — Modelads",
-      },
-    ],
+  head: () => ({
+    meta: [{ title: "Oferta — Modelads" }],
   }),
   component: OfferDetail,
+  errorComponent: ({ error }) => (
+    <AppShell>
+      <div className="py-20 text-center text-sm text-muted-foreground">
+        Erro ao carregar oferta: {error.message}
+      </div>
+    </AppShell>
+  ),
   notFoundComponent: () => (
     <AppShell>
       <div className="py-20 text-center">
@@ -43,7 +53,10 @@ export const Route = createFileRoute("/oferta/$id")({
 });
 
 function OfferDetail() {
-  const { offer } = Route.useLoaderData();
+  const params = Route.useParams();
+  const { data } = useSuspenseQuery(offerQuery(params.id));
+  const offer = data.offer!;
+
 
   async function downloadCreative() {
     try {
