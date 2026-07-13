@@ -14,7 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      meta_offers: {
+        Row: {
+          active_ads_count: number
+          active_days: number
+          ad_archive_id: string
+          ad_snapshot_url: string | null
+          ad_start_date: string | null
+          category: string
+          country: string
+          created_at: string
+          creative_type: string
+          creative_url: string | null
+          description: string | null
+          first_seen: string
+          headline: string | null
+          id: string
+          is_active: boolean
+          language: string
+          last_seen: string
+          page_id: string
+          page_name: string
+          page_url: string | null
+          product_type: string | null
+          search_term: string | null
+          status: string
+          structure: string | null
+          updated_at: string
+        }
+        Insert: {
+          active_ads_count?: number
+          active_days?: number
+          ad_archive_id: string
+          ad_snapshot_url?: string | null
+          ad_start_date?: string | null
+          category: string
+          country?: string
+          created_at?: string
+          creative_type?: string
+          creative_url?: string | null
+          description?: string | null
+          first_seen?: string
+          headline?: string | null
+          id?: string
+          is_active?: boolean
+          language?: string
+          last_seen?: string
+          page_id: string
+          page_name: string
+          page_url?: string | null
+          product_type?: string | null
+          search_term?: string | null
+          status?: string
+          structure?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active_ads_count?: number
+          active_days?: number
+          ad_archive_id?: string
+          ad_snapshot_url?: string | null
+          ad_start_date?: string | null
+          category?: string
+          country?: string
+          created_at?: string
+          creative_type?: string
+          creative_url?: string | null
+          description?: string | null
+          first_seen?: string
+          headline?: string | null
+          id?: string
+          is_active?: boolean
+          language?: string
+          last_seen?: string
+          page_id?: string
+          page_name?: string
+          page_url?: string | null
+          product_type?: string | null
+          search_term?: string | null
+          status?: string
+          structure?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      meta_refresh_runs: {
+        Row: {
+          details: Json | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          offers_upserted: number
+          pages_seen: number
+          started_at: string
+          status: string
+        }
+        Insert: {
+          details?: Json | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          offers_upserted?: number
+          pages_seen?: number
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          details?: Json | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          offers_upserted?: number
+          pages_seen?: number
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
