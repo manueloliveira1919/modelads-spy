@@ -1,18 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { OfferCard } from "@/components/offer-card";
+import { listOffers } from "@/lib/offers.functions";
 import {
   CATEGORIES,
   LANGUAGES,
-  OFFERS,
   STRUCTURES,
   type OfferCategory,
   type OfferLanguage,
   type OfferStructure,
-} from "@/lib/mock-data";
+} from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
+
+const offersQuery = queryOptions({
+  queryKey: ["offers"],
+  queryFn: () => listOffers(),
+  staleTime: 60_000,
+});
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,11 +33,22 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Modelads — Espionagem de anúncios" },
       {
         property: "og:description",
-        content: "Ferramenta pra infoprodutores e afiliados brasileiros modelarem ofertas validadas.",
+        content:
+          "Ferramenta pra infoprodutores e afiliados brasileiros modelarem ofertas validadas.",
       },
     ],
   }),
+  loader: ({ context }) => {
+    context.queryClient.ensureQueryData(offersQuery);
+  },
   component: Dashboard,
+  errorComponent: ({ error }) => (
+    <AppShell>
+      <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+        Erro ao carregar ofertas: {error.message}
+      </div>
+    </AppShell>
+  ),
 });
 
 function Dashboard() {
@@ -39,8 +57,11 @@ function Dashboard() {
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
   const [query, setQuery] = useState("");
 
+  const { data } = useSuspenseQuery(offersQuery);
+  const offers = data.offers;
+
   const filtered = useMemo(() => {
-    return OFFERS.filter((o) => {
+    return offers.filter((o) => {
       if (category !== "todas" && o.category !== category) return false;
       if (language !== "todos" && o.language !== language) return false;
       if (structure !== "todas" && o.structure !== structure) return false;
@@ -48,10 +69,11 @@ function Dashboard() {
         return false;
       return true;
     });
-  }, [category, language, structure, query]);
+  }, [offers, category, language, structure, query]);
 
-  const escaladas = OFFERS.filter((o) => o.status === "escaladissima").length;
-  const crescendo = OFFERS.filter((o) => o.status === "crescendo").length;
+  const escaladas = offers.filter((o) => o.status === "escaladissima").length;
+  const crescendo = offers.filter((o) => o.status === "crescendo").length;
+  const testando = offers.filter((o) => o.status === "testando").length;
 
   return (
     <AppShell>
@@ -62,8 +84,8 @@ function Dashboard() {
               Biblioteca de <span className="text-gradient-brand">ofertas</span>
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              {OFFERS.length} anúncios monitorados · {escaladas} escaladíssimas · {crescendo}{" "}
-              crescendo
+              {offers.length} anúncios monitorados · {escaladas} escaladíssimas ·{" "}
+              {crescendo} crescendo · {testando} testando
             </p>
           </div>
           <div className="relative w-full sm:w-72">
@@ -76,6 +98,12 @@ function Dashboard() {
             />
           </div>
         </div>
+
+        {data.error && (
+          <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+            {data.error}
+          </div>
+        )}
 
         <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
           <FilterRow label="Categoria">
@@ -107,7 +135,10 @@ function Dashboard() {
             ))}
           </FilterRow>
           <FilterRow label="Estrutura">
-            <FilterChip active={structure === "todas"} onClick={() => setStructure("todas")}>
+            <FilterChip
+              active={structure === "todas"}
+              onClick={() => setStructure("todas")}
+            >
               Todas
             </FilterChip>
             {STRUCTURES.map((s) => (
@@ -124,7 +155,9 @@ function Dashboard() {
 
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">
-            Nenhuma oferta encontrada com esses filtros.
+            {offers.length === 0
+              ? "Nenhuma oferta no banco ainda. A primeira atualização vai popular o Dashboard automaticamente."
+              : "Nenhuma oferta encontrada com esses filtros."}
           </div>
         ) : (
           <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">

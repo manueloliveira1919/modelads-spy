@@ -19,6 +19,7 @@ import { Route as EmBreveRouteImport } from './routes/em-breve'
 import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
+import { Route as ApiPublicHooksRefreshOffersRouteImport } from './routes/api/public/hooks/refresh-offers'
 
 const UtmRoute = UtmRouteImport.update({
   id: '/utm',
@@ -70,6 +71,12 @@ const OfertaIdRoute = OfertaIdRouteImport.update({
   path: '/oferta/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksRefreshOffersRoute =
+  ApiPublicHooksRefreshOffersRouteImport.update({
+    id: '/api/public/hooks/refresh-offers',
+    path: '/api/public/hooks/refresh-offers',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/utm': typeof UtmRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +102,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/utm': typeof UtmRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +116,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/utm': typeof UtmRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +131,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/utm'
     | '/oferta/$id'
+    | '/api/public/hooks/refresh-offers'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +144,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/utm'
     | '/oferta/$id'
+    | '/api/public/hooks/refresh-offers'
   id:
     | '__root__'
     | '/'
@@ -145,6 +157,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/utm'
     | '/oferta/$id'
+    | '/api/public/hooks/refresh-offers'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +171,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   UtmRoute: typeof UtmRoute
   OfertaIdRoute: typeof OfertaIdRoute
+  ApiPublicHooksRefreshOffersRoute: typeof ApiPublicHooksRefreshOffersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +246,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OfertaIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/refresh-offers': {
+      id: '/api/public/hooks/refresh-offers'
+      path: '/api/public/hooks/refresh-offers'
+      fullPath: '/api/public/hooks/refresh-offers'
+      preLoaderRoute: typeof ApiPublicHooksRefreshOffersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,6 +267,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   UtmRoute: UtmRoute,
   OfertaIdRoute: OfertaIdRoute,
+  ApiPublicHooksRefreshOffersRoute: ApiPublicHooksRefreshOffersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
