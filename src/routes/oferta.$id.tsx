@@ -117,7 +117,9 @@ Status: ${offer.status === "escaladissima" ? "Escaladíssima" : "Crescendo"}`;
               </div>
               <div className="flex flex-wrap gap-2">
                 <Tag>{offer.category}</Tag>
-                <Tag icon={<Layers className="h-3 w-3" />}>{offer.structure}</Tag>
+                {offer.structure && (
+                  <Tag icon={<Layers className="h-3 w-3" />}>{offer.structure}</Tag>
+                )}
                 <Tag>{offer.language}</Tag>
                 <Tag icon={<Clock className="h-3 w-3" />}>{offer.activeDays}d ativo</Tag>
                 <Tag>{offer.activeAds} anúncios</Tag>
