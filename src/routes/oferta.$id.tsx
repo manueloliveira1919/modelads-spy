@@ -1,0 +1,250 @@
+import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { useState } from "react";
+import {
+  ArrowLeft,
+  Clock,
+  Copy,
+  Download,
+  ExternalLink,
+  FileText,
+  Layers,
+  Check,
+} from "lucide-react";
+import { AppShell } from "@/components/app-shell";
+import { StatusBadge } from "@/components/offer-card";
+import { OFFERS } from "@/lib/mock-data";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/oferta/$id")({
+  loader: ({ params }) => {
+    const offer = OFFERS.find((o) => o.id === params.id);
+    if (!offer) throw notFound();
+    return { offer };
+  },
+  head: ({ loaderData }) => ({
+    meta: [
+      {
+        title: loaderData ? `${loaderData.offer.page} — Modelads` : "Oferta — Modelads",
+      },
+    ],
+  }),
+  component: OfferDetail,
+  notFoundComponent: () => (
+    <AppShell>
+      <div className="py-20 text-center">
+        <p className="text-muted-foreground">Oferta não encontrada.</p>
+        <Link to="/" className="mt-4 inline-block text-sm text-brand hover:underline">
+          Voltar ao dashboard
+        </Link>
+      </div>
+    </AppShell>
+  ),
+});
+
+function OfferDetail() {
+  const { offer } = Route.useLoaderData();
+
+  async function downloadCreative() {
+    try {
+      const res = await fetch(offer.creativeUrl);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const ext = offer.creativeType === "video" ? "mp4" : "jpg";
+      a.download = `${offer.page.replace(/\s+/g, "-").toLowerCase()}.${ext}`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Criativo baixado");
+    } catch {
+      toast.error("Não foi possível baixar o criativo");
+    }
+  }
+
+  const pageDataText = `Página: ${offer.page}
+Categoria: ${offer.category}
+Estrutura: ${offer.structure}
+Idioma/País: ${offer.language}
+Tempo ativo: ${offer.activeDays} dias
+Anúncios ativos: ${offer.activeAds}
+Status: ${offer.status === "escaladissima" ? "Escaladíssima" : "Crescendo"}`;
+
+  return (
+    <AppShell>
+      <div className="space-y-6">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Voltar
+        </Link>
+
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
+          <div className="overflow-hidden rounded-2xl border border-border bg-card">
+            <div className="relative aspect-video bg-muted">
+              <img
+                src={offer.creativeUrl}
+                alt={offer.headline}
+                className="h-full w-full object-cover"
+              />
+              <div className="absolute left-4 top-4">
+                <StatusBadge status={offer.status} />
+              </div>
+            </div>
+            <div className="space-y-4 p-5">
+              <div>
+                <p className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Anunciante
+                </p>
+                <h1 className="mt-1 font-display text-2xl font-bold">{offer.page}</h1>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Tag>{offer.category}</Tag>
+                <Tag icon={<Layers className="h-3 w-3" />}>{offer.structure}</Tag>
+                <Tag>{offer.language}</Tag>
+                <Tag icon={<Clock className="h-3 w-3" />}>{offer.activeDays}d ativo</Tag>
+                <Tag>{offer.activeAds} anúncios</Tag>
+              </div>
+              <div className="rounded-xl border border-border bg-background p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Headline
+                </p>
+                <p className="mt-2 font-display text-lg font-semibold">{offer.headline}</p>
+              </div>
+              <div className="rounded-xl border border-border bg-background p-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Descrição do anúncio
+                </p>
+                <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-foreground/90">
+                  {offer.description}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="font-display text-lg font-semibold">Ações rápidas</h2>
+              <div className="mt-4 space-y-2">
+                <ActionButton
+                  icon={<FileText className="h-4 w-4" />}
+                  label="Copiar descrição"
+                  onCopy={() => offer.description}
+                />
+                <button
+                  onClick={downloadCreative}
+                  className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-sm font-medium hover:border-accent"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Download className="h-4 w-4" />
+                    Baixar criativo
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {offer.creativeType === "video" ? ".mp4" : ".jpg"}
+                  </span>
+                </button>
+                <ActionButton
+                  icon={<Copy className="h-4 w-4" />}
+                  label="Copiar dados da página"
+                  onCopy={() => pageDataText}
+                />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <h2 className="font-display text-lg font-semibold">Links externos</h2>
+              <div className="mt-4 space-y-2">
+                <ExternalLinkRow
+                  href={offer.pageUrl}
+                  title="Página do anunciante"
+                  subtitle="Ver perfil no Facebook"
+                />
+                <ExternalLinkRow
+                  href={offer.adLibraryUrl}
+                  title="Facebook Ad Library"
+                  subtitle="Ver todos os anúncios ativos"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AppShell>
+  );
+}
+
+function Tag({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
+      {icon}
+      {children}
+    </span>
+  );
+}
+
+function ActionButton({
+  icon,
+  label,
+  onCopy,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  onCopy: () => string;
+}) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      onClick={async () => {
+        await navigator.clipboard.writeText(onCopy());
+        setCopied(true);
+        toast.success("Copiado para a área de transferência");
+        setTimeout(() => setCopied(false), 1500);
+      }}
+      className={cn(
+        "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium transition-colors",
+        copied
+          ? "border-brand bg-brand/10 text-brand"
+          : "border-border bg-background hover:border-accent",
+      )}
+    >
+      <span className="inline-flex items-center gap-2">
+        {icon}
+        {label}
+      </span>
+      {copied ? (
+        <Check className="h-4 w-4" />
+      ) : (
+        <Copy className="h-4 w-4 text-muted-foreground" />
+      )}
+    </button>
+  );
+}
+
+function ExternalLinkRow({
+  href,
+  title,
+  subtitle,
+}: {
+  href: string;
+  title: string;
+  subtitle: string;
+}) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 hover:border-accent"
+    >
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium">{title}</p>
+        <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+      <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
+    </a>
+  );
+}

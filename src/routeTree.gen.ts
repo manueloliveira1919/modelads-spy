@@ -9,38 +9,135 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as UtmRouteImport } from './routes/utm'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PalavrasBloqueadasRouteImport } from './routes/palavras-bloqueadas'
+import { Route as EmBreveRouteImport } from './routes/em-breve'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 
+const UtmRoute = UtmRouteImport.update({
+  id: '/utm',
+  path: '/utm',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PalavrasBloqueadasRoute = PalavrasBloqueadasRouteImport.update({
+  id: '/palavras-bloqueadas',
+  path: '/palavras-bloqueadas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmBreveRoute = EmBreveRouteImport.update({
+  id: '/em-breve',
+  path: '/em-breve',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OfertaIdRoute = OfertaIdRouteImport.update({
+  id: '/oferta/$id',
+  path: '/oferta/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/em-breve': typeof EmBreveRoute
+  '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/utm': typeof UtmRoute
+  '/oferta/$id': typeof OfertaIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/em-breve': typeof EmBreveRoute
+  '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/utm': typeof UtmRoute
+  '/oferta/$id': typeof OfertaIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/em-breve': typeof EmBreveRoute
+  '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/utm': typeof UtmRoute
+  '/oferta/$id': typeof OfertaIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/em-breve'
+    | '/palavras-bloqueadas'
+    | '/sitemap.xml'
+    | '/utm'
+    | '/oferta/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/em-breve'
+    | '/palavras-bloqueadas'
+    | '/sitemap.xml'
+    | '/utm'
+    | '/oferta/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/em-breve'
+    | '/palavras-bloqueadas'
+    | '/sitemap.xml'
+    | '/utm'
+    | '/oferta/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  EmBreveRoute: typeof EmBreveRoute
+  PalavrasBloqueadasRoute: typeof PalavrasBloqueadasRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  UtmRoute: typeof UtmRoute
+  OfertaIdRoute: typeof OfertaIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/utm': {
+      id: '/utm'
+      path: '/utm'
+      fullPath: '/utm'
+      preLoaderRoute: typeof UtmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/palavras-bloqueadas': {
+      id: '/palavras-bloqueadas'
+      path: '/palavras-bloqueadas'
+      fullPath: '/palavras-bloqueadas'
+      preLoaderRoute: typeof PalavrasBloqueadasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/em-breve': {
+      id: '/em-breve'
+      path: '/em-breve'
+      fullPath: '/em-breve'
+      preLoaderRoute: typeof EmBreveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +145,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/oferta/$id': {
+      id: '/oferta/$id'
+      path: '/oferta/$id'
+      fullPath: '/oferta/$id'
+      preLoaderRoute: typeof OfertaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  EmBreveRoute: EmBreveRoute,
+  PalavrasBloqueadasRoute: PalavrasBloqueadasRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  UtmRoute: UtmRoute,
+  OfertaIdRoute: OfertaIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
