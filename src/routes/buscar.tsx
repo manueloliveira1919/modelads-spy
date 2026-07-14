@@ -223,7 +223,14 @@ function LiveResultCard({ result }: { result: LiveSearchResult }) {
           {result.structure && (
             <Chip icon={<Layers className="h-3 w-3" />}>{result.structure}</Chip>
           )}
+          {result.isWhatsapp && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-1 text-[11px] font-semibold text-emerald-400 ring-1 ring-inset ring-emerald-500/30">
+              <MessageCircle className="h-3 w-3" />
+              Funil WhatsApp
+            </span>
+          )}
         </div>
+
 
 
         <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
