@@ -13,10 +13,12 @@ export interface LiveSearchResult {
   activeAds: number;
   status: OfferStatus;
   structure: OfferStructure | null;
+  productType: ProductType;
   adSnapshotUrl: string | null;
   pageUrl: string;
   adLibraryUrl: string | null;
 }
+
 
 interface MetaAdItem {
   id?: string;
