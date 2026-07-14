@@ -243,6 +243,8 @@ async function runRefresh() {
         active_ads_count: activeAdsCount,
         status,
         structure,
+        product_type: inferProductType(`${title} ${bodyText} ${desc}`),
+
         search_term: ad._term,
         last_seen: new Date().toISOString(),
       };
