@@ -9,11 +9,14 @@ import { listOffers } from "@/lib/offers.functions";
 import {
   CATEGORIES,
   LANGUAGES,
+  PRODUCT_TYPES,
   STRUCTURES,
   type OfferCategory,
   type OfferLanguage,
   type OfferStructure,
+  type ProductType,
 } from "@/lib/offers-shape";
+
 import { cn } from "@/lib/utils";
 
 
