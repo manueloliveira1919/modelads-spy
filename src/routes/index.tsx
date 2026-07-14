@@ -173,6 +173,20 @@ function Dashboard() {
         )}
 
         <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
+          <FilterRow label="Status de Escala">
+            <FilterChip active={scale === "escalando"} onClick={() => setScale("escalando")}>
+              Crescendo + Escaladíssima
+            </FilterChip>
+            <FilterChip
+              active={scale === "escaladissima"}
+              onClick={() => setScale("escaladissima")}
+            >
+              Apenas Escaladíssima
+            </FilterChip>
+            <FilterChip active={scale === "todos"} onClick={() => setScale("todos")}>
+              Todos (inclui testando)
+            </FilterChip>
+          </FilterRow>
           <FilterRow label="Categoria">
             <FilterChip active={category === "todas"} onClick={() => setCategory("todas")}>
               Todas
