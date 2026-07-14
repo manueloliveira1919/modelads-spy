@@ -33,6 +33,7 @@ export type Database = {
           is_active: boolean
           language: string
           last_seen: string
+          link_url: string | null
           page_id: string
           page_name: string
           page_url: string | null
@@ -60,6 +61,7 @@ export type Database = {
           is_active?: boolean
           language?: string
           last_seen?: string
+          link_url?: string | null
           page_id: string
           page_name: string
           page_url?: string | null
@@ -87,6 +89,7 @@ export type Database = {
           is_active?: boolean
           language?: string
           last_seen?: string
+          link_url?: string | null
           page_id?: string
           page_name?: string
           page_url?: string | null

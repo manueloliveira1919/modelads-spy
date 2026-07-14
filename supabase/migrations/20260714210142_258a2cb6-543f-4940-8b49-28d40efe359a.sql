@@ -1,0 +1,1 @@
+ALTER TABLE public.meta_offers ADD COLUMN IF NOT EXISTS link_url text;
