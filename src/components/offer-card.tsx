@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Clock, Flame, TrendingUp, Layers, Sparkles } from "lucide-react";
+import { Clock, Flame, TrendingUp, Layers, Sparkles, MessageCircle } from "lucide-react";
 import type { Offer } from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
 
