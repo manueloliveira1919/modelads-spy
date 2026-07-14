@@ -100,11 +100,13 @@ function Dashboard() {
       if (category !== "todas" && o.category !== category) return false;
       if (language !== "todos" && o.language !== language) return false;
       if (structure !== "todas" && o.structure !== structure) return false;
+      if (productType !== "todos" && o.productType !== productType) return false;
       if (query && !`${o.page} ${o.headline}`.toLowerCase().includes(query.toLowerCase()))
         return false;
       return true;
     });
-  }, [offers, category, language, structure, query]);
+  }, [offers, category, language, structure, productType, query]);
+
 
   const escaladas = offers.filter((o) => o.status === "escaladissima").length;
   const crescendo = offers.filter((o) => o.status === "crescendo").length;
