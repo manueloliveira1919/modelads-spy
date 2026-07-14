@@ -178,18 +178,20 @@ Status: ${statusLabel}`;
                   label="Copiar descrição"
                   onCopy={() => offer.description}
                 />
-                <button
-                  onClick={downloadCreative}
-                  className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-sm font-medium hover:border-accent"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    Baixar criativo
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {offer.creativeType === "video" ? ".mp4" : ".jpg"}
-                  </span>
-                </button>
+                {offer.creativeUrl && (
+                  <button
+                    onClick={downloadCreative}
+                    className="flex w-full items-center justify-between rounded-lg border border-border bg-background px-4 py-3 text-sm font-medium hover:border-accent"
+                  >
+                    <span className="inline-flex items-center gap-2">
+                      <Download className="h-4 w-4" />
+                      Baixar criativo
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {offer.creativeType === "video" ? ".mp4" : ".jpg"}
+                    </span>
+                  </button>
+                )}
                 <ActionButton
                   icon={<Copy className="h-4 w-4" />}
                   label="Copiar dados da página"
