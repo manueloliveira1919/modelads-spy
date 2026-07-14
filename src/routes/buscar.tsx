@@ -130,6 +130,23 @@ function BuscarPage() {
           ))}
         </div>
 
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Funil
+          </span>
+          <FilterChip active={funnel === "todos"} onClick={() => setFunnel("todos")}>
+            Todos
+          </FilterChip>
+          <FilterChip
+            active={funnel === "whatsapp"}
+            onClick={() => setFunnel("whatsapp")}
+          >
+            Funil WhatsApp
+          </FilterChip>
+        </div>
+
+
+
 
 
         {mutation.isPending && (
