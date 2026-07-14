@@ -7,6 +7,7 @@ export type OfferLanguage = "Português" | "Espanhol" | "Inglês";
 export interface Offer {
   id: string;
   page: string;
+  pageId: string;
   category: OfferCategory;
   structure: OfferStructure | null;
   language: OfferLanguage;
@@ -18,9 +19,12 @@ export interface Offer {
   creativeUrl: string | null;
   creativeType: "image" | "video";
   pageUrl: string;
+  linkUrl: string | null;
   adLibraryUrl: string | null;
   adSnapshotUrl: string | null;
+  adArchiveId: string | null;
 }
+
 
 export const CATEGORIES: OfferCategory[] = [
   "Info",
