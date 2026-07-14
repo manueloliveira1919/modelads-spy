@@ -105,6 +105,29 @@ function BuscarPage() {
           </button>
         </form>
 
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Tipo de Produto
+          </span>
+          <FilterChip
+            active={productType === "todos"}
+            onClick={() => setProductType("todos")}
+          >
+            Todos
+          </FilterChip>
+          {PRODUCT_TYPES.map((p) => (
+            <FilterChip
+              key={p}
+              active={productType === p}
+              onClick={() => setProductType(p)}
+            >
+              {p}
+            </FilterChip>
+          ))}
+        </div>
+
+
+
         {mutation.isPending && (
           <div className="flex items-center justify-center gap-3 rounded-2xl border border-border bg-card px-4 py-16 text-sm text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin text-brand" />
