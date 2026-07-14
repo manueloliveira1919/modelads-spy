@@ -296,6 +296,7 @@ async function runRefresh() {
     ok: true,
     pages: byPage.size,
     offers: upserts,
+    skippedNoise,
     errors: errors.length,
     plan: plan.length,
   };
