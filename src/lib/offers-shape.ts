@@ -51,6 +51,7 @@ export const CATEGORIES: OfferCategory[] = [
   "Saúde",
   "Mentoria",
   "Aplicativo/App",
+  "Sem categoria",
 ];
 
 export const STRUCTURES: OfferStructure[] = ["VSL", "Página de Vendas", "Quiz"];
