@@ -107,11 +107,31 @@ Status: ${statusLabel}`;
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)]">
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="relative aspect-video bg-muted">
-              <img
-                src={offer.creativeUrl}
-                alt={offer.headline}
-                className="h-full w-full object-cover"
-              />
+              {offer.creativeUrl ? (
+                <img
+                  src={offer.creativeUrl}
+                  alt={offer.headline}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-muted to-background p-6 text-center">
+                  <ExternalLink className="h-8 w-8 text-muted-foreground/60" />
+                  <p className="text-sm text-muted-foreground">
+                    A Meta não expõe a mídia diretamente. Abra o anúncio original para ver o criativo.
+                  </p>
+                  {offer.adSnapshotUrl && (
+                    <a
+                      href={offer.adSnapshotUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-brand-foreground hover:opacity-90"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                      Ver anúncio original
+                    </a>
+                  )}
+                </div>
+              )}
               <div className="absolute left-4 top-4">
                 <StatusBadge status={offer.status} />
               </div>
