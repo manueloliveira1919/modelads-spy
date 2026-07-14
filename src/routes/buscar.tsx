@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -8,6 +8,7 @@ import {
   Flame,
   Layers,
   Loader2,
+  Package,
   Search,
   Sparkles,
   TrendingUp,
@@ -15,7 +16,9 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge } from "@/components/offer-card";
 import { searchOffersLive, type LiveSearchResult } from "@/lib/search.functions";
+import { PRODUCT_TYPES, type ProductType } from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/buscar")({
   head: () => ({
