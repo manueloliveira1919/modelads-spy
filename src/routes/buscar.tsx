@@ -154,6 +154,24 @@ function BuscarPage() {
           </FilterChip>
         </div>
 
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Status de Escala
+          </span>
+          <FilterChip active={scale === "escalando"} onClick={() => setScale("escalando")}>
+            Crescendo + Escaladíssima
+          </FilterChip>
+          <FilterChip
+            active={scale === "escaladissima"}
+            onClick={() => setScale("escaladissima")}
+          >
+            Apenas Escaladíssima
+          </FilterChip>
+          <FilterChip active={scale === "todos"} onClick={() => setScale("todos")}>
+            Todos (inclui testando)
+          </FilterChip>
+        </div>
+
 
 
 
