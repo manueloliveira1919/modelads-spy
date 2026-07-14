@@ -233,3 +233,26 @@ export function getActiveSearchPlan() {
   }
   return plan;
 }
+
+// Retorna a categoria cuja lista de palavras-chave (BR ativas) bate com o texto.
+// Se nenhuma bater com confiança, retorna "Sem categoria" — evitando forçar
+// políticos/apps de drama nas categorias reais.
+export type CategoryOrUnclassified = MetaCategory | "Sem categoria";
+
+export function classifyCategoryFromText(
+  text: string,
+  hinted?: MetaCategory,
+): CategoryOrUnclassified {
+  const t = (text || "").toLowerCase();
+  if (!t.trim()) return "Sem categoria";
+  const brGroups = KEYWORD_GROUPS.filter((g) => g.language === "BR" && g.active);
+  // Confere primeiro a categoria "sugerida" (termo que trouxe o anúncio).
+  if (hinted) {
+    const g = brGroups.find((x) => x.category === hinted);
+    if (g && g.terms.some((term) => t.includes(term.toLowerCase()))) return hinted;
+  }
+  for (const g of brGroups) {
+    if (g.terms.some((term) => t.includes(term.toLowerCase()))) return g.category;
+  }
+  return "Sem categoria";
+}
