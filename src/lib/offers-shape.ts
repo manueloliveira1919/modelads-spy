@@ -1,8 +1,13 @@
 // Formato compartilhado entre server fn e componentes. É o que o Dashboard consome.
+import { inferProductType, type ProductType } from "./offer-heuristics";
+export type { ProductType } from "./offer-heuristics";
+export { PRODUCT_TYPES } from "./offer-heuristics";
+
 export type OfferStatus = "escaladissima" | "crescendo" | "testando";
 export type OfferCategory = "Info" | "Nutra" | "Relacionamento" | "Finanças" | "Saúde";
 export type OfferStructure = "VSL" | "Página de Vendas" | "Quiz";
 export type OfferLanguage = "Português" | "Espanhol" | "Inglês";
+
 
 export interface Offer {
   id: string;
