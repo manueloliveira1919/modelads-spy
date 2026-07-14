@@ -36,6 +36,7 @@ export const Route = createFileRoute("/buscar")({
 
 function BuscarPage() {
   const [term, setTerm] = useState("");
+  const [productType, setProductType] = useState<ProductType | "todos">("todos");
   const searchFn = useServerFn(searchOffersLive);
   const mutation = useMutation({
     mutationFn: (t: string) => searchFn({ data: { term: t } }),
@@ -48,8 +49,16 @@ function BuscarPage() {
     mutation.mutate(t);
   }
 
-  const results = mutation.data?.results ?? [];
+  const rawResults = mutation.data?.results ?? [];
+  const results = useMemo(
+    () =>
+      productType === "todos"
+        ? rawResults
+        : rawResults.filter((r) => r.productType === productType),
+    [rawResults, productType],
+  );
   const searched = mutation.isSuccess || mutation.isError;
+
 
   return (
     <AppShell>
