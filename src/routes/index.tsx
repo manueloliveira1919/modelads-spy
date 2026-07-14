@@ -56,12 +56,15 @@ export const Route = createFileRoute("/")({
   ),
 });
 
+type ScaleFilter = "escalando" | "todos" | "escaladissima";
+
 function Dashboard() {
   const [category, setCategory] = useState<OfferCategory | "todas">("todas");
   const [language, setLanguage] = useState<OfferLanguage | "todos">("todos");
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
   const [productType, setProductType] = useState<ProductType | "todos">("todos");
   const [funnel, setFunnel] = useState<"todos" | "whatsapp">("todos");
+  const [scale, setScale] = useState<ScaleFilter>("escalando");
   const [query, setQuery] = useState("");
 
   const [refreshing, setRefreshing] = useState(false);
@@ -98,17 +101,29 @@ function Dashboard() {
 
 
   const filtered = useMemo(() => {
-    return offers.filter((o) => {
+    const list = offers.filter((o) => {
+      // "Sem categoria" fica oculto do Dashboard por padrão — só aparece
+      // quando o usuário seleciona explicitamente essa categoria.
+      if (category === "todas" && o.category === "Sem categoria") return false;
       if (category !== "todas" && o.category !== category) return false;
       if (language !== "todos" && o.language !== language) return false;
       if (structure !== "todas" && o.structure !== structure) return false;
       if (productType !== "todos" && o.productType !== productType) return false;
       if (funnel === "whatsapp" && !o.isWhatsapp) return false;
+      // Filtro de escala: padrão exclui "testando"; usuário pode ver todos ou só escaladíssima.
+      if (scale === "escalando" && o.status === "testando") return false;
+      if (scale === "escaladissima" && o.status !== "escaladissima") return false;
       if (query && !`${o.page} ${o.headline}`.toLowerCase().includes(query.toLowerCase()))
         return false;
       return true;
     });
-  }, [offers, category, language, structure, productType, funnel, query]);
+    // Escaladíssima primeiro, depois crescendo, depois testando; dentro do grupo, mais anúncios ativos primeiro.
+    const rank = { escaladissima: 0, crescendo: 1, testando: 2 } as const;
+    return [...list].sort(
+      (a, b) => rank[a.status] - rank[b.status] || b.activeAds - a.activeAds,
+    );
+  }, [offers, category, language, structure, productType, funnel, scale, query]);
+
 
 
 
