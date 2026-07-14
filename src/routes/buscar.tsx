@@ -8,7 +8,9 @@ import {
   Flame,
   Layers,
   Loader2,
+  MessageCircle,
   Package,
+
   Search,
   Sparkles,
   TrendingUp,
