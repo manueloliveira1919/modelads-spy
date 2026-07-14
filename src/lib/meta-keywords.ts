@@ -2,7 +2,14 @@
 // Para ativar novos idiomas/países, basta marcar `active: true` na entrada correspondente
 // (ou adicionar novos itens) — a lógica de busca lê apenas o que estiver ativo.
 
-export type MetaCategory = "Info" | "Nutra" | "Relacionamento" | "Finanças" | "Saúde";
+export type MetaCategory =
+  | "Info"
+  | "Nutra"
+  | "Relacionamento"
+  | "Finanças"
+  | "Saúde"
+  | "Mentoria"
+  | "Aplicativo/App";
 export type MetaLanguage = "BR" | "ES";
 
 export interface KeywordGroup {
@@ -18,19 +25,57 @@ export const KEYWORD_GROUPS: KeywordGroup[] = [
     category: "Info",
     language: "BR",
     active: true,
-    terms: ["curso online", "mentoria", "método", "aprenda a", "transformação"],
+    terms: [
+      "curso online",
+      "mentoria",
+      "método",
+      "aprenda a",
+      "transformação",
+      "ebook",
+      "e-book",
+      "pdf",
+      "apostila",
+      "curso",
+      "aula online",
+      "treinamento",
+      "workshop",
+      "low ticket",
+      "mini curso",
+    ],
   },
   {
     category: "Nutra",
     language: "BR",
     active: true,
-    terms: ["emagrecer", "dieta", "perder peso", "detox", "queima de gordura"],
+    terms: [
+      "emagrecer",
+      "dieta",
+      "perder peso",
+      "detox",
+      "queima de gordura",
+      "chá",
+      "chá emagrecedor",
+      "receitas",
+      "receitas fit",
+      "cardápio",
+      "suplemento",
+      "shake",
+    ],
   },
   {
     category: "Relacionamento",
     language: "BR",
     active: true,
-    terms: ["reconquistar", "conquistar homem", "conquistar mulher", "seu ex", "sedução"],
+    terms: [
+      "reconquistar",
+      "conquistar homem",
+      "conquistar mulher",
+      "seu ex",
+      "sedução",
+      "mentoria de relacionamento",
+      "terapia de casal",
+      "texto que reconquista",
+    ],
   },
   {
     category: "Finanças",
@@ -42,13 +87,49 @@ export const KEYWORD_GROUPS: KeywordGroup[] = [
       "dinheiro online",
       "liberdade financeira",
       "ganhar dinheiro",
+      "curso de investimento",
+      "planilha financeira",
+      "mentoria financeira",
+      "aplicativo de finanças",
     ],
   },
   {
     category: "Saúde",
     language: "BR",
     active: true,
-    terms: ["ansiedade", "sono", "bem-estar", "natural", "remédio caseiro"],
+    terms: [
+      "ansiedade",
+      "sono",
+      "bem-estar",
+      "natural",
+      "remédio caseiro",
+      "remédio natural",
+      "chá calmante",
+      "suplemento natural",
+      "receita caseira",
+    ],
+  },
+  {
+    category: "Mentoria",
+    language: "BR",
+    active: true,
+    terms: [
+      "mentoria individual",
+      "mentoria em grupo",
+      "acompanhamento personalizado",
+      "consultoria",
+    ],
+  },
+  {
+    category: "Aplicativo/App",
+    language: "BR",
+    active: true,
+    terms: [
+      "baixe o app",
+      "aplicativo grátis",
+      "disponível na play store",
+      "disponível na app store",
+    ],
   },
 
   // === Español — INATIVO (pronto para expansão futura) ===
@@ -87,6 +168,28 @@ export const KEYWORD_GROUPS: KeywordGroup[] = [
     language: "ES",
     active: false,
     terms: ["ansiedad", "sueño", "bienestar", "natural", "remedio casero"],
+  },
+  {
+    category: "Mentoria",
+    language: "ES",
+    active: false,
+    terms: [
+      "mentoría individual",
+      "mentoría en grupo",
+      "acompañamiento personalizado",
+      "consultoría",
+    ],
+  },
+  {
+    category: "Aplicativo/App",
+    language: "ES",
+    active: false,
+    terms: [
+      "descarga la app",
+      "aplicación gratis",
+      "disponible en play store",
+      "disponible en app store",
+    ],
   },
 ];
 

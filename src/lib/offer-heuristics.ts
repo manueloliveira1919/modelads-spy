@@ -18,6 +18,15 @@ export function classifyStatus(activeAds: number): "testando" | "crescendo" | "e
   return "testando";
 }
 
+// Detecta se o anúncio é um funil de WhatsApp — por texto ou pelo link de destino.
+export function isWhatsappFunnel(text: string, linkUrl?: string | null): boolean {
+  const haystack = `${text || ""} ${linkUrl || ""}`.toLowerCase();
+  return /(wa\.me|whats\.link|api\.whatsapp\.com|chamar no whats|fale no whats|clique e fale no whats|chame no whats|no whatsapp)/.test(
+    haystack,
+  );
+}
+
+
 export function detectCreativeType(url: string | null | undefined): "image" | "video" {
   if (!url) return "image";
   return /\.(mp4|mov|m3u8|webm)(\?|$)/i.test(url) ? "video" : "image";
