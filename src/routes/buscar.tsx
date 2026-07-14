@@ -264,3 +264,29 @@ function Chip({ children, icon }: { children: React.ReactNode; icon?: React.Reac
     </span>
   );
 }
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+        active
+          ? "border-brand bg-brand text-brand-foreground"
+          : "border-border bg-background text-muted-foreground hover:border-accent hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
