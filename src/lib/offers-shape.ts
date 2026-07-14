@@ -26,6 +26,7 @@ export interface Offer {
   language: OfferLanguage;
   status: OfferStatus;
   productType: ProductType;
+  isWhatsapp: boolean;
   activeDays: number;
   activeAds: number;
   headline: string;
@@ -47,7 +48,10 @@ export const CATEGORIES: OfferCategory[] = [
   "Relacionamento",
   "Finanças",
   "Saúde",
+  "Mentoria",
+  "Aplicativo/App",
 ];
+
 export const STRUCTURES: OfferStructure[] = ["VSL", "Página de Vendas", "Quiz"];
 export const LANGUAGES: OfferLanguage[] = ["Português", "Espanhol", "Inglês"];
 
