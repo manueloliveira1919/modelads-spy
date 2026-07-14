@@ -61,7 +61,9 @@ function Dashboard() {
   const [language, setLanguage] = useState<OfferLanguage | "todos">("todos");
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
   const [productType, setProductType] = useState<ProductType | "todos">("todos");
+  const [funnel, setFunnel] = useState<"todos" | "whatsapp">("todos");
   const [query, setQuery] = useState("");
+
   const [refreshing, setRefreshing] = useState(false);
 
   const queryClient = useQueryClient();
@@ -101,11 +103,13 @@ function Dashboard() {
       if (language !== "todos" && o.language !== language) return false;
       if (structure !== "todas" && o.structure !== structure) return false;
       if (productType !== "todos" && o.productType !== productType) return false;
+      if (funnel === "whatsapp" && !o.isWhatsapp) return false;
       if (query && !`${o.page} ${o.headline}`.toLowerCase().includes(query.toLowerCase()))
         return false;
       return true;
     });
-  }, [offers, category, language, structure, productType, query]);
+  }, [offers, category, language, structure, productType, funnel, query]);
+
 
 
   const escaladas = offers.filter((o) => o.status === "escaladissima").length;
@@ -216,8 +220,20 @@ function Dashboard() {
               </FilterChip>
             ))}
           </FilterRow>
+          <FilterRow label="Funil">
+            <FilterChip active={funnel === "todos"} onClick={() => setFunnel("todos")}>
+              Todos
+            </FilterChip>
+            <FilterChip
+              active={funnel === "whatsapp"}
+              onClick={() => setFunnel("whatsapp")}
+            >
+              Funil WhatsApp
+            </FilterChip>
+          </FilterRow>
 
         </div>
+
 
         {filtered.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-border p-12 text-center text-sm text-muted-foreground">

@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { classifyStatus, inferProductType, inferStructure, type ProductType } from "./offer-heuristics";
+import { classifyStatus, inferProductType, inferStructure, isWhatsappFunnel, type ProductType } from "./offer-heuristics";
 import type { OfferStatus, OfferStructure } from "./offers-shape";
+
 
 
 export interface LiveSearchResult {
@@ -14,7 +15,9 @@ export interface LiveSearchResult {
   status: OfferStatus;
   structure: OfferStructure | null;
   productType: ProductType;
+  isWhatsapp: boolean;
   adSnapshotUrl: string | null;
+
   pageUrl: string;
   adLibraryUrl: string | null;
 }
@@ -110,6 +113,8 @@ export const searchOffersLive = createServerFn({ method: "POST" })
           status: classifyStatus(activeAds),
           structure: inferStructure(`${title} ${body}`),
           productType: inferProductType(`${title} ${body} ${desc}`),
+          isWhatsapp: isWhatsappFunnel(`${title} ${body} ${desc}`),
+
 
           adSnapshotUrl: ad.ad_snapshot_url ?? null,
           pageUrl: `https://www.facebook.com/${pageId}`,

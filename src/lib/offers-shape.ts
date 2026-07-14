@@ -1,12 +1,20 @@
 // Formato compartilhado entre server fn e componentes. É o que o Dashboard consome.
-import { inferProductType, type ProductType } from "./offer-heuristics";
+import { inferProductType, isWhatsappFunnel, type ProductType } from "./offer-heuristics";
 export type { ProductType } from "./offer-heuristics";
 export { PRODUCT_TYPES } from "./offer-heuristics";
 
 export type OfferStatus = "escaladissima" | "crescendo" | "testando";
-export type OfferCategory = "Info" | "Nutra" | "Relacionamento" | "Finanças" | "Saúde";
+export type OfferCategory =
+  | "Info"
+  | "Nutra"
+  | "Relacionamento"
+  | "Finanças"
+  | "Saúde"
+  | "Mentoria"
+  | "Aplicativo/App";
 export type OfferStructure = "VSL" | "Página de Vendas" | "Quiz";
 export type OfferLanguage = "Português" | "Espanhol" | "Inglês";
+
 
 
 export interface Offer {
@@ -18,6 +26,7 @@ export interface Offer {
   language: OfferLanguage;
   status: OfferStatus;
   productType: ProductType;
+  isWhatsapp: boolean;
   activeDays: number;
   activeAds: number;
   headline: string;
@@ -39,7 +48,10 @@ export const CATEGORIES: OfferCategory[] = [
   "Relacionamento",
   "Finanças",
   "Saúde",
+  "Mentoria",
+  "Aplicativo/App",
 ];
+
 export const STRUCTURES: OfferStructure[] = ["VSL", "Página de Vendas", "Quiz"];
 export const LANGUAGES: OfferLanguage[] = ["Português", "Espanhol", "Inglês"];
 
@@ -103,6 +115,8 @@ export function rowToOffer(row: OfferRow): Offer {
     language: LANG_MAP[row.language] ?? "Português",
     status: (row.status as OfferStatus) ?? "testando",
     productType,
+    isWhatsapp: isWhatsappFunnel(`${headline} ${description}`, row.link_url ?? null),
+
     activeDays: computeActiveDaysFromStart(row.ad_start_date, row.active_days ?? 0),
     activeAds: row.active_ads_count,
     headline,

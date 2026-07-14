@@ -8,7 +8,9 @@ import {
   Flame,
   Layers,
   Loader2,
+  MessageCircle,
   Package,
+
   Search,
   Sparkles,
   TrendingUp,
@@ -37,6 +39,7 @@ export const Route = createFileRoute("/buscar")({
 function BuscarPage() {
   const [term, setTerm] = useState("");
   const [productType, setProductType] = useState<ProductType | "todos">("todos");
+  const [funnel, setFunnel] = useState<"todos" | "whatsapp">("todos");
   const searchFn = useServerFn(searchOffersLive);
   const mutation = useMutation({
     mutationFn: (t: string) => searchFn({ data: { term: t } }),
@@ -52,11 +55,14 @@ function BuscarPage() {
   const rawResults = mutation.data?.results ?? [];
   const results = useMemo(
     () =>
-      productType === "todos"
-        ? rawResults
-        : rawResults.filter((r) => r.productType === productType),
-    [rawResults, productType],
+      rawResults.filter((r) => {
+        if (productType !== "todos" && r.productType !== productType) return false;
+        if (funnel === "whatsapp" && !r.isWhatsapp) return false;
+        return true;
+      }),
+    [rawResults, productType, funnel],
   );
+
   const searched = mutation.isSuccess || mutation.isError;
 
 
@@ -125,6 +131,23 @@ function BuscarPage() {
             </FilterChip>
           ))}
         </div>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Funil
+          </span>
+          <FilterChip active={funnel === "todos"} onClick={() => setFunnel("todos")}>
+            Todos
+          </FilterChip>
+          <FilterChip
+            active={funnel === "whatsapp"}
+            onClick={() => setFunnel("whatsapp")}
+          >
+            Funil WhatsApp
+          </FilterChip>
+        </div>
+
+
 
 
 
@@ -200,7 +223,14 @@ function LiveResultCard({ result }: { result: LiveSearchResult }) {
           {result.structure && (
             <Chip icon={<Layers className="h-3 w-3" />}>{result.structure}</Chip>
           )}
+          {result.isWhatsapp && (
+            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-1 text-[11px] font-semibold text-emerald-400 ring-1 ring-inset ring-emerald-500/30">
+              <MessageCircle className="h-3 w-3" />
+              Funil WhatsApp
+            </span>
+          )}
         </div>
+
 
 
         <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
