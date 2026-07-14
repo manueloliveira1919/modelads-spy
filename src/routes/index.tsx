@@ -61,7 +61,9 @@ function Dashboard() {
   const [language, setLanguage] = useState<OfferLanguage | "todos">("todos");
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
   const [productType, setProductType] = useState<ProductType | "todos">("todos");
+  const [funnel, setFunnel] = useState<"todos" | "whatsapp">("todos");
   const [query, setQuery] = useState("");
+
   const [refreshing, setRefreshing] = useState(false);
 
   const queryClient = useQueryClient();
