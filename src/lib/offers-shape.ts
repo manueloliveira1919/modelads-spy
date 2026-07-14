@@ -115,6 +115,8 @@ export function rowToOffer(row: OfferRow): Offer {
     language: LANG_MAP[row.language] ?? "Português",
     status: (row.status as OfferStatus) ?? "testando",
     productType,
+    isWhatsapp: isWhatsappFunnel(`${headline} ${description}`, row.link_url ?? null),
+
     activeDays: computeActiveDaysFromStart(row.ad_start_date, row.active_days ?? 0),
     activeAds: row.active_ads_count,
     headline,
