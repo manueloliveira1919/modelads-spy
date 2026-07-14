@@ -113,6 +113,8 @@ export const searchOffersLive = createServerFn({ method: "POST" })
           status: classifyStatus(activeAds),
           structure: inferStructure(`${title} ${body}`),
           productType: inferProductType(`${title} ${body} ${desc}`),
+          isWhatsapp: isWhatsappFunnel(`${title} ${body} ${desc}`),
+
 
           adSnapshotUrl: ad.ad_snapshot_url ?? null,
           pageUrl: `https://www.facebook.com/${pageId}`,
