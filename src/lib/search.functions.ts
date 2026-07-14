@@ -109,6 +109,8 @@ export const searchOffersLive = createServerFn({ method: "POST" })
           activeAds,
           status: classifyStatus(activeAds),
           structure: inferStructure(`${title} ${body}`),
+          productType: inferProductType(`${title} ${body} ${desc}`),
+
           adSnapshotUrl: ad.ad_snapshot_url ?? null,
           pageUrl: `https://www.facebook.com/${pageId}`,
           adLibraryUrl: `https://www.facebook.com/ads/library/?id=${archiveId}`,
