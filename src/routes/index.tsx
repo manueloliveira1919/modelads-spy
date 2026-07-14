@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { Search, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
@@ -14,6 +15,7 @@ import {
   type OfferStructure,
 } from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
+
 
 const offersQuery = queryOptions({
   queryKey: ["offers"],
