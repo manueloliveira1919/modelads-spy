@@ -97,11 +97,14 @@ export const searchOffersLive = createServerFn({ method: "POST" })
         const pageId = ad.page_id;
         const archiveId = ad.id;
         if (!pageId || !archiveId || seen.has(pageId)) continue;
-        seen.add(pageId);
-        const activeAds = perPage.get(pageId) ?? 1;
         const body = ad.ad_creative_bodies?.[0] ?? "";
         const title = ad.ad_creative_link_titles?.[0] ?? "";
         const desc = ad.ad_creative_link_descriptions?.[0] ?? "";
+        const pageName = ad.page_name ?? "Página desconhecida";
+        // Filtra anúncios políticos e apps de drama/novela também na busca ao vivo.
+        if (detectNoise(`${pageName} ${title} ${body} ${desc}`)) continue;
+        seen.add(pageId);
+        const activeAds = perPage.get(pageId) ?? 1;
         results.push({
           adArchiveId: archiveId,
           pageId,
