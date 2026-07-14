@@ -58,9 +58,37 @@ function Dashboard() {
   const [language, setLanguage] = useState<OfferLanguage | "todos">("todos");
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
   const [query, setQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data } = useSuspenseQuery(offersQuery);
   const offers = data.offers;
+
+  async function handleRefresh() {
+    if (refreshing) return;
+    setRefreshing(true);
+    const t = toast.loading("Atualizando ofertas da Meta Ad Library…");
+    try {
+      const res = await fetch("/api/public/hooks/refresh-offers", { method: "POST" });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        offers?: number;
+        pages?: number;
+        error?: string;
+      };
+      if (!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      await queryClient.invalidateQueries({ queryKey: ["offers"] });
+      toast.success(
+        `Atualizado: ${json.offers ?? 0} anúncios / ${json.pages ?? 0} páginas`,
+        { id: t },
+      );
+    } catch (err) {
+      toast.error(`Falha ao atualizar: ${(err as Error).message}`, { id: t });
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
 
   const filtered = useMemo(() => {
     return offers.filter((o) => {
