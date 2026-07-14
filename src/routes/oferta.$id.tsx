@@ -59,6 +59,7 @@ function OfferDetail() {
 
 
   async function downloadCreative() {
+    if (!offer.creativeUrl) return;
     try {
       const res = await fetch(offer.creativeUrl);
       const blob = await res.blob();
