@@ -213,6 +213,17 @@ Status: ${statusLabel}`;
             <div className="rounded-2xl border border-border bg-card p-5">
               <h2 className="font-display text-lg font-semibold">Links externos</h2>
               <div className="mt-4 space-y-2">
+                {offer.linkUrl ? (
+                  <ExternalLinkRow
+                    href={offer.linkUrl}
+                    title="Ver página de destino"
+                    subtitle="Abrir a landing page do anúncio"
+                  />
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border bg-background px-4 py-3 text-xs text-muted-foreground">
+                    Link de destino não disponível para este anúncio (a API pública da Meta nem sempre expõe esse campo).
+                  </div>
+                )}
                 <ExternalLinkRow
                   href={offer.pageUrl}
                   title="Página do anunciante"
@@ -234,6 +245,7 @@ Status: ${statusLabel}`;
                 )}
               </div>
             </div>
+
           </div>
         </div>
       </div>
