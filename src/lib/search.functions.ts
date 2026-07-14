@@ -108,7 +108,7 @@ export const searchOffersLive = createServerFn({ method: "POST" })
         results.push({
           adArchiveId: archiveId,
           pageId,
-          page: ad.page_name ?? "Página desconhecida",
+          page: pageName,
           headline: title || body.slice(0, 120),
           description: body || desc,
           activeDays: computeActiveDays(ad.ad_delivery_start_time),
