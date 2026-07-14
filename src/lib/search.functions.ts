@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { classifyStatus, inferStructure } from "./offer-heuristics";
+import { classifyStatus, inferProductType, inferStructure, type ProductType } from "./offer-heuristics";
 import type { OfferStatus, OfferStructure } from "./offers-shape";
+
 
 export interface LiveSearchResult {
   adArchiveId: string;
