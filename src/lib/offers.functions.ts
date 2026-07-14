@@ -57,7 +57,7 @@ export const getOffer = createServerFn({ method: "GET" })
     const { data: row, error } = await supabase
       .from("meta_offers")
       .select(
-        "id, ad_archive_id, page_id, page_name, category, language, headline, description, creative_url, creative_type, ad_snapshot_url, page_url, active_days, active_ads_count, status, structure",
+        "id, ad_archive_id, page_id, page_name, category, language, headline, description, creative_url, creative_type, ad_snapshot_url, page_url, active_days, active_ads_count, status, structure, ad_start_date",
       )
       .eq("id", data.id)
       .maybeSingle();
