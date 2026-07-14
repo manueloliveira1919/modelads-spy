@@ -68,8 +68,10 @@ interface OfferRow {
   active_ads_count: number;
   status: string;
   structure: string | null;
+  product_type?: string | null;
   ad_start_date?: string | null;
 }
+
 
 function resolveCreativeUrl(row: OfferRow): string | null {
   const url = row.creative_url;
