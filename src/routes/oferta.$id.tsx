@@ -206,11 +206,20 @@ Status: ${statusLabel}`;
                   title="Página do anunciante"
                   subtitle="Ver perfil no Facebook"
                 />
-                <ExternalLinkRow
-                  href={offer.adLibraryUrl}
-                  title="Facebook Ad Library"
-                  subtitle="Ver todos os anúncios ativos"
-                />
+                {offer.adSnapshotUrl && (
+                  <ExternalLinkRow
+                    href={offer.adSnapshotUrl}
+                    title="Ver anúncio original"
+                    subtitle="Abrir prévia do criativo na Meta"
+                  />
+                )}
+                {offer.adLibraryUrl && (
+                  <ExternalLinkRow
+                    href={offer.adLibraryUrl}
+                    title="Biblioteca de Anúncios"
+                    subtitle="Ver todos os anúncios ativos"
+                  />
+                )}
               </div>
             </div>
           </div>
