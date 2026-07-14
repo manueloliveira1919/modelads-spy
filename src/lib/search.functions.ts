@@ -15,7 +15,9 @@ export interface LiveSearchResult {
   status: OfferStatus;
   structure: OfferStructure | null;
   productType: ProductType;
+  isWhatsapp: boolean;
   adSnapshotUrl: string | null;
+
   pageUrl: string;
   adLibraryUrl: string | null;
 }
