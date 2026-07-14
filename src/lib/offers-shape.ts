@@ -90,6 +90,10 @@ function computeActiveDaysFromStart(start: string | null | undefined, fallback: 
 
 export function rowToOffer(row: OfferRow): Offer {
   const archiveId = row.ad_archive_id?.trim() || null;
+  const headline = row.headline ?? "";
+  const description = row.description ?? "";
+  const productType = (row.product_type as ProductType | null | undefined)
+    ?? inferProductType(`${headline} ${description}`);
   return {
     id: row.id,
     page: row.page_name,
@@ -98,10 +102,12 @@ export function rowToOffer(row: OfferRow): Offer {
     structure: (row.structure as OfferStructure | null) ?? null,
     language: LANG_MAP[row.language] ?? "Português",
     status: (row.status as OfferStatus) ?? "testando",
+    productType,
     activeDays: computeActiveDaysFromStart(row.ad_start_date, row.active_days ?? 0),
     activeAds: row.active_ads_count,
-    headline: row.headline ?? "",
-    description: row.description ?? "",
+    headline,
+    description,
+
     creativeUrl: resolveCreativeUrl(row),
     creativeType: (row.creative_type as "image" | "video") ?? "image",
     pageUrl: row.page_url ?? `https://www.facebook.com/${row.page_id}`,
