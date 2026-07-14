@@ -244,7 +244,7 @@ async function runRefresh() {
         ad_archive_id: archiveId,
         page_id: pageId,
         page_name: bucket.pageName,
-        category: ad._category,
+        category: finalCategory,
         language: ad._language,
         country: "BR",
         headline: title || bodyText.slice(0, 120),
