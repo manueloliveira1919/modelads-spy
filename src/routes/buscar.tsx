@@ -196,10 +196,12 @@ function LiveResultCard({ result }: { result: LiveSearchResult }) {
         <p className="line-clamp-2 text-sm text-muted-foreground">{result.headline}</p>
 
         <div className="flex flex-wrap gap-1.5">
+          <Chip icon={<Package className="h-3 w-3" />}>{result.productType}</Chip>
           {result.structure && (
             <Chip icon={<Layers className="h-3 w-3" />}>{result.structure}</Chip>
           )}
         </div>
+
 
         <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
