@@ -272,13 +272,45 @@ function ActionButton({
   onCopy: () => string;
 }) {
   const [copied, setCopied] = useState(false);
+  async function copyText(text: string): Promise<boolean> {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {
+      // segue pro fallback
+    }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
   return (
     <button
       onClick={async () => {
-        await navigator.clipboard.writeText(onCopy());
-        setCopied(true);
-        toast.success("Copiado para a área de transferência");
-        setTimeout(() => setCopied(false), 1500);
+        const text = onCopy();
+        if (!text) {
+          toast.error("Nada para copiar (texto vazio).");
+          return;
+        }
+        const ok = await copyText(text);
+        if (ok) {
+          setCopied(true);
+          toast.success("Copiado!");
+          setTimeout(() => setCopied(false), 1500);
+        } else {
+          toast.error("Não foi possível copiar. Verifique as permissões do navegador.");
+        }
       }}
       className={cn(
         "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium transition-colors",
@@ -287,6 +319,7 @@ function ActionButton({
           : "border-border bg-background hover:border-accent",
       )}
     >
+
       <span className="inline-flex items-center gap-2">
         {icon}
         {label}
