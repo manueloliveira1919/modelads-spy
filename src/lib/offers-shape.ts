@@ -17,6 +17,7 @@ export interface Offer {
   structure: OfferStructure | null;
   language: OfferLanguage;
   status: OfferStatus;
+  productType: ProductType;
   activeDays: number;
   activeAds: number;
   headline: string;
@@ -29,6 +30,7 @@ export interface Offer {
   adSnapshotUrl: string | null;
   adArchiveId: string | null;
 }
+
 
 
 export const CATEGORIES: OfferCategory[] = [
