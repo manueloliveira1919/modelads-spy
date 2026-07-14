@@ -199,6 +199,24 @@ function Dashboard() {
               </FilterChip>
             ))}
           </FilterRow>
+          <FilterRow label="Tipo de Produto">
+            <FilterChip
+              active={productType === "todos"}
+              onClick={() => setProductType("todos")}
+            >
+              Todos
+            </FilterChip>
+            {PRODUCT_TYPES.map((p) => (
+              <FilterChip
+                key={p}
+                active={productType === p}
+                onClick={() => setProductType(p)}
+              >
+                {p}
+              </FilterChip>
+            ))}
+          </FilterRow>
+
         </div>
 
         {filtered.length === 0 ? (
