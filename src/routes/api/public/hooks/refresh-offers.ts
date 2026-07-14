@@ -76,6 +76,70 @@ function computeActiveDays(start?: string): number {
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
+// Faz scraping da página do snapshot da Meta pra extrair a mídia real e o link
+// de destino do anúncio. A API pública não retorna esses campos diretamente.
+// Se qualquer etapa falhar (403, HTML mudou, timeout), retorna null nos campos.
+interface SnapshotMedia {
+  imageUrl: string | null;
+  videoUrl: string | null;
+  linkUrl: string | null;
+}
+
+function decodeMetaJsonString(raw: string): string {
+  // Meta serializa em JSON dentro do HTML — precisa desescapar \/ e \u00XX.
+  try {
+    return JSON.parse(`"${raw}"`);
+  } catch {
+    return raw.replace(/\\\//g, "/");
+  }
+}
+
+function firstMatch(html: string, patterns: RegExp[]): string | null {
+  for (const rx of patterns) {
+    const m = html.match(rx);
+    if (m?.[1]) return decodeMetaJsonString(m[1]);
+  }
+  return null;
+}
+
+async function extractSnapshotMedia(snapshotUrl: string | null): Promise<SnapshotMedia> {
+  if (!snapshotUrl) return { imageUrl: null, videoUrl: null, linkUrl: null };
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(snapshotUrl, {
+      signal: controller.signal,
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "accept-language": "pt-BR,pt;q=0.9,en;q=0.8",
+      },
+    });
+    clearTimeout(timer);
+    if (!res.ok) return { imageUrl: null, videoUrl: null, linkUrl: null };
+    const html = await res.text();
+
+    const videoUrl = firstMatch(html, [
+      /"video_hd_url":"([^"]+)"/,
+      /"video_sd_url":"([^"]+)"/,
+    ]);
+    const imageUrl = firstMatch(html, [
+      /"original_image_url":"([^"]+)"/,
+      /"resized_image_url":"([^"]+)"/,
+      /"image_url":"([^"]+)"/,
+    ]);
+    const linkUrl = firstMatch(html, [
+      /"link_url":"([^"]+)"/,
+      /"snapshot_url":"([^"]+)".*?"link_url":"([^"]+)"/,
+    ]);
+
+    return { imageUrl, videoUrl, linkUrl };
+  } catch {
+    return { imageUrl: null, videoUrl: null, linkUrl: null };
+  }
+}
+
+
 async function runRefresh() {
   const token = process.env.META_ACCESS_TOKEN;
   if (!token) throw new Error("META_ACCESS_TOKEN não configurado");
