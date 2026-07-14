@@ -13,12 +13,23 @@ export function OfferCard({ offer }: { offer: Offer }) {
       className="group block overflow-hidden rounded-2xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:border-accent"
     >
       <div className="relative aspect-video overflow-hidden bg-muted">
-        <img
-          src={offer.creativeUrl}
-          alt={offer.headline}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+        {offer.creativeUrl ? (
+          <img
+            src={offer.creativeUrl}
+            alt={offer.headline}
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-muted to-background">
+            <div className="text-center">
+              <Sparkles className="mx-auto h-8 w-8 text-muted-foreground/60" />
+              <p className="mt-2 px-4 text-xs text-muted-foreground">
+                Prévia disponível na Biblioteca de Anúncios
+              </p>
+            </div>
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
         <div className="absolute left-3 top-3 flex gap-2">
           <StatusBadge status={offer.status} />

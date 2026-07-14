@@ -2,7 +2,7 @@
 export type OfferStatus = "escaladissima" | "crescendo" | "testando";
 export type OfferCategory = "Info" | "Nutra" | "Relacionamento" | "Finanças" | "Saúde";
 export type OfferStructure = "VSL" | "Página de Vendas" | "Quiz";
-export type OfferLanguage = "BR" | "Espanhol" | "Inglês";
+export type OfferLanguage = "Português" | "Espanhol" | "Inglês";
 
 export interface Offer {
   id: string;
@@ -15,10 +15,11 @@ export interface Offer {
   activeAds: number;
   headline: string;
   description: string;
-  creativeUrl: string;
+  creativeUrl: string | null;
   creativeType: "image" | "video";
   pageUrl: string;
-  adLibraryUrl: string;
+  adLibraryUrl: string | null;
+  adSnapshotUrl: string | null;
 }
 
 export const CATEGORIES: OfferCategory[] = [
@@ -29,10 +30,11 @@ export const CATEGORIES: OfferCategory[] = [
   "Saúde",
 ];
 export const STRUCTURES: OfferStructure[] = ["VSL", "Página de Vendas", "Quiz"];
-export const LANGUAGES: OfferLanguage[] = ["BR", "Espanhol", "Inglês"];
+export const LANGUAGES: OfferLanguage[] = ["Português", "Espanhol", "Inglês"];
 
 const LANG_MAP: Record<string, OfferLanguage> = {
-  BR: "BR",
+  BR: "Português",
+  PT: "Português",
   ES: "Espanhol",
   EN: "Inglês",
 };
@@ -54,27 +56,39 @@ interface OfferRow {
   active_ads_count: number;
   status: string;
   structure: string | null;
+  ad_start_date?: string | null;
+}
+
+// A Meta Ads Library API pública NÃO retorna URL direta da mídia — só o
+// ad_snapshot_url (uma página HTML da prévia). Tratamos a ausência da mídia
+// direta como null e oferecemos o botão "Ver anúncio original" no lugar.
+function resolveCreativeUrl(row: OfferRow): string | null {
+  const url = row.creative_url;
+  if (!url) return null;
+  // Se for justamente o snapshot HTML, não serve como <img src>.
+  if (url.includes("facebook.com/ads/archive/render_ad")) return null;
+  return url;
 }
 
 export function rowToOffer(row: OfferRow): Offer {
+  const archiveId = row.ad_archive_id?.trim() || null;
   return {
     id: row.id,
     page: row.page_name,
     category: (row.category as OfferCategory) ?? "Info",
     structure: (row.structure as OfferStructure | null) ?? null,
-    language: LANG_MAP[row.language] ?? "BR",
+    language: LANG_MAP[row.language] ?? "Português",
     status: (row.status as OfferStatus) ?? "testando",
     activeDays: row.active_days,
     activeAds: row.active_ads_count,
     headline: row.headline ?? "",
     description: row.description ?? "",
-    creativeUrl:
-      row.creative_url ||
-      "https://images.unsplash.com/photo-1611926653458-09294b3142bf?w=800&auto=format&fit=crop",
+    creativeUrl: resolveCreativeUrl(row),
     creativeType: (row.creative_type as "image" | "video") ?? "image",
     pageUrl: row.page_url ?? `https://facebook.com/${row.page_id}`,
-    adLibraryUrl:
-      row.ad_snapshot_url ??
-      `https://www.facebook.com/ads/library/?id=${row.ad_archive_id}`,
+    adLibraryUrl: archiveId
+      ? `https://www.facebook.com/ads/library/?id=${archiveId}`
+      : null,
+    adSnapshotUrl: row.ad_snapshot_url ?? null,
   };
 }
