@@ -60,8 +60,10 @@ function Dashboard() {
   const [category, setCategory] = useState<OfferCategory | "todas">("todas");
   const [language, setLanguage] = useState<OfferLanguage | "todos">("todos");
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
+  const [productType, setProductType] = useState<ProductType | "todos">("todos");
   const [query, setQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+
   const queryClient = useQueryClient();
 
   const { data } = useSuspenseQuery(offersQuery);
