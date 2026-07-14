@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getActiveSearchPlan } from "@/lib/meta-keywords";
-import { classifyStatus, inferStructure } from "@/lib/offer-heuristics";
+import { classifyStatus, inferProductType, inferStructure } from "@/lib/offer-heuristics";
 
 // Endpoint chamado pelo cron (pg_cron) a cada 24h para atualizar as ofertas.
 // Também pode ser disparado manualmente via POST autenticado com apikey.
@@ -243,6 +243,8 @@ async function runRefresh() {
         active_ads_count: activeAdsCount,
         status,
         structure,
+        product_type: inferProductType(`${title} ${bodyText} ${desc}`),
+
         search_term: ad._term,
         last_seen: new Date().toISOString(),
       };

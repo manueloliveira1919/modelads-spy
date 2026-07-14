@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { classifyStatus, inferStructure } from "./offer-heuristics";
+import { classifyStatus, inferProductType, inferStructure, type ProductType } from "./offer-heuristics";
 import type { OfferStatus, OfferStructure } from "./offers-shape";
+
 
 export interface LiveSearchResult {
   adArchiveId: string;
@@ -12,10 +13,12 @@ export interface LiveSearchResult {
   activeAds: number;
   status: OfferStatus;
   structure: OfferStructure | null;
+  productType: ProductType;
   adSnapshotUrl: string | null;
   pageUrl: string;
   adLibraryUrl: string | null;
 }
+
 
 interface MetaAdItem {
   id?: string;
@@ -106,6 +109,8 @@ export const searchOffersLive = createServerFn({ method: "POST" })
           activeAds,
           status: classifyStatus(activeAds),
           structure: inferStructure(`${title} ${body}`),
+          productType: inferProductType(`${title} ${body} ${desc}`),
+
           adSnapshotUrl: ad.ad_snapshot_url ?? null,
           pageUrl: `https://www.facebook.com/${pageId}`,
           adLibraryUrl: `https://www.facebook.com/ads/library/?id=${archiveId}`,

@@ -22,3 +22,38 @@ export function detectCreativeType(url: string | null | undefined): "image" | "v
   if (!url) return "image";
   return /\.(mp4|mov|m3u8|webm)(\?|$)/i.test(url) ? "video" : "image";
 }
+
+export type ProductType =
+  | "Low Ticket"
+  | "Ebook/PDF"
+  | "Curso Online"
+  | "Mentoria"
+  | "Produto Físico";
+
+export const PRODUCT_TYPES: ProductType[] = [
+  "Low Ticket",
+  "Ebook/PDF",
+  "Curso Online",
+  "Mentoria",
+  "Produto Físico",
+];
+
+// Classifica o tipo de produto a partir do texto do anúncio.
+// A Meta Ad Library não retorna esse dado, então usamos heurística por palavras-chave.
+export function inferProductType(text: string): ProductType {
+  const t = (text || "").toLowerCase();
+  if (/\b(mentoria|acompanhamento individual|consultoria 1[- ]?a[- ]?1|imers[ãa]o)\b/.test(t)) {
+    return "Mentoria";
+  }
+  if (/\b(curso|aula|aulas|m[óo]dulo|m[óo]dulos|treinamento|forma[çc][ãa]o|masterclass|workshop)\b/.test(t)) {
+    return "Curso Online";
+  }
+  if (/\b(e[- ]?book|ebook|pdf|apostila|guia (em )?pdf|livro digital)\b/.test(t)) {
+    return "Ebook/PDF";
+  }
+  if (/\b(frete|entrega|envio|kit|unidade|frasco|c[áa]psulas?|garrafas?|produto f[íi]sico|receba em casa)\b/.test(t)) {
+    return "Produto Físico";
+  }
+  return "Low Ticket";
+}
+

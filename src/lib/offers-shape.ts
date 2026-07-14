@@ -1,8 +1,13 @@
 // Formato compartilhado entre server fn e componentes. É o que o Dashboard consome.
+import { inferProductType, type ProductType } from "./offer-heuristics";
+export type { ProductType } from "./offer-heuristics";
+export { PRODUCT_TYPES } from "./offer-heuristics";
+
 export type OfferStatus = "escaladissima" | "crescendo" | "testando";
 export type OfferCategory = "Info" | "Nutra" | "Relacionamento" | "Finanças" | "Saúde";
 export type OfferStructure = "VSL" | "Página de Vendas" | "Quiz";
 export type OfferLanguage = "Português" | "Espanhol" | "Inglês";
+
 
 export interface Offer {
   id: string;
@@ -12,6 +17,7 @@ export interface Offer {
   structure: OfferStructure | null;
   language: OfferLanguage;
   status: OfferStatus;
+  productType: ProductType;
   activeDays: number;
   activeAds: number;
   headline: string;
@@ -24,6 +30,7 @@ export interface Offer {
   adSnapshotUrl: string | null;
   adArchiveId: string | null;
 }
+
 
 
 export const CATEGORIES: OfferCategory[] = [
@@ -61,8 +68,10 @@ interface OfferRow {
   active_ads_count: number;
   status: string;
   structure: string | null;
+  product_type?: string | null;
   ad_start_date?: string | null;
 }
+
 
 function resolveCreativeUrl(row: OfferRow): string | null {
   const url = row.creative_url;
@@ -81,6 +90,10 @@ function computeActiveDaysFromStart(start: string | null | undefined, fallback: 
 
 export function rowToOffer(row: OfferRow): Offer {
   const archiveId = row.ad_archive_id?.trim() || null;
+  const headline = row.headline ?? "";
+  const description = row.description ?? "";
+  const productType = (row.product_type as ProductType | null | undefined)
+    ?? inferProductType(`${headline} ${description}`);
   return {
     id: row.id,
     page: row.page_name,
@@ -89,10 +102,12 @@ export function rowToOffer(row: OfferRow): Offer {
     structure: (row.structure as OfferStructure | null) ?? null,
     language: LANG_MAP[row.language] ?? "Português",
     status: (row.status as OfferStatus) ?? "testando",
+    productType,
     activeDays: computeActiveDaysFromStart(row.ad_start_date, row.active_days ?? 0),
     activeAds: row.active_ads_count,
-    headline: row.headline ?? "",
-    description: row.description ?? "",
+    headline,
+    description,
+
     creativeUrl: resolveCreativeUrl(row),
     creativeType: (row.creative_type as "image" | "video") ?? "image",
     pageUrl: row.page_url ?? `https://www.facebook.com/${row.page_id}`,

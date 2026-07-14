@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -8,6 +8,7 @@ import {
   Flame,
   Layers,
   Loader2,
+  Package,
   Search,
   Sparkles,
   TrendingUp,
@@ -15,7 +16,9 @@ import {
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge } from "@/components/offer-card";
 import { searchOffersLive, type LiveSearchResult } from "@/lib/search.functions";
+import { PRODUCT_TYPES, type ProductType } from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
+
 
 export const Route = createFileRoute("/buscar")({
   head: () => ({
@@ -33,6 +36,7 @@ export const Route = createFileRoute("/buscar")({
 
 function BuscarPage() {
   const [term, setTerm] = useState("");
+  const [productType, setProductType] = useState<ProductType | "todos">("todos");
   const searchFn = useServerFn(searchOffersLive);
   const mutation = useMutation({
     mutationFn: (t: string) => searchFn({ data: { term: t } }),
@@ -45,8 +49,16 @@ function BuscarPage() {
     mutation.mutate(t);
   }
 
-  const results = mutation.data?.results ?? [];
+  const rawResults = mutation.data?.results ?? [];
+  const results = useMemo(
+    () =>
+      productType === "todos"
+        ? rawResults
+        : rawResults.filter((r) => r.productType === productType),
+    [rawResults, productType],
+  );
   const searched = mutation.isSuccess || mutation.isError;
+
 
   return (
     <AppShell>
@@ -92,6 +104,29 @@ function BuscarPage() {
             )}
           </button>
         </form>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Tipo de Produto
+          </span>
+          <FilterChip
+            active={productType === "todos"}
+            onClick={() => setProductType("todos")}
+          >
+            Todos
+          </FilterChip>
+          {PRODUCT_TYPES.map((p) => (
+            <FilterChip
+              key={p}
+              active={productType === p}
+              onClick={() => setProductType(p)}
+            >
+              {p}
+            </FilterChip>
+          ))}
+        </div>
+
+
 
         {mutation.isPending && (
           <div className="flex items-center justify-center gap-3 rounded-2xl border border-border bg-card px-4 py-16 text-sm text-muted-foreground">
@@ -161,10 +196,12 @@ function LiveResultCard({ result }: { result: LiveSearchResult }) {
         <p className="line-clamp-2 text-sm text-muted-foreground">{result.headline}</p>
 
         <div className="flex flex-wrap gap-1.5">
+          <Chip icon={<Package className="h-3 w-3" />}>{result.productType}</Chip>
           {result.structure && (
             <Chip icon={<Layers className="h-3 w-3" />}>{result.structure}</Chip>
           )}
         </div>
+
 
         <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1.5">
@@ -227,3 +264,29 @@ function Chip({ children, icon }: { children: React.ReactNode; icon?: React.Reac
     </span>
   );
 }
+
+function FilterChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+        active
+          ? "border-brand bg-brand text-brand-foreground"
+          : "border-border bg-background text-muted-foreground hover:border-accent hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+

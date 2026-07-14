@@ -9,11 +9,14 @@ import { listOffers } from "@/lib/offers.functions";
 import {
   CATEGORIES,
   LANGUAGES,
+  PRODUCT_TYPES,
   STRUCTURES,
   type OfferCategory,
   type OfferLanguage,
   type OfferStructure,
+  type ProductType,
 } from "@/lib/offers-shape";
+
 import { cn } from "@/lib/utils";
 
 
@@ -57,8 +60,10 @@ function Dashboard() {
   const [category, setCategory] = useState<OfferCategory | "todas">("todas");
   const [language, setLanguage] = useState<OfferLanguage | "todos">("todos");
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
+  const [productType, setProductType] = useState<ProductType | "todos">("todos");
   const [query, setQuery] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+
   const queryClient = useQueryClient();
 
   const { data } = useSuspenseQuery(offersQuery);
@@ -95,11 +100,13 @@ function Dashboard() {
       if (category !== "todas" && o.category !== category) return false;
       if (language !== "todos" && o.language !== language) return false;
       if (structure !== "todas" && o.structure !== structure) return false;
+      if (productType !== "todos" && o.productType !== productType) return false;
       if (query && !`${o.page} ${o.headline}`.toLowerCase().includes(query.toLowerCase()))
         return false;
       return true;
     });
-  }, [offers, category, language, structure, query]);
+  }, [offers, category, language, structure, productType, query]);
+
 
   const escaladas = offers.filter((o) => o.status === "escaladissima").length;
   const crescendo = offers.filter((o) => o.status === "crescendo").length;
@@ -192,6 +199,24 @@ function Dashboard() {
               </FilterChip>
             ))}
           </FilterRow>
+          <FilterRow label="Tipo de Produto">
+            <FilterChip
+              active={productType === "todos"}
+              onClick={() => setProductType("todos")}
+            >
+              Todos
+            </FilterChip>
+            {PRODUCT_TYPES.map((p) => (
+              <FilterChip
+                key={p}
+                active={productType === p}
+                onClick={() => setProductType(p)}
+              >
+                {p}
+              </FilterChip>
+            ))}
+          </FilterRow>
+
         </div>
 
         {filtered.length === 0 ? (
