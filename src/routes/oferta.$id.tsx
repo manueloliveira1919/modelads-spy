@@ -108,16 +108,25 @@ Status: ${statusLabel}`;
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="relative aspect-video bg-muted">
               {offer.creativeUrl ? (
-                <img
-                  src={offer.creativeUrl}
-                  alt={offer.headline}
-                  className="h-full w-full object-cover"
-                />
+                offer.creativeType === "video" ? (
+                  <video
+                    src={offer.creativeUrl}
+                    controls
+                    playsInline
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={offer.creativeUrl}
+                    alt={offer.headline}
+                    className="h-full w-full object-cover"
+                  />
+                )
               ) : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-muted to-background p-6 text-center">
                   <ExternalLink className="h-8 w-8 text-muted-foreground/60" />
                   <p className="text-sm text-muted-foreground">
-                    A Meta não expõe a mídia diretamente. Abra o anúncio original para ver o criativo.
+                    Mídia direta não disponível para este anúncio. Abra o original na Meta.
                   </p>
                   {offer.adSnapshotUrl && (
                     <a
@@ -136,6 +145,7 @@ Status: ${statusLabel}`;
                 <StatusBadge status={offer.status} />
               </div>
             </div>
+
             <div className="space-y-4 p-5">
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
