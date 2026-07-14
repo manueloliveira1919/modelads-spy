@@ -11,7 +11,8 @@ export type OfferCategory =
   | "Finanças"
   | "Saúde"
   | "Mentoria"
-  | "Aplicativo/App";
+  | "Aplicativo/App"
+  | "Sem categoria";
 export type OfferStructure = "VSL" | "Página de Vendas" | "Quiz";
 export type OfferLanguage = "Português" | "Espanhol" | "Inglês";
 
