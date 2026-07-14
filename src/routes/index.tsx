@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { Search, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
@@ -14,6 +15,7 @@ import {
   type OfferStructure,
 } from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
+
 
 const offersQuery = queryOptions({
   queryKey: ["offers"],
@@ -56,9 +58,37 @@ function Dashboard() {
   const [language, setLanguage] = useState<OfferLanguage | "todos">("todos");
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
   const [query, setQuery] = useState("");
+  const [refreshing, setRefreshing] = useState(false);
+  const queryClient = useQueryClient();
 
   const { data } = useSuspenseQuery(offersQuery);
   const offers = data.offers;
+
+  async function handleRefresh() {
+    if (refreshing) return;
+    setRefreshing(true);
+    const t = toast.loading("Atualizando ofertas da Meta Ad Library…");
+    try {
+      const res = await fetch("/api/public/hooks/refresh-offers", { method: "POST" });
+      const json = (await res.json()) as {
+        ok?: boolean;
+        offers?: number;
+        pages?: number;
+        error?: string;
+      };
+      if (!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      await queryClient.invalidateQueries({ queryKey: ["offers"] });
+      toast.success(
+        `Atualizado: ${json.offers ?? 0} anúncios / ${json.pages ?? 0} páginas`,
+        { id: t },
+      );
+    } catch (err) {
+      toast.error(`Falha ao atualizar: ${(err as Error).message}`, { id: t });
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
 
   const filtered = useMemo(() => {
     return offers.filter((o) => {
@@ -88,16 +118,27 @@ function Dashboard() {
               {crescendo} crescendo · {testando} testando
             </p>
           </div>
-          <div className="relative w-full sm:w-72">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar oferta ou página..."
-              className="w-full rounded-lg border border-input bg-card py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
-            />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-72">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Buscar oferta ou página..."
+                className="w-full rounded-lg border border-input bg-card py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
+              />
+            </div>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+              {refreshing ? "Atualizando…" : "Atualizar Ofertas"}
+            </button>
           </div>
         </div>
+
 
         {data.error && (
           <div className="rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">

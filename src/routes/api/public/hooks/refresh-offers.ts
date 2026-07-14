@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getActiveSearchPlan } from "@/lib/meta-keywords";
-import { classifyStatus, detectCreativeType, inferStructure } from "@/lib/offer-heuristics";
+import { classifyStatus, inferStructure } from "@/lib/offer-heuristics";
 
 // Endpoint chamado pelo cron (pg_cron) a cada 24h para atualizar as ofertas.
 // Também pode ser disparado manualmente via POST autenticado com apikey.
@@ -75,6 +75,70 @@ function computeActiveDays(start?: string): number {
   const diff = Date.now() - s;
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
+
+// Faz scraping da página do snapshot da Meta pra extrair a mídia real e o link
+// de destino do anúncio. A API pública não retorna esses campos diretamente.
+// Se qualquer etapa falhar (403, HTML mudou, timeout), retorna null nos campos.
+interface SnapshotMedia {
+  imageUrl: string | null;
+  videoUrl: string | null;
+  linkUrl: string | null;
+}
+
+function decodeMetaJsonString(raw: string): string {
+  // Meta serializa em JSON dentro do HTML — precisa desescapar \/ e \u00XX.
+  try {
+    return JSON.parse(`"${raw}"`);
+  } catch {
+    return raw.replace(/\\\//g, "/");
+  }
+}
+
+function firstMatch(html: string, patterns: RegExp[]): string | null {
+  for (const rx of patterns) {
+    const m = html.match(rx);
+    if (m?.[1]) return decodeMetaJsonString(m[1]);
+  }
+  return null;
+}
+
+async function extractSnapshotMedia(snapshotUrl: string | null): Promise<SnapshotMedia> {
+  if (!snapshotUrl) return { imageUrl: null, videoUrl: null, linkUrl: null };
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 8000);
+    const res = await fetch(snapshotUrl, {
+      signal: controller.signal,
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "accept-language": "pt-BR,pt;q=0.9,en;q=0.8",
+      },
+    });
+    clearTimeout(timer);
+    if (!res.ok) return { imageUrl: null, videoUrl: null, linkUrl: null };
+    const html = await res.text();
+
+    const videoUrl = firstMatch(html, [
+      /"video_hd_url":"([^"]+)"/,
+      /"video_sd_url":"([^"]+)"/,
+    ]);
+    const imageUrl = firstMatch(html, [
+      /"original_image_url":"([^"]+)"/,
+      /"resized_image_url":"([^"]+)"/,
+      /"image_url":"([^"]+)"/,
+    ]);
+    const linkUrl = firstMatch(html, [
+      /"link_url":"([^"]+)"/,
+      /"snapshot_url":"([^"]+)".*?"link_url":"([^"]+)"/,
+    ]);
+
+    return { imageUrl, videoUrl, linkUrl };
+  } catch {
+    return { imageUrl: null, videoUrl: null, linkUrl: null };
+  }
+}
+
 
 async function runRefresh() {
   const token = process.env.META_ACCESS_TOKEN;
@@ -152,8 +216,12 @@ async function runRefresh() {
       const desc = ad.ad_creative_link_descriptions?.[0] ?? "";
       const structure = inferStructure(`${title} ${bodyText}`);
       const activeDays = computeActiveDays(ad.ad_delivery_start_time);
-      // A Meta não expõe a URL direta do criativo pela API pública — usamos o snapshot
       const snapshot = ad.ad_snapshot_url ?? null;
+
+      // Tenta extrair mídia direta + link de destino via scraping do snapshot.
+      const media = await extractSnapshotMedia(snapshot);
+      const creativeUrl = media.videoUrl ?? media.imageUrl ?? null;
+      const creativeType: "image" | "video" = media.videoUrl ? "video" : "image";
 
       const row = {
         ad_archive_id: archiveId,
@@ -163,11 +231,12 @@ async function runRefresh() {
         language: ad._language,
         country: "BR",
         headline: title || bodyText.slice(0, 120),
-        description: bodyText,
-        creative_url: snapshot,
-        creative_type: detectCreativeType(snapshot),
+        description: bodyText || desc,
+        creative_url: creativeUrl,
+        creative_type: creativeType,
         ad_snapshot_url: snapshot,
         page_url: `https://www.facebook.com/${pageId}`,
+        link_url: media.linkUrl,
         ad_start_date: ad.ad_delivery_start_time ?? null,
         is_active: true,
         active_days: activeDays,
@@ -188,6 +257,7 @@ async function runRefresh() {
       }
     }
   }
+
 
   if (runId) {
     await supabaseAdmin

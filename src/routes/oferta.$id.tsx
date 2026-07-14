@@ -108,16 +108,25 @@ Status: ${statusLabel}`;
           <div className="overflow-hidden rounded-2xl border border-border bg-card">
             <div className="relative aspect-video bg-muted">
               {offer.creativeUrl ? (
-                <img
-                  src={offer.creativeUrl}
-                  alt={offer.headline}
-                  className="h-full w-full object-cover"
-                />
+                offer.creativeType === "video" ? (
+                  <video
+                    src={offer.creativeUrl}
+                    controls
+                    playsInline
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <img
+                    src={offer.creativeUrl}
+                    alt={offer.headline}
+                    className="h-full w-full object-cover"
+                  />
+                )
               ) : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-br from-muted to-background p-6 text-center">
                   <ExternalLink className="h-8 w-8 text-muted-foreground/60" />
                   <p className="text-sm text-muted-foreground">
-                    A Meta não expõe a mídia diretamente. Abra o anúncio original para ver o criativo.
+                    Mídia direta não disponível para este anúncio. Abra o original na Meta.
                   </p>
                   {offer.adSnapshotUrl && (
                     <a
@@ -136,6 +145,7 @@ Status: ${statusLabel}`;
                 <StatusBadge status={offer.status} />
               </div>
             </div>
+
             <div className="space-y-4 p-5">
               <div>
                 <p className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -203,6 +213,17 @@ Status: ${statusLabel}`;
             <div className="rounded-2xl border border-border bg-card p-5">
               <h2 className="font-display text-lg font-semibold">Links externos</h2>
               <div className="mt-4 space-y-2">
+                {offer.linkUrl ? (
+                  <ExternalLinkRow
+                    href={offer.linkUrl}
+                    title="Ver página de destino"
+                    subtitle="Abrir a landing page do anúncio"
+                  />
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border bg-background px-4 py-3 text-xs text-muted-foreground">
+                    Link de destino não disponível para este anúncio (a API pública da Meta nem sempre expõe esse campo).
+                  </div>
+                )}
                 <ExternalLinkRow
                   href={offer.pageUrl}
                   title="Página do anunciante"
@@ -224,6 +245,7 @@ Status: ${statusLabel}`;
                 )}
               </div>
             </div>
+
           </div>
         </div>
       </div>
@@ -250,13 +272,45 @@ function ActionButton({
   onCopy: () => string;
 }) {
   const [copied, setCopied] = useState(false);
+  async function copyText(text: string): Promise<boolean> {
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+      }
+    } catch {
+      // segue pro fallback
+    }
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      return ok;
+    } catch {
+      return false;
+    }
+  }
   return (
     <button
       onClick={async () => {
-        await navigator.clipboard.writeText(onCopy());
-        setCopied(true);
-        toast.success("Copiado para a área de transferência");
-        setTimeout(() => setCopied(false), 1500);
+        const text = onCopy();
+        if (!text) {
+          toast.error("Nada para copiar (texto vazio).");
+          return;
+        }
+        const ok = await copyText(text);
+        if (ok) {
+          setCopied(true);
+          toast.success("Copiado!");
+          setTimeout(() => setCopied(false), 1500);
+        } else {
+          toast.error("Não foi possível copiar. Verifique as permissões do navegador.");
+        }
       }}
       className={cn(
         "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-sm font-medium transition-colors",
@@ -265,6 +319,7 @@ function ActionButton({
           : "border-border bg-background hover:border-accent",
       )}
     >
+
       <span className="inline-flex items-center gap-2">
         {icon}
         {label}
