@@ -37,6 +37,7 @@ export const Route = createFileRoute("/buscar")({
 function BuscarPage() {
   const [term, setTerm] = useState("");
   const [productType, setProductType] = useState<ProductType | "todos">("todos");
+  const [funnel, setFunnel] = useState<"todos" | "whatsapp">("todos");
   const searchFn = useServerFn(searchOffersLive);
   const mutation = useMutation({
     mutationFn: (t: string) => searchFn({ data: { term: t } }),
@@ -52,11 +53,14 @@ function BuscarPage() {
   const rawResults = mutation.data?.results ?? [];
   const results = useMemo(
     () =>
-      productType === "todos"
-        ? rawResults
-        : rawResults.filter((r) => r.productType === productType),
-    [rawResults, productType],
+      rawResults.filter((r) => {
+        if (productType !== "todos" && r.productType !== productType) return false;
+        if (funnel === "whatsapp" && !r.isWhatsapp) return false;
+        return true;
+      }),
+    [rawResults, productType, funnel],
   );
+
   const searched = mutation.isSuccess || mutation.isError;
 
 
