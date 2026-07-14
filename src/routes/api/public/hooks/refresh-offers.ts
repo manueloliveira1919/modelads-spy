@@ -216,8 +216,12 @@ async function runRefresh() {
       const desc = ad.ad_creative_link_descriptions?.[0] ?? "";
       const structure = inferStructure(`${title} ${bodyText}`);
       const activeDays = computeActiveDays(ad.ad_delivery_start_time);
-      // A Meta não expõe a URL direta do criativo pela API pública — usamos o snapshot
       const snapshot = ad.ad_snapshot_url ?? null;
+
+      // Tenta extrair mídia direta + link de destino via scraping do snapshot.
+      const media = await extractSnapshotMedia(snapshot);
+      const creativeUrl = media.videoUrl ?? media.imageUrl ?? null;
+      const creativeType: "image" | "video" = media.videoUrl ? "video" : "image";
 
       const row = {
         ad_archive_id: archiveId,
@@ -227,11 +231,12 @@ async function runRefresh() {
         language: ad._language,
         country: "BR",
         headline: title || bodyText.slice(0, 120),
-        description: bodyText,
-        creative_url: snapshot,
-        creative_type: detectCreativeType(snapshot),
+        description: bodyText || desc,
+        creative_url: creativeUrl,
+        creative_type: creativeType,
         ad_snapshot_url: snapshot,
         page_url: `https://www.facebook.com/${pageId}`,
+        link_url: media.linkUrl,
         ad_start_date: ad.ad_delivery_start_time ?? null,
         is_active: true,
         active_days: activeDays,
@@ -252,6 +257,7 @@ async function runRefresh() {
       }
     }
   }
+
 
   if (runId) {
     await supabaseAdmin
