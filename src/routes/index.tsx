@@ -24,17 +24,17 @@ const offersQuery = queryOptions({
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Modelads — Espionagem de anúncios do Facebook" },
+      { title: "Modelads" },
       {
         name: "description",
         content:
           "Encontre ofertas validadas na Meta Ads Library, descubra criativos escaladíssimos e modele o que funciona.",
       },
-      { property: "og:title", content: "Modelads — Espionagem de anúncios" },
+      { property: "og:title", content: "Modelads" },
       {
         property: "og:description",
         content:
-          "Ferramenta pra infoprodutores e afiliados brasileiros modelarem ofertas validadas.",
+          "Encontre ofertas validadas na Meta Ads Library, descubra criativos escaladíssimos e modele o que funciona.",
       },
     ],
   }),

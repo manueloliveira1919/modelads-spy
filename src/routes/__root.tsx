@@ -78,20 +78,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Modelads — Espionagem de anúncios do Facebook" },
+      { title: "Modelads" },
       {
         name: "description",
         content:
-          "Encontre ofertas validadas na Meta Ads Library, descubra criativos escaladíssimos e modele o que já funciona.",
+          "Encontre ofertas validadas na Meta Ads Library, descubra criativos escaladíssimos e modele o que funciona.",
       },
       { name: "author", content: "Modelads" },
       { property: "og:title", content: "Modelads" },
       {
         property: "og:description",
-        content: "Espione ofertas escaladas do Facebook e modele o que funciona.",
+        content: "Encontre ofertas validadas na Meta Ads Library, descubra criativos escaladíssimos e modele o que funciona.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "Modelads" },
+      { name: "twitter:description", content: "Encontre ofertas validadas na Meta Ads Library, descubra criativos escaladíssimos e modele o que funciona." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f8ed0103-443f-41d5-8af2-47bfdf85575b/id-preview-58ce11d1--37c79db8-d705-4e8c-af4b-147b9e2885d4.lovable.app-1783987915777.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/f8ed0103-443f-41d5-8af2-47bfdf85575b/id-preview-58ce11d1--37c79db8-d705-4e8c-af4b-147b9e2885d4.lovable.app-1783987915777.png" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
