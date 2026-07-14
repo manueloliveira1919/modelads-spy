@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getActiveSearchPlan } from "@/lib/meta-keywords";
-import { classifyStatus, inferProductType, inferStructure } from "@/lib/offer-heuristics";
+import { classifyStatus, detectNoise, inferProductType, inferStructure } from "@/lib/offer-heuristics";
+import { classifyCategoryFromText } from "@/lib/meta-keywords";
 
 // Endpoint chamado pelo cron (pg_cron) a cada 24h para atualizar as ofertas.
 // Também pode ser disparado manualmente via POST autenticado com apikey.
@@ -200,6 +201,7 @@ async function runRefresh() {
 
   let upserts = 0;
 
+  let skippedNoise = 0;
   for (const [pageId, bucket] of byPage.entries()) {
     const activeAdsCount = bucket.ads.length;
     const status = classifyStatus(activeAdsCount);
@@ -214,6 +216,14 @@ async function runRefresh() {
       const bodyText = ad.ad_creative_bodies?.[0] ?? "";
       const title = ad.ad_creative_link_titles?.[0] ?? "";
       const desc = ad.ad_creative_link_descriptions?.[0] ?? "";
+      const fullText = `${bucket.pageName} ${title} ${bodyText} ${desc}`;
+
+      // Bloqueia anúncios políticos/eleitorais e apps de drama/novela.
+      if (detectNoise(fullText)) {
+        skippedNoise++;
+        continue;
+      }
+
       const structure = inferStructure(`${title} ${bodyText}`);
       const activeDays = computeActiveDays(ad.ad_delivery_start_time);
       const snapshot = ad.ad_snapshot_url ?? null;
@@ -223,11 +233,18 @@ async function runRefresh() {
       const creativeUrl = media.videoUrl ?? media.imageUrl ?? null;
       const creativeType: "image" | "video" = media.videoUrl ? "video" : "image";
 
+      // Só atribui a categoria sugerida pelo termo se o texto realmente confirma.
+      // Caso contrário, marca como "Sem categoria" (oculta por padrão no Dashboard).
+      const finalCategory = classifyCategoryFromText(
+        `${title} ${bodyText} ${desc}`,
+        ad._category as import("@/lib/meta-keywords").MetaCategory,
+      );
+
       const row = {
         ad_archive_id: archiveId,
         page_id: pageId,
         page_name: bucket.pageName,
-        category: ad._category,
+        category: finalCategory,
         language: ad._language,
         country: "BR",
         headline: title || bodyText.slice(0, 120),
@@ -279,6 +296,7 @@ async function runRefresh() {
     ok: true,
     pages: byPage.size,
     offers: upserts,
+    skippedNoise,
     errors: errors.length,
     plan: plan.length,
   };

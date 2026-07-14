@@ -36,10 +36,13 @@ export const Route = createFileRoute("/buscar")({
   component: BuscarPage,
 });
 
+type ScaleFilter = "escalando" | "todos" | "escaladissima";
+
 function BuscarPage() {
   const [term, setTerm] = useState("");
   const [productType, setProductType] = useState<ProductType | "todos">("todos");
   const [funnel, setFunnel] = useState<"todos" | "whatsapp">("todos");
+  const [scale, setScale] = useState<ScaleFilter>("escalando");
   const searchFn = useServerFn(searchOffersLive);
   const mutation = useMutation({
     mutationFn: (t: string) => searchFn({ data: { term: t } }),
@@ -53,15 +56,19 @@ function BuscarPage() {
   }
 
   const rawResults = mutation.data?.results ?? [];
-  const results = useMemo(
-    () =>
-      rawResults.filter((r) => {
-        if (productType !== "todos" && r.productType !== productType) return false;
-        if (funnel === "whatsapp" && !r.isWhatsapp) return false;
-        return true;
-      }),
-    [rawResults, productType, funnel],
-  );
+  const results = useMemo(() => {
+    const filtered = rawResults.filter((r) => {
+      if (productType !== "todos" && r.productType !== productType) return false;
+      if (funnel === "whatsapp" && !r.isWhatsapp) return false;
+      if (scale === "escalando" && r.status === "testando") return false;
+      if (scale === "escaladissima" && r.status !== "escaladissima") return false;
+      return true;
+    });
+    const rank = { escaladissima: 0, crescendo: 1, testando: 2 } as const;
+    return [...filtered].sort(
+      (a, b) => rank[a.status] - rank[b.status] || b.activeAds - a.activeAds,
+    );
+  }, [rawResults, productType, funnel, scale]);
 
   const searched = mutation.isSuccess || mutation.isError;
 
@@ -144,6 +151,24 @@ function BuscarPage() {
             onClick={() => setFunnel("whatsapp")}
           >
             Funil WhatsApp
+          </FilterChip>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-card p-3">
+          <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Status de Escala
+          </span>
+          <FilterChip active={scale === "escalando"} onClick={() => setScale("escalando")}>
+            Crescendo + Escaladíssima
+          </FilterChip>
+          <FilterChip
+            active={scale === "escaladissima"}
+            onClick={() => setScale("escaladissima")}
+          >
+            Apenas Escaladíssima
+          </FilterChip>
+          <FilterChip active={scale === "todos"} onClick={() => setScale("todos")}>
+            Todos (inclui testando)
           </FilterChip>
         </div>
 

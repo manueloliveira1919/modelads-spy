@@ -27,6 +27,23 @@ export function isWhatsappFunnel(text: string, linkUrl?: string | null): boolean
 }
 
 
+// Palavras-chave típicas de anúncios políticos/eleitorais — devem ser excluídos.
+const POLITICAL_REGEX =
+  /\b(vereador|deputad[oa]s?|prefeit[oa]s?|prefeitura|mandato|reelei[çc][ãa]o|candidat[oa]s?|senador[ea]?|governador[ea]?|c[âa]mara municipal|elei[çc][õo]es?|urnas?)\b/i;
+
+// Apps de drama/novela/short drama que estão poluindo os resultados de infoproduto.
+const ENTERTAINMENT_REGEX =
+  /\b(dramabox|drama box|short ?drama|webnovel|reelscene|goodshort|dublad[oa]s?|cap[íi]tulos?|novela|reencarna[çc][ãa]o|assista a s[ée]rie|clique para ler mais cap[íi]tulos|drama)\b/i;
+
+export type NoiseKind = "politico" | "entretenimento";
+
+export function detectNoise(text: string): NoiseKind | null {
+  if (!text) return null;
+  if (POLITICAL_REGEX.test(text)) return "politico";
+  if (ENTERTAINMENT_REGEX.test(text)) return "entretenimento";
+  return null;
+}
+
 export function detectCreativeType(url: string | null | undefined): "image" | "video" {
   if (!url) return "image";
   return /\.(mp4|mov|m3u8|webm)(\?|$)/i.test(url) ? "video" : "image";

@@ -11,7 +11,8 @@ export type OfferCategory =
   | "Finanças"
   | "Saúde"
   | "Mentoria"
-  | "Aplicativo/App";
+  | "Aplicativo/App"
+  | "Sem categoria";
 export type OfferStructure = "VSL" | "Página de Vendas" | "Quiz";
 export type OfferLanguage = "Português" | "Espanhol" | "Inglês";
 
@@ -50,6 +51,7 @@ export const CATEGORIES: OfferCategory[] = [
   "Saúde",
   "Mentoria",
   "Aplicativo/App",
+  "Sem categoria",
 ];
 
 export const STRUCTURES: OfferStructure[] = ["VSL", "Página de Vendas", "Quiz"];

@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { classifyStatus, inferProductType, inferStructure, isWhatsappFunnel, type ProductType } from "./offer-heuristics";
+import { classifyStatus, detectNoise, inferProductType, inferStructure, isWhatsappFunnel, type ProductType } from "./offer-heuristics";
 import type { OfferStatus, OfferStructure } from "./offers-shape";
 
 
@@ -97,15 +97,18 @@ export const searchOffersLive = createServerFn({ method: "POST" })
         const pageId = ad.page_id;
         const archiveId = ad.id;
         if (!pageId || !archiveId || seen.has(pageId)) continue;
-        seen.add(pageId);
-        const activeAds = perPage.get(pageId) ?? 1;
         const body = ad.ad_creative_bodies?.[0] ?? "";
         const title = ad.ad_creative_link_titles?.[0] ?? "";
         const desc = ad.ad_creative_link_descriptions?.[0] ?? "";
+        const pageName = ad.page_name ?? "Página desconhecida";
+        // Filtra anúncios políticos e apps de drama/novela também na busca ao vivo.
+        if (detectNoise(`${pageName} ${title} ${body} ${desc}`)) continue;
+        seen.add(pageId);
+        const activeAds = perPage.get(pageId) ?? 1;
         results.push({
           adArchiveId: archiveId,
           pageId,
-          page: ad.page_name ?? "Página desconhecida",
+          page: pageName,
           headline: title || body.slice(0, 120),
           description: body || desc,
           activeDays: computeActiveDays(ad.ad_delivery_start_time),
