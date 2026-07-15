@@ -131,6 +131,8 @@ export const searchOffersLive = createServerFn({ method: "POST" })
           structure: inferStructure(`${title} ${body}`),
           productType: inferProductType(`${title} ${body} ${desc}`),
           isWhatsapp: isWhatsappFunnel(`${title} ${body} ${desc}`),
+          language: mapLanguage(ad.languages),
+
 
 
           adSnapshotUrl: ad.ad_snapshot_url ?? null,
