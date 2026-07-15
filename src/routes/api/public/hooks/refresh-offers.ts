@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getActiveSearchPlan } from "@/lib/meta-keywords";
-import { classifyStatus, detectNoise, inferProductType, inferStructure } from "@/lib/offer-heuristics";
+import { classifyStatus, detectNoise, inferProductType, inferStructure, stripSnapshotSecrets } from "@/lib/offer-heuristics";
 import { classifyCategoryFromText } from "@/lib/meta-keywords";
 
 // Endpoint chamado pelo cron (pg_cron) a cada 24h para atualizar as ofertas.
@@ -238,7 +238,7 @@ async function runRefresh() {
 
       const structure = inferStructure(`${title} ${bodyText}`);
       const activeDays = computeActiveDays(ad.ad_delivery_start_time);
-      const snapshot = ad.ad_snapshot_url ?? null;
+      const snapshot = stripSnapshotSecrets(ad.ad_snapshot_url);
 
       // Tenta extrair mídia direta + link de destino via scraping do snapshot.
       const media = await extractSnapshotMedia(snapshot);

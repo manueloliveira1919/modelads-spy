@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { classifyStatus, detectNoise, inferProductType, inferStructure, isWhatsappFunnel, type ProductType } from "./offer-heuristics";
+import { classifyStatus, detectNoise, inferProductType, inferStructure, isWhatsappFunnel, stripSnapshotSecrets, type ProductType } from "./offer-heuristics";
 import type { OfferStatus, OfferStructure } from "./offers-shape";
 
 
@@ -135,7 +135,7 @@ export const searchOffersLive = createServerFn({ method: "POST" })
 
 
 
-          adSnapshotUrl: ad.ad_snapshot_url ?? null,
+          adSnapshotUrl: stripSnapshotSecrets(ad.ad_snapshot_url),
           pageUrl: `https://www.facebook.com/${pageId}`,
           adLibraryUrl: `https://www.facebook.com/ads/library/?id=${archiveId}`,
         });

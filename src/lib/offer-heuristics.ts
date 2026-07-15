@@ -12,6 +12,23 @@ export function inferStructure(text: string): "VSL" | "Página de Vendas" | "Qui
   return "Página de Vendas";
 }
 
+// Remove access_token e outros parâmetros sensíveis do snapshot URL da Meta Ad Library.
+// A API pública devolve ad_snapshot_url com um access_token curto atrelado à app; nunca
+// deve ser persistido nem exposto ao client.
+export function stripSnapshotSecrets(url: string | null | undefined): string | null {
+  if (!url) return null;
+  try {
+    const u = new URL(url);
+    for (const key of ["access_token", "app_secret_proof", "appsecret_proof", "__token__"]) {
+      u.searchParams.delete(key);
+    }
+    return u.toString();
+  } catch {
+    // Fallback regex se URL parsing falhar
+    return url.replace(/([?&])(access_token|app_secret_proof|appsecret_proof|__token__)=[^&]*/gi, "$1").replace(/[?&]$/, "");
+  }
+}
+
 export function classifyStatus(activeAds: number): "testando" | "crescendo" | "escaladissima" {
   if (activeAds >= 10) return "escaladissima";
   if (activeAds >= 4) return "crescendo";
