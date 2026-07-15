@@ -62,25 +62,21 @@ export type ProductType =
   | "Low Ticket"
   | "Ebook/PDF"
   | "Curso Online"
-  | "Mentoria"
   | "Produto Físico";
 
 export const PRODUCT_TYPES: ProductType[] = [
   "Low Ticket",
   "Ebook/PDF",
   "Curso Online",
-  "Mentoria",
   "Produto Físico",
 ];
 
 // Classifica o tipo de produto a partir do texto do anúncio.
 // A Meta Ad Library não retorna esse dado, então usamos heurística por palavras-chave.
+// "Mentoria" foi removido daqui — segue disponível como Categoria.
 export function inferProductType(text: string): ProductType {
   const t = (text || "").toLowerCase();
-  if (/\b(mentoria|acompanhamento individual|consultoria 1[- ]?a[- ]?1|imers[ãa]o)\b/.test(t)) {
-    return "Mentoria";
-  }
-  if (/\b(curso|aula|aulas|m[óo]dulo|m[óo]dulos|treinamento|forma[çc][ãa]o|masterclass|workshop)\b/.test(t)) {
+  if (/\b(curso|aula|aulas|m[óo]dulo|m[óo]dulos|treinamento|forma[çc][ãa]o|masterclass|workshop|mentoria|acompanhamento individual|imers[ãa]o)\b/.test(t)) {
     return "Curso Online";
   }
   if (/\b(e[- ]?book|ebook|pdf|apostila|guia (em )?pdf|livro digital)\b/.test(t)) {
