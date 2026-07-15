@@ -21,6 +21,30 @@ export interface KeywordGroup {
 
 export const KEYWORD_GROUPS: KeywordGroup[] = [
   // === Português (Brasil) — ATIVO ===
+  // Ordem importa: Mentoria e Aplicativo/App vêm antes de Info para não perder
+  // termos como "mentoria" / "aplicativo" para o catch-all de Info.
+  {
+    category: "Mentoria",
+    language: "BR",
+    active: true,
+    terms: [
+      "mentoria individual",
+      "mentoria em grupo",
+      "acompanhamento personalizado",
+      "consultoria",
+    ],
+  },
+  {
+    category: "Aplicativo/App",
+    language: "BR",
+    active: true,
+    terms: [
+      "baixe o app",
+      "aplicativo grátis",
+      "disponível na play store",
+      "disponível na app store",
+    ],
+  },
   {
     category: "Info",
     language: "BR",
@@ -43,6 +67,7 @@ export const KEYWORD_GROUPS: KeywordGroup[] = [
       "mini curso",
     ],
   },
+
   {
     category: "Nutra",
     language: "BR",
