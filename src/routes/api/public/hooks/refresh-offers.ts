@@ -159,9 +159,10 @@ async function runRefresh() {
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+  const startedAt = new Date().toISOString();
   const { data: runRow } = await supabaseAdmin
     .from("meta_refresh_runs")
-    .insert({ status: "running" })
+    .insert({ status: "running", started_at: startedAt })
     .select("id")
     .single();
   const runId = runRow?.id as string | undefined;
@@ -205,110 +206,146 @@ async function runRefresh() {
     }
   }
 
-  // Marca todas as ofertas atuais como inativas — as que reaparecerem serão reativadas no upsert.
-  await supabaseAdmin
-    .from("meta_offers")
-    .update({ is_active: false })
-    .eq("is_active", true);
+  // NÃO desativamos nada antes do upsert. A desativação só acontece no final,
+  // e apenas se a coleta foi válida (ver bloco após o loop de upsert abaixo).
+  // Isso evita que uma falha da Meta API (bloqueio, 429, timeout) zere o Dashboard.
+
+  const totalAdsCollected = Array.from(byPage.values()).reduce(
+    (acc, b) => acc + b.ads.length,
+    0,
+  );
+  const errorRate = plan.length > 0 ? errors.length / plan.length : 1;
+  const collectionValid =
+    byPage.size > 0 && totalAdsCollected > 0 && errorRate < 0.5;
 
   let upserts = 0;
-
   let skippedNoise = 0;
-  for (const [pageId, bucket] of byPage.entries()) {
-    const activeAdsCount = bucket.ads.length;
-    const status = classifyStatus(activeAdsCount);
+  let deactivated = 0;
+  if (collectionValid) {
+    for (const [pageId, bucket] of byPage.entries()) {
+      const activeAdsCount = bucket.ads.length;
+      const status = classifyStatus(activeAdsCount);
 
-    // Deduplica anúncios por ad archive id, mantém o primeiro por página
-    const seen = new Set<string>();
-    for (const ad of bucket.ads) {
-      const archiveId = ad.id;
-      if (!archiveId || seen.has(archiveId)) continue;
-      seen.add(archiveId);
+      // Deduplica anúncios por ad archive id, mantém o primeiro por página
+      const seen = new Set<string>();
+      for (const ad of bucket.ads) {
+        const archiveId = ad.id;
+        if (!archiveId || seen.has(archiveId)) continue;
+        seen.add(archiveId);
 
-      const bodyText = ad.ad_creative_bodies?.[0] ?? "";
-      const title = ad.ad_creative_link_titles?.[0] ?? "";
-      const desc = ad.ad_creative_link_descriptions?.[0] ?? "";
-      const fullText = `${bucket.pageName} ${title} ${bodyText} ${desc}`;
+        const bodyText = ad.ad_creative_bodies?.[0] ?? "";
+        const title = ad.ad_creative_link_titles?.[0] ?? "";
+        const desc = ad.ad_creative_link_descriptions?.[0] ?? "";
+        const fullText = `${bucket.pageName} ${title} ${bodyText} ${desc}`;
 
-      // Bloqueia anúncios políticos/eleitorais e apps de drama/novela.
-      if (detectNoise(fullText)) {
-        skippedNoise++;
-        continue;
-      }
+        // Bloqueia anúncios políticos/eleitorais e apps de drama/novela.
+        if (detectNoise(fullText)) {
+          skippedNoise++;
+          continue;
+        }
 
-      const structure = inferStructure(`${title} ${bodyText}`);
-      const activeDays = computeActiveDays(ad.ad_delivery_start_time);
-      const snapshot = stripSnapshotSecrets(ad.ad_snapshot_url);
+        const structure = inferStructure(`${title} ${bodyText}`);
+        const activeDays = computeActiveDays(ad.ad_delivery_start_time);
+        const snapshot = stripSnapshotSecrets(ad.ad_snapshot_url);
 
-      // Tenta extrair mídia direta + link de destino via scraping do snapshot.
-      const media = await extractSnapshotMedia(snapshot);
-      const creativeUrl = media.videoUrl ?? media.imageUrl ?? null;
-      const creativeType: "image" | "video" = media.videoUrl ? "video" : "image";
+        // Tenta extrair mídia direta + link de destino via scraping do snapshot.
+        const media = await extractSnapshotMedia(snapshot);
+        const creativeUrl = media.videoUrl ?? media.imageUrl ?? null;
+        const creativeType: "image" | "video" = media.videoUrl ? "video" : "image";
 
-      // Só atribui a categoria sugerida pelo termo se o texto realmente confirma.
-      // Caso contrário, marca como "Sem categoria" (oculta por padrão no Dashboard).
-      const finalCategory = classifyCategoryFromText(
-        `${title} ${bodyText} ${desc}`,
-        ad._category as import("@/lib/meta-keywords").MetaCategory,
-      );
+        // Só atribui a categoria sugerida pelo termo se o texto realmente confirma.
+        // Caso contrário, marca como "Sem categoria" (oculta por padrão no Dashboard).
+        const finalCategory = classifyCategoryFromText(
+          `${title} ${bodyText} ${desc}`,
+          ad._category as import("@/lib/meta-keywords").MetaCategory,
+        );
 
-      const row = {
-        ad_archive_id: archiveId,
-        page_id: pageId,
-        page_name: bucket.pageName,
-        category: finalCategory,
-        language: normalizeAdLanguage(ad.languages, ad._language),
+        const row = {
+          ad_archive_id: archiveId,
+          page_id: pageId,
+          page_name: bucket.pageName,
+          category: finalCategory,
+          language: normalizeAdLanguage(ad.languages, ad._language),
 
-        country: "BR",
-        headline: title || bodyText.slice(0, 120),
-        description: bodyText || desc,
-        creative_url: creativeUrl,
-        creative_type: creativeType,
-        ad_snapshot_url: snapshot,
-        page_url: `https://www.facebook.com/${pageId}`,
-        link_url: media.linkUrl,
-        ad_start_date: ad.ad_delivery_start_time ?? null,
-        is_active: true,
-        active_days: activeDays,
-        active_ads_count: activeAdsCount,
-        status,
-        structure,
-        product_type: inferProductType(`${title} ${bodyText} ${desc}`),
+          country: "BR",
+          headline: title || bodyText.slice(0, 120),
+          description: bodyText || desc,
+          creative_url: creativeUrl,
+          creative_type: creativeType,
+          ad_snapshot_url: snapshot,
+          page_url: `https://www.facebook.com/${pageId}`,
+          link_url: media.linkUrl,
+          ad_start_date: ad.ad_delivery_start_time ?? null,
+          is_active: true,
+          active_days: activeDays,
+          active_ads_count: activeAdsCount,
+          status,
+          structure,
+          product_type: inferProductType(`${title} ${bodyText} ${desc}`),
 
-        search_term: ad._term,
-        last_seen: new Date().toISOString(),
-      };
+          search_term: ad._term,
+          last_seen: new Date().toISOString(),
+        };
 
-      const { error } = await supabaseAdmin
-        .from("meta_offers")
-        .upsert(row, { onConflict: "ad_archive_id" });
-      if (error) {
-        errors.push(`upsert ${archiveId}: ${error.message}`);
-      } else {
-        upserts++;
+        const { error } = await supabaseAdmin
+          .from("meta_offers")
+          .upsert(row, { onConflict: "ad_archive_id" });
+        if (error) {
+          errors.push(`upsert ${archiveId}: ${error.message}`);
+        } else {
+          upserts++;
+        }
       }
     }
+
+    // Só agora — após uma coleta válida e todos os upserts — desativa apenas
+    // os anúncios que NÃO reapareceram nesta rodada (last_seen anterior ao início).
+    const { count } = await supabaseAdmin
+      .from("meta_offers")
+      .update({ is_active: false }, { count: "exact" })
+      .eq("is_active", true)
+      .lt("last_seen", startedAt);
+    deactivated = count ?? 0;
+  } else {
+    errors.push(
+      `coleta invalida: pages=${byPage.size} ads=${totalAdsCollected} errorRate=${errorRate.toFixed(2)} — mantendo ofertas atuais ativas`,
+    );
   }
 
+
+  const runStatus = !collectionValid
+    ? "blocked"
+    : errors.length
+      ? "partial"
+      : "success";
 
   if (runId) {
     await supabaseAdmin
       .from("meta_refresh_runs")
       .update({
         finished_at: new Date().toISOString(),
-        status: errors.length ? "partial" : "success",
+        status: runStatus,
         offers_upserted: upserts,
         pages_seen: byPage.size,
         error: errors.length ? errors.slice(0, 5).join(" | ") : null,
-        details: { errors: errors.slice(0, 50), plan_size: plan.length },
+        details: {
+          errors: errors.slice(0, 50),
+          plan_size: plan.length,
+          collection_valid: collectionValid,
+          total_ads_collected: totalAdsCollected,
+          error_rate: Number(errorRate.toFixed(3)),
+          deactivated,
+        },
       })
       .eq("id", runId);
   }
 
   return {
     ok: true,
+    collectionValid,
     pages: byPage.size,
     offers: upserts,
+    deactivated,
     skippedNoise,
     errors: errors.length,
     plan: plan.length,
