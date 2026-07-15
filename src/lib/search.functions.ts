@@ -42,6 +42,8 @@ interface MetaAdItem {
   ad_creative_link_descriptions?: string[];
   ad_snapshot_url?: string;
   ad_delivery_start_time?: string;
+  languages?: string[];
+
 }
 
 function computeActiveDays(start?: string): number {
