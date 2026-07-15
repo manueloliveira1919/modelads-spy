@@ -139,7 +139,43 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      list_active_offer_pages: {
+        Args: never
+        Returns: {
+          active_ads_count: number
+          active_days: number
+          ad_archive_id: string
+          ad_snapshot_url: string | null
+          ad_start_date: string | null
+          category: string
+          country: string
+          created_at: string
+          creative_type: string
+          creative_url: string | null
+          description: string | null
+          first_seen: string
+          headline: string | null
+          id: string
+          is_active: boolean
+          language: string
+          last_seen: string
+          link_url: string | null
+          page_id: string
+          page_name: string
+          page_url: string | null
+          product_type: string | null
+          search_term: string | null
+          status: string
+          structure: string | null
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "meta_offers"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
     }
     Enums: {
       [_ in never]: never
