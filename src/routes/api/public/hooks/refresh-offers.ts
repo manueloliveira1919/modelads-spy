@@ -238,7 +238,7 @@ async function runRefresh() {
 
       const structure = inferStructure(`${title} ${bodyText}`);
       const activeDays = computeActiveDays(ad.ad_delivery_start_time);
-      const snapshot = ad.ad_snapshot_url ?? null;
+      const snapshot = stripSnapshotSecrets(ad.ad_snapshot_url);
 
       // Tenta extrair mídia direta + link de destino via scraping do snapshot.
       const media = await extractSnapshotMedia(snapshot);
