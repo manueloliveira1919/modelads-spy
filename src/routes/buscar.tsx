@@ -1,23 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Clock,
   ExternalLink,
   Flame,
+  Heart,
+  ImageIcon,
   Layers,
   Loader2,
   MessageCircle,
-  Package,
-
   Search,
   Sparkles,
+  Tag,
   TrendingUp,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge } from "@/components/offer-card";
 import { searchOffersLive, type LiveSearchResult } from "@/lib/search.functions";
+import { extractPrice } from "@/lib/offer-heuristics";
 import { PRODUCT_TYPES, type ProductType } from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
 
@@ -222,103 +225,178 @@ function BuscarPage() {
   );
 }
 
+const FAV_KEY = "modelads:favorites";
+
 function LiveResultCard({ result }: { result: LiveSearchResult }) {
+  const id = result.adArchiveId;
+  const [fav, setFav] = useState(false);
+  useEffect(() => {
+    try {
+      const set = new Set<string>(JSON.parse(localStorage.getItem(FAV_KEY) || "[]"));
+      setFav(set.has(id));
+    } catch {
+      /* noop */
+    }
+  }, [id]);
+  const toggleFav = () => {
+    let set: Set<string>;
+    try {
+      set = new Set(JSON.parse(localStorage.getItem(FAV_KEY) || "[]"));
+    } catch {
+      set = new Set();
+    }
+    if (set.has(id)) {
+      set.delete(id);
+      setFav(false);
+      toast("Removido dos favoritos");
+    } else {
+      set.add(id);
+      setFav(true);
+      toast.success("Salvo nos favoritos");
+    }
+    localStorage.setItem(FAV_KEY, JSON.stringify([...set]));
+  };
+  const price = extractPrice(`${result.headline} ${result.description}`);
+
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-colors hover:border-accent">
-      <div className="relative flex aspect-video items-center justify-center bg-gradient-to-br from-muted to-background">
-        <Sparkles className="h-8 w-8 text-muted-foreground/50" />
-        <div className="absolute left-3 top-3">
+    <article className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-lg hover:shadow-black/20">
+      {/* Cabeçalho compacto (sem imagem — busca ao vivo raramente traz mídia direta) */}
+      <div className="relative flex h-20 items-center gap-2 border-b border-border bg-gradient-to-r from-muted/40 to-transparent px-4">
+        <ImageIcon className="h-4 w-4 shrink-0 text-muted-foreground/50" />
+        <p className="truncate text-[11px] text-muted-foreground/70">
+          Prévia disponível na Biblioteca de Anúncios
+        </p>
+        <div className="ml-auto flex items-center gap-1.5">
           <StatusBadge status={result.status} />
-        </div>
-        <div className="absolute right-3 top-3">
-          <span className="rounded-md bg-black/60 px-2 py-1 text-xs font-medium text-white backdrop-blur">
-            BR
+          <span className="rounded-md bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur">
+            {result.language}
           </span>
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col space-y-3 p-4">
-        <h3 className="truncate font-display text-base font-semibold text-foreground">
-          {result.page}
-        </h3>
-        <p className="line-clamp-2 text-sm text-muted-foreground">{result.headline}</p>
+      <div className="flex flex-1 flex-col gap-3 p-4">
+        <div>
+          <h3 className="truncate font-display text-lg font-bold leading-tight text-foreground">
+            {result.page}
+          </h3>
+          <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+            {result.headline}
+          </p>
+        </div>
 
         <div className="flex flex-wrap gap-1.5">
-          <Chip icon={<Package className="h-3 w-3" />}>{result.productType}</Chip>
+          <span className="inline-flex items-center gap-1 rounded-md bg-sky-500/15 px-2 py-0.5 text-[11px] font-semibold text-sky-300 ring-1 ring-inset ring-sky-500/30">
+            {result.productType}
+          </span>
           {result.structure && (
-            <Chip icon={<Layers className="h-3 w-3" />}>{result.structure}</Chip>
+            <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
+              <Layers className="h-3 w-3" />
+              {result.structure}
+            </span>
           )}
           {result.isWhatsapp && (
-            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-1 text-[11px] font-semibold text-emerald-400 ring-1 ring-inset ring-emerald-500/30">
+            <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400 ring-1 ring-inset ring-emerald-500/30">
               <MessageCircle className="h-3 w-3" />
-              Funil WhatsApp
+              WhatsApp
             </span>
           )}
         </div>
 
+        <div className="mt-auto grid grid-cols-3 gap-2 rounded-xl border border-border/70 bg-background/40 p-3">
+          <MiniStat
+            icon={<Clock className="h-3 w-3" />}
+            label="Ativo"
+            value={`${result.activeDays}d`}
+          />
+          <MiniStat
+            icon={
+              result.status === "escaladissima" ? (
+                <Flame className="h-3 w-3 text-hot" />
+              ) : result.status === "crescendo" ? (
+                <TrendingUp className="h-3 w-3 text-warm" />
+              ) : (
+                <Sparkles className="h-3 w-3" />
+              )
+            }
+            label="Anúncios"
+            value={result.activeAds}
+            highlight
+          />
+          {price ? (
+            <MiniStat
+              icon={<Tag className="h-3 w-3 text-brand" />}
+              label="Ticket"
+              value={price}
+            />
+          ) : (
+            <div />
+          )}
+        </div>
+      </div>
 
-
-        <div className="flex items-center justify-between border-t border-border pt-3 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5">
-            <Clock className="h-3.5 w-3.5" />
-            {result.activeDays}d ativo
-          </span>
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 font-medium",
-              result.status === "escaladissima" && "text-hot",
-              result.status === "crescendo" && "text-warm",
-              result.status === "testando" && "text-muted-foreground",
-            )}
+      <div className="flex items-center gap-2 border-t border-border/70 p-3">
+        <button
+          type="button"
+          onClick={toggleFav}
+          aria-label={fav ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+          className={cn(
+            "inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition-colors",
+            fav
+              ? "border-pink-500/40 bg-pink-500/15 text-pink-400"
+              : "border-border bg-background text-muted-foreground hover:border-accent hover:text-foreground",
+          )}
+        >
+          <Heart className={cn("h-5 w-5", fav && "fill-current")} />
+        </button>
+        {result.adLibraryUrl ? (
+          <a
+            href={result.adLibraryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-3 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90"
           >
-            {result.status === "escaladissima" ? (
-              <Flame className="h-3.5 w-3.5" />
-            ) : result.status === "crescendo" ? (
-              <TrendingUp className="h-3.5 w-3.5" />
-            ) : (
-              <Sparkles className="h-3.5 w-3.5" />
-            )}
-            {result.activeAds} anúncios
+            <ExternalLink className="h-4 w-4" />
+            Ver Biblioteca
+          </a>
+        ) : (
+          <span className="inline-flex h-11 flex-1 items-center justify-center rounded-xl border border-dashed border-border text-xs text-muted-foreground">
+            Sem link
           </span>
-        </div>
+        )}
+      </div>
+    </article>
+  );
+}
 
-        <div className="mt-auto flex gap-2 pt-2">
-          {result.adSnapshotUrl && (
-            <a
-              href={result.adSnapshotUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:border-accent"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Ver anúncio
-            </a>
-          )}
-          {result.adLibraryUrl && (
-            <a
-              href={result.adLibraryUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium hover:border-accent"
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Biblioteca
-            </a>
-          )}
-        </div>
+function MiniStat({
+  icon,
+  label,
+  value,
+  highlight,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  highlight?: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+      <div
+        className={cn(
+          "mt-0.5 truncate font-display font-bold leading-none text-foreground",
+          highlight ? "text-xl" : "text-sm",
+        )}
+      >
+        {value}
       </div>
     </div>
   );
 }
 
-function Chip({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-secondary-foreground">
-      {icon}
-      {children}
-    </span>
-  );
-}
 
 function FilterChip({
   active,

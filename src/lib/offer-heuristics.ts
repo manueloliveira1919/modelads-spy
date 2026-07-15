@@ -26,6 +26,15 @@ export function isWhatsappFunnel(text: string, linkUrl?: string | null): boolean
   );
 }
 
+// Extrai o primeiro preço em BRL do texto (ex: "R$97", "R$ 19,90", "por apenas R$ 1.997,00").
+// Retorna a string normalizada (ex: "R$ 19,90") ou null quando não encontra.
+export function extractPrice(text: string): string | null {
+  if (!text) return null;
+  const m = text.match(/R\$\s?\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|R\$\s?\d+(?:,\d{1,2})?/i);
+  if (!m) return null;
+  return m[0].replace(/R\$\s?/i, "R$ ").trim();
+}
+
 
 // Palavras-chave típicas de anúncios políticos/eleitorais — devem ser excluídos.
 const POLITICAL_REGEX =
