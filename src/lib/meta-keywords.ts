@@ -134,28 +134,7 @@ export const KEYWORD_GROUPS: KeywordGroup[] = [
       "receita caseira",
     ],
   },
-  {
-    category: "Mentoria",
-    language: "BR",
-    active: true,
-    terms: [
-      "mentoria individual",
-      "mentoria em grupo",
-      "acompanhamento personalizado",
-      "consultoria",
-    ],
-  },
-  {
-    category: "Aplicativo/App",
-    language: "BR",
-    active: true,
-    terms: [
-      "baixe o app",
-      "aplicativo grátis",
-      "disponível na play store",
-      "disponível na app store",
-    ],
-  },
+
 
   // === Español — INATIVO (pronto para expansão futura) ===
   {
