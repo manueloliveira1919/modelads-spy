@@ -135,7 +135,7 @@ export const searchOffersLive = createServerFn({ method: "POST" })
 
 
 
-          adSnapshotUrl: ad.ad_snapshot_url ?? null,
+          adSnapshotUrl: stripSnapshotSecrets(ad.ad_snapshot_url),
           pageUrl: `https://www.facebook.com/${pageId}`,
           adLibraryUrl: `https://www.facebook.com/ads/library/?id=${archiveId}`,
         });
