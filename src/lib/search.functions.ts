@@ -16,11 +16,21 @@ export interface LiveSearchResult {
   structure: OfferStructure | null;
   productType: ProductType;
   isWhatsapp: boolean;
+  language: "Português" | "Espanhol" | "Inglês";
   adSnapshotUrl: string | null;
 
   pageUrl: string;
   adLibraryUrl: string | null;
 }
+
+function mapLanguage(langs: string[] | undefined): "Português" | "Espanhol" | "Inglês" {
+  const first = (langs?.[0] || "").toLowerCase();
+  if (first.startsWith("es")) return "Espanhol";
+  if (first.startsWith("en")) return "Inglês";
+  return "Português";
+}
+
+
 
 
 interface MetaAdItem {
