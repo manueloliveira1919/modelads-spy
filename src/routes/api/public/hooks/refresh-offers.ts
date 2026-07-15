@@ -159,9 +159,10 @@ async function runRefresh() {
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+  const startedAt = new Date().toISOString();
   const { data: runRow } = await supabaseAdmin
     .from("meta_refresh_runs")
-    .insert({ status: "running" })
+    .insert({ status: "running", started_at: startedAt })
     .select("id")
     .single();
   const runId = runRow?.id as string | undefined;
