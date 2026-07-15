@@ -21,6 +21,30 @@ export interface KeywordGroup {
 
 export const KEYWORD_GROUPS: KeywordGroup[] = [
   // === Português (Brasil) — ATIVO ===
+  // Ordem importa: Mentoria e Aplicativo/App vêm antes de Info para não perder
+  // termos como "mentoria" / "aplicativo" para o catch-all de Info.
+  {
+    category: "Mentoria",
+    language: "BR",
+    active: true,
+    terms: [
+      "mentoria individual",
+      "mentoria em grupo",
+      "acompanhamento personalizado",
+      "consultoria",
+    ],
+  },
+  {
+    category: "Aplicativo/App",
+    language: "BR",
+    active: true,
+    terms: [
+      "baixe o app",
+      "aplicativo grátis",
+      "disponível na play store",
+      "disponível na app store",
+    ],
+  },
   {
     category: "Info",
     language: "BR",
@@ -43,6 +67,7 @@ export const KEYWORD_GROUPS: KeywordGroup[] = [
       "mini curso",
     ],
   },
+
   {
     category: "Nutra",
     language: "BR",
@@ -109,28 +134,7 @@ export const KEYWORD_GROUPS: KeywordGroup[] = [
       "receita caseira",
     ],
   },
-  {
-    category: "Mentoria",
-    language: "BR",
-    active: true,
-    terms: [
-      "mentoria individual",
-      "mentoria em grupo",
-      "acompanhamento personalizado",
-      "consultoria",
-    ],
-  },
-  {
-    category: "Aplicativo/App",
-    language: "BR",
-    active: true,
-    terms: [
-      "baixe o app",
-      "aplicativo grátis",
-      "disponível na play store",
-      "disponível na app store",
-    ],
-  },
+
 
   // === Español — INATIVO (pronto para expansão futura) ===
   {
@@ -234,25 +238,23 @@ export function getActiveSearchPlan() {
   return plan;
 }
 
-// Retorna a categoria cuja lista de palavras-chave (BR ativas) bate com o texto.
-// Se nenhuma bater com confiança, retorna "Sem categoria" — evitando forçar
-// políticos/apps de drama nas categorias reais.
+// Se o anúncio foi trazido por um termo de busca de uma categoria, isso já é
+// evidência suficiente — não exigimos que o corpo do texto repita a palavra.
+// Só cai em "Sem categoria" quando não há hint E o texto não bate com nada.
 export type CategoryOrUnclassified = MetaCategory | "Sem categoria";
 
 export function classifyCategoryFromText(
   text: string,
   hinted?: MetaCategory,
 ): CategoryOrUnclassified {
+  // Hint do termo de busca ganha por padrão — o anúncio veio dessa categoria.
+  if (hinted) return hinted;
   const t = (text || "").toLowerCase();
   if (!t.trim()) return "Sem categoria";
   const brGroups = KEYWORD_GROUPS.filter((g) => g.language === "BR" && g.active);
-  // Confere primeiro a categoria "sugerida" (termo que trouxe o anúncio).
-  if (hinted) {
-    const g = brGroups.find((x) => x.category === hinted);
-    if (g && g.terms.some((term) => t.includes(term.toLowerCase()))) return hinted;
-  }
   for (const g of brGroups) {
     if (g.terms.some((term) => t.includes(term.toLowerCase()))) return g.category;
   }
   return "Sem categoria";
 }
+

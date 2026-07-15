@@ -77,6 +77,18 @@ function computeActiveDays(start?: string): number {
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
+// Normaliza o idioma real do anúncio a partir do que a Meta retorna em `languages`
+// (ex: ["pt","es"]). Fallback para o idioma do grupo de busca quando ausente.
+function normalizeAdLanguage(langs: string[] | undefined, fallback: string): string {
+  const first = (langs?.[0] || "").toLowerCase();
+  if (first.startsWith("pt")) return "PT";
+  if (first.startsWith("es")) return "ES";
+  if (first.startsWith("en")) return "EN";
+  if (!first) return fallback === "BR" ? "PT" : fallback;
+  return first.slice(0, 2).toUpperCase();
+}
+
+
 // Faz scraping da página do snapshot da Meta pra extrair a mídia real e o link
 // de destino do anúncio. A API pública não retorna esses campos diretamente.
 // Se qualquer etapa falhar (403, HTML mudou, timeout), retorna null nos campos.
@@ -245,7 +257,8 @@ async function runRefresh() {
         page_id: pageId,
         page_name: bucket.pageName,
         category: finalCategory,
-        language: ad._language,
+        language: normalizeAdLanguage(ad.languages, ad._language),
+
         country: "BR",
         headline: title || bodyText.slice(0, 120),
         description: bodyText || desc,

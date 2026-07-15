@@ -16,11 +16,21 @@ export interface LiveSearchResult {
   structure: OfferStructure | null;
   productType: ProductType;
   isWhatsapp: boolean;
+  language: "Português" | "Espanhol" | "Inglês";
   adSnapshotUrl: string | null;
 
   pageUrl: string;
   adLibraryUrl: string | null;
 }
+
+function mapLanguage(langs: string[] | undefined): "Português" | "Espanhol" | "Inglês" {
+  const first = (langs?.[0] || "").toLowerCase();
+  if (first.startsWith("es")) return "Espanhol";
+  if (first.startsWith("en")) return "Inglês";
+  return "Português";
+}
+
+
 
 
 interface MetaAdItem {
@@ -32,6 +42,8 @@ interface MetaAdItem {
   ad_creative_link_descriptions?: string[];
   ad_snapshot_url?: string;
   ad_delivery_start_time?: string;
+  languages?: string[];
+
 }
 
 function computeActiveDays(start?: string): number {
@@ -69,6 +81,8 @@ export const searchOffersLive = createServerFn({ method: "POST" })
         "ad_creative_link_descriptions",
         "ad_snapshot_url",
         "ad_delivery_start_time",
+        "languages",
+
       ].join(","),
     });
 
@@ -117,6 +131,8 @@ export const searchOffersLive = createServerFn({ method: "POST" })
           structure: inferStructure(`${title} ${body}`),
           productType: inferProductType(`${title} ${body} ${desc}`),
           isWhatsapp: isWhatsappFunnel(`${title} ${body} ${desc}`),
+          language: mapLanguage(ad.languages),
+
 
 
           adSnapshotUrl: ad.ad_snapshot_url ?? null,
