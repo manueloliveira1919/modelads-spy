@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { getActiveSearchPlan } from "@/lib/meta-keywords";
-import { classifyStatus, detectNoise, inferProductType, inferStructure } from "@/lib/offer-heuristics";
+import { classifyStatus, detectNoise, inferProductType, inferStructure, stripSnapshotSecrets } from "@/lib/offer-heuristics";
 import { classifyCategoryFromText } from "@/lib/meta-keywords";
 
 // Endpoint chamado pelo cron (pg_cron) a cada 24h para atualizar as ofertas.
