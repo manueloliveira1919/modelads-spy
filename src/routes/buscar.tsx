@@ -1,23 +1,26 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   Clock,
   ExternalLink,
   Flame,
+  Heart,
+  ImageIcon,
   Layers,
   Loader2,
   MessageCircle,
-  Package,
-
   Search,
   Sparkles,
+  Tag,
   TrendingUp,
 } from "lucide-react";
+import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge } from "@/components/offer-card";
 import { searchOffersLive, type LiveSearchResult } from "@/lib/search.functions";
+import { extractPrice } from "@/lib/offer-heuristics";
 import { PRODUCT_TYPES, type ProductType } from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
 
