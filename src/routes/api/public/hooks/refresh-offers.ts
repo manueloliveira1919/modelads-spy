@@ -206,15 +206,21 @@ async function runRefresh() {
     }
   }
 
-  // Marca todas as ofertas atuais como inativas — as que reaparecerem serão reativadas no upsert.
-  await supabaseAdmin
-    .from("meta_offers")
-    .update({ is_active: false })
-    .eq("is_active", true);
+  // NÃO desativamos nada antes do upsert. A desativação só acontece no final,
+  // e apenas se a coleta foi válida (ver bloco após o loop de upsert abaixo).
+  // Isso evita que uma falha da Meta API (bloqueio, 429, timeout) zere o Dashboard.
+
+  const totalAdsCollected = Array.from(byPage.values()).reduce(
+    (acc, b) => acc + b.ads.length,
+    0,
+  );
+  const errorRate = plan.length > 0 ? errors.length / plan.length : 1;
+  const collectionValid =
+    byPage.size > 0 && totalAdsCollected > 0 && errorRate < 0.5;
 
   let upserts = 0;
-
   let skippedNoise = 0;
+  let deactivated = 0;
   for (const [pageId, bucket] of byPage.entries()) {
     const activeAdsCount = bucket.ads.length;
     const status = classifyStatus(activeAdsCount);
