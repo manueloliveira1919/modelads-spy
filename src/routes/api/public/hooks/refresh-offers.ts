@@ -313,24 +313,39 @@ async function runRefresh() {
   }
 
 
+  const runStatus = !collectionValid
+    ? "blocked"
+    : errors.length
+      ? "partial"
+      : "success";
+
   if (runId) {
     await supabaseAdmin
       .from("meta_refresh_runs")
       .update({
         finished_at: new Date().toISOString(),
-        status: errors.length ? "partial" : "success",
+        status: runStatus,
         offers_upserted: upserts,
         pages_seen: byPage.size,
         error: errors.length ? errors.slice(0, 5).join(" | ") : null,
-        details: { errors: errors.slice(0, 50), plan_size: plan.length },
+        details: {
+          errors: errors.slice(0, 50),
+          plan_size: plan.length,
+          collection_valid: collectionValid,
+          total_ads_collected: totalAdsCollected,
+          error_rate: Number(errorRate.toFixed(3)),
+          deactivated,
+        },
       })
       .eq("id", runId);
   }
 
   return {
     ok: true,
+    collectionValid,
     pages: byPage.size,
     offers: upserts,
+    deactivated,
     skippedNoise,
     errors: errors.length,
     plan: plan.length,
