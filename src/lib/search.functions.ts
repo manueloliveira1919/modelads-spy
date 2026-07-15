@@ -81,6 +81,8 @@ export const searchOffersLive = createServerFn({ method: "POST" })
         "ad_creative_link_descriptions",
         "ad_snapshot_url",
         "ad_delivery_start_time",
+        "languages",
+
       ].join(","),
     });
 
