@@ -397,14 +397,6 @@ function MiniStat({
   );
 }
 
-function Chip({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-1 text-[11px] font-medium text-secondary-foreground">
-      {icon}
-      {children}
-    </span>
-  );
-}
 
 function FilterChip({
   active,
