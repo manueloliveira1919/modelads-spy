@@ -22,33 +22,24 @@ function serverSupabase() {
 
 export const listOffers = createServerFn({ method: "GET" }).handler(async () => {
   const supabase = serverSupabase();
-  const { data, error } = await supabase
-    .from("meta_offers")
-    .select(
-      "id, ad_archive_id, page_id, page_name, category, language, headline, description, creative_url, creative_type, ad_snapshot_url, page_url, link_url, active_days, active_ads_count, status, structure, product_type, ad_start_date",
-    )
-
-    .eq("is_active", true)
-    .order("active_ads_count", { ascending: false })
-    .order("active_days", { ascending: false })
-    .limit(1000);
+  // Dedup por page_id direto no banco (DISTINCT ON) — garante 1 linha por
+  // anunciante já escolhendo o melhor anúncio, sem depender de LIMIT arbitrário.
+  const { data, error } = await supabase.rpc("list_active_offer_pages");
 
   if (error) {
     console.error("listOffers error", error);
     return { offers: [] as Offer[], error: "Não foi possível carregar ofertas." };
   }
 
-  // Deduplica: 1 card por página (o melhor anúncio do anunciante).
-  // A Meta Ads API retorna vários criativos por página; a "oferta" é a página.
-  const seenPages = new Set<string>();
-  const deduped = [] as typeof data;
-  for (const row of data ?? []) {
-    if (seenPages.has(row.page_id)) continue;
-    seenPages.add(row.page_id);
-    deduped.push(row);
-  }
+  const rows = (data ?? []) as Parameters<typeof rowToOffer>[0][];
+  // Ordena: mais anúncios ativos primeiro, depois quem está no ar há mais tempo.
+  const sorted = [...rows].sort(
+    (a, b) =>
+      (b.active_ads_count ?? 0) - (a.active_ads_count ?? 0) ||
+      (b.active_days ?? 0) - (a.active_days ?? 0),
+  );
 
-  return { offers: deduped.map(rowToOffer), error: null as string | null };
+  return { offers: sorted.map(rowToOffer), error: null as string | null };
 });
 
 export const getOffer = createServerFn({ method: "GET" })
