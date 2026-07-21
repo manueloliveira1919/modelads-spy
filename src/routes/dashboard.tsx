@@ -26,7 +26,7 @@ const offersQuery = queryOptions({
   staleTime: 60_000,
 });
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/dashboard")({
   head: () => ({
     meta: [
       { title: "Modelads" },
