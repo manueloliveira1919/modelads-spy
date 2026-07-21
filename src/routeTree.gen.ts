@@ -16,8 +16,8 @@ import { Route as OfertasRouteImport } from './routes/ofertas'
 import { Route as FerramentasRouteImport } from './routes/ferramentas'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as EmBreveRouteImport } from './routes/em-breve'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BuscarRouteImport } from './routes/buscar'
-import { Route as IndexRouteImport } from './routes/index'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 import { Route as ApiPublicHooksRefreshOffersRouteImport } from './routes/api/public/hooks/refresh-offers'
 
@@ -56,14 +56,14 @@ const EmBreveRoute = EmBreveRouteImport.update({
   path: '/em-breve',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BuscarRoute = BuscarRouteImport.update({
   id: '/buscar',
   path: '/buscar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfertaIdRoute = OfertaIdRouteImport.update({
@@ -79,8 +79,8 @@ const ApiPublicHooksRefreshOffersRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
   '/buscar': typeof BuscarRoute
+  '/dashboard': typeof DashboardRoute
   '/em-breve': typeof EmBreveRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
@@ -92,8 +92,8 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
   '/buscar': typeof BuscarRoute
+  '/dashboard': typeof DashboardRoute
   '/em-breve': typeof EmBreveRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
@@ -106,8 +106,8 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
   '/buscar': typeof BuscarRoute
+  '/dashboard': typeof DashboardRoute
   '/em-breve': typeof EmBreveRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
@@ -121,8 +121,8 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/'
     | '/buscar'
+    | '/dashboard'
     | '/em-breve'
     | '/favoritos'
     | '/ferramentas'
@@ -134,8 +134,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/refresh-offers'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
     | '/buscar'
+    | '/dashboard'
     | '/em-breve'
     | '/favoritos'
     | '/ferramentas'
@@ -147,8 +147,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/refresh-offers'
   id:
     | '__root__'
-    | '/'
     | '/buscar'
+    | '/dashboard'
     | '/em-breve'
     | '/favoritos'
     | '/ferramentas'
@@ -161,8 +161,8 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
   BuscarRoute: typeof BuscarRoute
+  DashboardRoute: typeof DashboardRoute
   EmBreveRoute: typeof EmBreveRoute
   FavoritosRoute: typeof FavoritosRoute
   FerramentasRoute: typeof FerramentasRoute
@@ -225,18 +225,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmBreveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/buscar': {
       id: '/buscar'
       path: '/buscar'
       fullPath: '/buscar'
       preLoaderRoute: typeof BuscarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/oferta/$id': {
@@ -257,8 +257,8 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
   BuscarRoute: BuscarRoute,
+  DashboardRoute: DashboardRoute,
   EmBreveRoute: EmBreveRoute,
   FavoritosRoute: FavoritosRoute,
   FerramentasRoute: FerramentasRoute,
@@ -272,13 +272,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
