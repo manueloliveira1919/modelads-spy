@@ -4,6 +4,6 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 // no sidebar — redireciona pra evitar UX confusa de dupla listagem.
 export const Route = createFileRoute("/ofertas")({
   beforeLoad: () => {
-    throw redirect({ to: "/" });
+    throw redirect({ to: "/dashboard" });
   },
 });
