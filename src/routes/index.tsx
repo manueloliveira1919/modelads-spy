@@ -429,7 +429,7 @@ function Benefits() {
 
 /* ---------- AI section ---------- */
 type Status = "Disponível" | "Em Desenvolvimento" | "Em Breve";
-const AI_FEATURES: { icon: React.ComponentType<{ className?: string }>; name: string; status: Status }[] = [
+const AI_FEATURES: { icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>; name: string; status: Status }[] = [
   { icon: Bot, name: "ModelAds AI", status: "Disponível" },
   { icon: MessageCircle, name: "Criador de Fluxos WhatsApp", status: "Em Desenvolvimento" },
   { icon: Wand2, name: "Criador de Quiz", status: "Em Desenvolvimento" },

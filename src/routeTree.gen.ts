@@ -18,6 +18,7 @@ import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as EmBreveRouteImport } from './routes/em-breve'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as BuscarRouteImport } from './routes/buscar'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 import { Route as ApiPublicHooksRefreshOffersRouteImport } from './routes/api/public/hooks/refresh-offers'
 
@@ -66,6 +67,11 @@ const BuscarRoute = BuscarRouteImport.update({
   path: '/buscar',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OfertaIdRoute = OfertaIdRouteImport.update({
   id: '/oferta/$id',
   path: '/oferta/$id',
@@ -79,6 +85,7 @@ const ApiPublicHooksRefreshOffersRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/buscar': typeof BuscarRoute
   '/dashboard': typeof DashboardRoute
   '/em-breve': typeof EmBreveRoute
@@ -92,6 +99,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/buscar': typeof BuscarRoute
   '/dashboard': typeof DashboardRoute
   '/em-breve': typeof EmBreveRoute
@@ -106,6 +114,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/buscar': typeof BuscarRoute
   '/dashboard': typeof DashboardRoute
   '/em-breve': typeof EmBreveRoute
@@ -121,6 +130,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/buscar'
     | '/dashboard'
     | '/em-breve'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/refresh-offers'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/buscar'
     | '/dashboard'
     | '/em-breve'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/refresh-offers'
   id:
     | '__root__'
+    | '/'
     | '/buscar'
     | '/dashboard'
     | '/em-breve'
@@ -161,6 +173,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   BuscarRoute: typeof BuscarRoute
   DashboardRoute: typeof DashboardRoute
   EmBreveRoute: typeof EmBreveRoute
@@ -239,6 +252,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BuscarRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oferta/$id': {
       id: '/oferta/$id'
       path: '/oferta/$id'
@@ -257,6 +277,7 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   BuscarRoute: BuscarRoute,
   DashboardRoute: DashboardRoute,
   EmBreveRoute: EmBreveRoute,
