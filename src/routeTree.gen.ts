@@ -15,10 +15,17 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as PalavrasBloqueadasRouteImport } from './routes/palavras-bloqueadas'
 import { Route as OfertasDoDiaRouteImport } from './routes/ofertas-do-dia'
 import { Route as OfertasRouteImport } from './routes/ofertas'
+import { Route as ModelarWhatsappRouteImport } from './routes/modelar-whatsapp'
+import { Route as ModelarQuizRouteImport } from './routes/modelar-quiz'
+import { Route as ModelarOfertaRouteImport } from './routes/modelar-oferta'
+import { Route as ModelaSpyAiRouteImport } from './routes/modela-spy-ai'
 import { Route as MinhaContaRouteImport } from './routes/minha-conta'
 import { Route as FerramentasRouteImport } from './routes/ferramentas'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as EmBreveRouteImport } from './routes/em-breve'
+import { Route as CriadorVslRouteImport } from './routes/criador-vsl'
+import { Route as CriadorCriativosRouteImport } from './routes/criador-criativos'
+import { Route as CriadorAudiosRouteImport } from './routes/criador-audios'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -56,6 +63,26 @@ const OfertasRoute = OfertasRouteImport.update({
   path: '/ofertas',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ModelarWhatsappRoute = ModelarWhatsappRouteImport.update({
+  id: '/modelar-whatsapp',
+  path: '/modelar-whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelarQuizRoute = ModelarQuizRouteImport.update({
+  id: '/modelar-quiz',
+  path: '/modelar-quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelarOfertaRoute = ModelarOfertaRouteImport.update({
+  id: '/modelar-oferta',
+  path: '/modelar-oferta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelaSpyAiRoute = ModelaSpyAiRouteImport.update({
+  id: '/modela-spy-ai',
+  path: '/modela-spy-ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MinhaContaRoute = MinhaContaRouteImport.update({
   id: '/minha-conta',
   path: '/minha-conta',
@@ -74,6 +101,21 @@ const FavoritosRoute = FavoritosRouteImport.update({
 const EmBreveRoute = EmBreveRouteImport.update({
   id: '/em-breve',
   path: '/em-breve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadorVslRoute = CriadorVslRouteImport.update({
+  id: '/criador-vsl',
+  path: '/criador-vsl',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadorCriativosRoute = CriadorCriativosRouteImport.update({
+  id: '/criador-criativos',
+  path: '/criador-criativos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadorAudiosRoute = CriadorAudiosRouteImport.update({
+  id: '/criador-audios',
+  path: '/criador-audios',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
@@ -113,10 +155,17 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/criador-audios': typeof CriadorAudiosRoute
+  '/criador-criativos': typeof CriadorCriativosRoute
+  '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
   '/minha-conta': typeof MinhaContaRoute
+  '/modela-spy-ai': typeof ModelaSpyAiRoute
+  '/modelar-oferta': typeof ModelarOfertaRoute
+  '/modelar-quiz': typeof ModelarQuizRoute
+  '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -131,10 +180,17 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/criador-audios': typeof CriadorAudiosRoute
+  '/criador-criativos': typeof CriadorCriativosRoute
+  '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
   '/minha-conta': typeof MinhaContaRoute
+  '/modela-spy-ai': typeof ModelaSpyAiRoute
+  '/modelar-oferta': typeof ModelarOfertaRoute
+  '/modelar-quiz': typeof ModelarQuizRoute
+  '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -150,10 +206,17 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
   '/configuracoes': typeof ConfiguracoesRoute
+  '/criador-audios': typeof CriadorAudiosRoute
+  '/criador-criativos': typeof CriadorCriativosRoute
+  '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
   '/minha-conta': typeof MinhaContaRoute
+  '/modela-spy-ai': typeof ModelaSpyAiRoute
+  '/modelar-oferta': typeof ModelarOfertaRoute
+  '/modelar-quiz': typeof ModelarQuizRoute
+  '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -170,10 +233,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/buscar'
     | '/configuracoes'
+    | '/criador-audios'
+    | '/criador-criativos'
+    | '/criador-vsl'
     | '/em-breve'
     | '/favoritos'
     | '/ferramentas'
     | '/minha-conta'
+    | '/modela-spy-ai'
+    | '/modelar-oferta'
+    | '/modelar-quiz'
+    | '/modelar-whatsapp'
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
@@ -188,10 +258,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/buscar'
     | '/configuracoes'
+    | '/criador-audios'
+    | '/criador-criativos'
+    | '/criador-vsl'
     | '/em-breve'
     | '/favoritos'
     | '/ferramentas'
     | '/minha-conta'
+    | '/modela-spy-ai'
+    | '/modelar-oferta'
+    | '/modelar-quiz'
+    | '/modelar-whatsapp'
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
@@ -206,10 +283,17 @@ export interface FileRouteTypes {
     | '/auth'
     | '/buscar'
     | '/configuracoes'
+    | '/criador-audios'
+    | '/criador-criativos'
+    | '/criador-vsl'
     | '/em-breve'
     | '/favoritos'
     | '/ferramentas'
     | '/minha-conta'
+    | '/modela-spy-ai'
+    | '/modelar-oferta'
+    | '/modelar-quiz'
+    | '/modelar-whatsapp'
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
@@ -225,10 +309,17 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BuscarRoute: typeof BuscarRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
+  CriadorAudiosRoute: typeof CriadorAudiosRoute
+  CriadorCriativosRoute: typeof CriadorCriativosRoute
+  CriadorVslRoute: typeof CriadorVslRoute
   EmBreveRoute: typeof EmBreveRoute
   FavoritosRoute: typeof FavoritosRoute
   FerramentasRoute: typeof FerramentasRoute
   MinhaContaRoute: typeof MinhaContaRoute
+  ModelaSpyAiRoute: typeof ModelaSpyAiRoute
+  ModelarOfertaRoute: typeof ModelarOfertaRoute
+  ModelarQuizRoute: typeof ModelarQuizRoute
+  ModelarWhatsappRoute: typeof ModelarWhatsappRoute
   OfertasRoute: typeof OfertasRoute
   OfertasDoDiaRoute: typeof OfertasDoDiaRoute
   PalavrasBloqueadasRoute: typeof PalavrasBloqueadasRoute
@@ -283,6 +374,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OfertasRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/modelar-whatsapp': {
+      id: '/modelar-whatsapp'
+      path: '/modelar-whatsapp'
+      fullPath: '/modelar-whatsapp'
+      preLoaderRoute: typeof ModelarWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/modelar-quiz': {
+      id: '/modelar-quiz'
+      path: '/modelar-quiz'
+      fullPath: '/modelar-quiz'
+      preLoaderRoute: typeof ModelarQuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/modelar-oferta': {
+      id: '/modelar-oferta'
+      path: '/modelar-oferta'
+      fullPath: '/modelar-oferta'
+      preLoaderRoute: typeof ModelarOfertaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/modela-spy-ai': {
+      id: '/modela-spy-ai'
+      path: '/modela-spy-ai'
+      fullPath: '/modela-spy-ai'
+      preLoaderRoute: typeof ModelaSpyAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/minha-conta': {
       id: '/minha-conta'
       path: '/minha-conta'
@@ -309,6 +428,27 @@ declare module '@tanstack/react-router' {
       path: '/em-breve'
       fullPath: '/em-breve'
       preLoaderRoute: typeof EmBreveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criador-vsl': {
+      id: '/criador-vsl'
+      path: '/criador-vsl'
+      fullPath: '/criador-vsl'
+      preLoaderRoute: typeof CriadorVslRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criador-criativos': {
+      id: '/criador-criativos'
+      path: '/criador-criativos'
+      fullPath: '/criador-criativos'
+      preLoaderRoute: typeof CriadorCriativosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criador-audios': {
+      id: '/criador-audios'
+      path: '/criador-audios'
+      fullPath: '/criador-audios'
+      preLoaderRoute: typeof CriadorAudiosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracoes': {
@@ -361,10 +501,17 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BuscarRoute: BuscarRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
+  CriadorAudiosRoute: CriadorAudiosRoute,
+  CriadorCriativosRoute: CriadorCriativosRoute,
+  CriadorVslRoute: CriadorVslRoute,
   EmBreveRoute: EmBreveRoute,
   FavoritosRoute: FavoritosRoute,
   FerramentasRoute: FerramentasRoute,
   MinhaContaRoute: MinhaContaRoute,
+  ModelaSpyAiRoute: ModelaSpyAiRoute,
+  ModelarOfertaRoute: ModelarOfertaRoute,
+  ModelarQuizRoute: ModelarQuizRoute,
+  ModelarWhatsappRoute: ModelarWhatsappRoute,
   OfertasRoute: OfertasRoute,
   OfertasDoDiaRoute: OfertasDoDiaRoute,
   PalavrasBloqueadasRoute: PalavrasBloqueadasRoute,
