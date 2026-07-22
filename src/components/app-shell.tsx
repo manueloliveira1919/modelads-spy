@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   Flame,
   Heart,
-  Sparkles,
+  
   Menu,
   X,
   Radar,
@@ -281,5 +281,3 @@ function Logo() {
   );
 }
 
-// Keep this export for legacy references
-export { Sparkles };
