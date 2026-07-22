@@ -28,19 +28,10 @@ export const Route = createFileRoute("/ofertas-do-dia")({
 
 function Page() {
   const { data } = useSuspenseQuery(offersQuery);
-  const now = Date.now();
-  const DAY = 24 * 60 * 60 * 1000;
 
-  // Ofertas vistas pela primeira vez nas últimas 24h; se não houver,
-  // cai para as vistas nos últimos 3 dias (fallback pra não ficar vazio).
-  const recent = data.offers.filter((o) => {
-    const t = new Date(o.firstSeen).getTime();
-    return now - t <= DAY;
-  });
-  const fallback = data.offers.filter((o) => {
-    const t = new Date(o.firstSeen).getTime();
-    return now - t <= 3 * DAY;
-  });
+  // "Do dia" = ativos há 1 dia ou menos. Fallback: até 3 dias se estiver vazio.
+  const recent = data.offers.filter((o) => o.activeDays <= 1);
+  const fallback = data.offers.filter((o) => o.activeDays <= 3);
   const list = recent.length > 0 ? recent : fallback;
 
   return (
