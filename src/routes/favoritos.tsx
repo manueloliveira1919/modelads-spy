@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { RequireAuth } from "@/components/require-auth";
 
 export const Route = createFileRoute("/favoritos")({
   head: () => ({
@@ -9,7 +10,11 @@ export const Route = createFileRoute("/favoritos")({
       { name: "description", content: "Suas ofertas favoritas para modelar." },
     ],
   }),
-  component: Page,
+  component: () => (
+    <RequireAuth>
+      <Page />
+    </RequireAuth>
+  ),
 });
 
 function Page() {

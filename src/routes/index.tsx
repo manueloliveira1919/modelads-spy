@@ -4,6 +4,7 @@ import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-
 import { Search, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
+import { RequireAuth } from "@/components/require-auth";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
 import {
@@ -46,7 +47,11 @@ export const Route = createFileRoute("/")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(offersQuery);
   },
-  component: Dashboard,
+  component: () => (
+    <RequireAuth>
+      <Dashboard />
+    </RequireAuth>
+  ),
   errorComponent: ({ error }) => (
     <AppShell>
       <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
