@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Flame } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { RequireAuth } from "@/components/require-auth";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
 
@@ -23,7 +24,11 @@ export const Route = createFileRoute("/ofertas-do-dia")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(offersQuery);
   },
-  component: Page,
+  component: () => (
+    <RequireAuth>
+      <Page />
+    </RequireAuth>
+  ),
 });
 
 function Page() {

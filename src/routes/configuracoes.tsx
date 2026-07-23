@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Settings, Bell, Palette, Shield } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { RequireAuth } from "@/components/require-auth";
 import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/configuracoes")({
@@ -10,7 +11,11 @@ export const Route = createFileRoute("/configuracoes")({
       { name: "description", content: "Personalize sua experiência no Modelads." },
     ],
   }),
-  component: Page,
+  component: () => (
+    <RequireAuth>
+      <Page />
+    </RequireAuth>
+  ),
 });
 
 function Page() {

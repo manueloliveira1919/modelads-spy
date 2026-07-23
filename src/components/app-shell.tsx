@@ -219,38 +219,26 @@ function SidebarNav({
 }
 
 function UserFooter() {
-  const { user, roles, isPro, isAdmin, signOut } = useAuth();
+  const { user, isPro, isAdmin, isPlus, signOut } = useAuth();
   const navigate = useNavigate();
-  const plan = isAdmin ? "Admin" : isPro ? "PRO" : "Starter";
-  const email = user?.email ?? "Convidado";
+  const [open, setOpen] = useState(false);
+  const plan = isAdmin ? "Admin" : isPlus && !isPro ? "PLUS" : isPro ? "PRO" : "Starter";
 
-  return (
-    <div className="border-t border-sidebar-border p-3">
-      {user ? (
-        <div className="flex items-center gap-3 rounded-lg px-2 py-2">
-          <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-foreground">
-            <User className="h-4 w-4" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="truncate text-sm font-medium text-foreground">{email}</div>
-            <div className="truncate text-xs text-muted-foreground">
-              Plano <span className={cn("font-semibold", isPro && "text-brand")}>{plan}</span>
-              {roles.length === 0 && " · carregando"}
-            </div>
-          </div>
-          <button
-            onClick={async () => {
-              await signOut();
-              navigate({ to: "/" });
-            }}
-            className="rounded-md p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground"
-            aria-label="Sair"
-            title="Sair"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      ) : (
+  const meta = (user?.user_metadata ?? {}) as {
+    first_name?: string;
+    last_name?: string;
+    display_name?: string;
+  };
+  const displayName =
+    [meta.first_name, meta.last_name].filter(Boolean).join(" ").trim() ||
+    meta.display_name ||
+    user?.email?.split("@")[0] ||
+    "";
+  const initial = (displayName || user?.email || "?").trim().charAt(0).toUpperCase();
+
+  if (!user) {
+    return (
+      <div className="border-t border-sidebar-border p-3">
         <Link
           to="/auth"
           className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-accent"
@@ -263,10 +251,64 @@ function UserFooter() {
             <div className="truncate text-xs text-muted-foreground">Criar conta grátis</div>
           </div>
         </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative border-t border-sidebar-border p-3">
+      {open && (
+        <div className="absolute bottom-full left-3 right-3 mb-2 rounded-xl border border-border bg-popover p-1 shadow-xl">
+          <Link
+            to="/minha-conta"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent"
+          >
+            <User className="h-4 w-4" /> Minha Conta
+          </Link>
+          <Link
+            to="/configuracoes"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 rounded-md px-3 py-2 text-sm text-foreground hover:bg-accent"
+          >
+            <Settings className="h-4 w-4" /> Configurações
+          </Link>
+          <button
+            onClick={async () => {
+              setOpen(false);
+              await signOut();
+              navigate({ to: "/auth", replace: true });
+            }}
+            className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-foreground hover:bg-accent"
+          >
+            <X className="h-4 w-4" /> Sair
+          </button>
+        </div>
       )}
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-3 rounded-lg px-2 py-2 hover:bg-accent"
+      >
+        <div
+          className={cn(
+            "grid h-9 w-9 shrink-0 place-items-center rounded-full text-sm font-bold",
+            isPro ? "bg-brand text-brand-foreground" : "bg-accent text-foreground",
+          )}
+        >
+          {initial}
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <div className="truncate text-sm font-medium text-foreground">{displayName}</div>
+          <div className="truncate text-xs text-muted-foreground">
+            Plano <span className={cn("font-semibold", isPro && "text-brand")}>{plan}</span>
+          </div>
+        </div>
+      </button>
     </div>
   );
 }
+
 
 function Logo() {
   return (
