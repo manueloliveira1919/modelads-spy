@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      blacklist_words: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          word: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          word: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          word?: string
+        }
+        Relationships: []
+      }
+      credits: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          total_earned: number
+          total_spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          total_earned?: number
+          total_spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      keyword_categories: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       meta_offers: {
         Row: {
           active_ads_count: number
@@ -134,6 +221,66 @@ export type Database = {
         }
         Relationships: []
       }
+      mining_logs: {
+        Row: {
+          created_at: string
+          details: Json | null
+          id: string
+          kind: string
+          status: string
+          summary: string | null
+        }
+        Insert: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          kind?: string
+          status?: string
+          summary?: string | null
+        }
+        Update: {
+          created_at?: string
+          details?: Json | null
+          id?: string
+          kind?: string
+          status?: string
+          summary?: string | null
+        }
+        Relationships: []
+      }
+      plans: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price_cents: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price_cents?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -164,6 +311,102 @@ export type Database = {
           last_name?: string | null
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      search_keywords: {
+        Row: {
+          category: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          weight: number
+          word: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          weight?: number
+          word: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          weight?: number
+          word?: string
+        }
+        Relationships: []
+      }
+      support_tickets: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          name: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          name: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      system_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          kind: string | null
+          metadata: Json | null
+          result: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          kind?: string | null
+          metadata?: Json | null
+          result?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          kind?: string | null
+          metadata?: Json | null
+          result?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

@@ -30,8 +30,19 @@ import { Route as CriadorAudiosRouteImport } from './routes/criador-audios'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
+import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
+import { Route as AdminQualidadeRouteImport } from './routes/admin.qualidade'
+import { Route as AdminPalavrasChaveRouteImport } from './routes/admin.palavras-chave'
+import { Route as AdminMineracaoRouteImport } from './routes/admin.mineracao'
+import { Route as AdminLogsRouteImport } from './routes/admin.logs'
+import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
+import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
+import { Route as AdminBlacklistRouteImport } from './routes/admin.blacklist'
 import { Route as ApiPublicHooksRefreshOffersRouteImport } from './routes/api/public/hooks/refresh-offers'
 
 const UtmRoute = UtmRouteImport.update({
@@ -139,15 +150,70 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const OfertaIdRoute = OfertaIdRouteImport.update({
   id: '/oferta/$id',
   path: '/oferta/$id',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSuporteRoute = AdminSuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminQualidadeRoute = AdminQualidadeRouteImport.update({
+  id: '/qualidade',
+  path: '/qualidade',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminPalavrasChaveRoute = AdminPalavrasChaveRouteImport.update({
+  id: '/palavras-chave',
+  path: '/palavras-chave',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminMineracaoRoute = AdminMineracaoRouteImport.update({
+  id: '/mineracao',
+  path: '/mineracao',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLogsRoute = AdminLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminClientesRoute = AdminClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
+  id: '/categorias',
+  path: '/categorias',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBlacklistRoute = AdminBlacklistRouteImport.update({
+  id: '/blacklist',
+  path: '/blacklist',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ApiPublicHooksRefreshOffersRoute =
   ApiPublicHooksRefreshOffersRouteImport.update({
@@ -158,6 +224,7 @@ const ApiPublicHooksRefreshOffersRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -179,7 +246,17 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
+  '/admin/blacklist': typeof AdminBlacklistRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/clientes': typeof AdminClientesRoute
+  '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/logs': typeof AdminLogsRoute
+  '/admin/mineracao': typeof AdminMineracaoRoute
+  '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
+  '/admin/qualidade': typeof AdminQualidadeRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
 }
 export interface FileRoutesByTo {
@@ -205,12 +282,23 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
+  '/admin/blacklist': typeof AdminBlacklistRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/clientes': typeof AdminClientesRoute
+  '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/logs': typeof AdminLogsRoute
+  '/admin/mineracao': typeof AdminMineracaoRoute
+  '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
+  '/admin/qualidade': typeof AdminQualidadeRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/admin': typeof AdminIndexRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
   '/configuracoes': typeof ConfiguracoesRoute
@@ -232,13 +320,24 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
+  '/admin/blacklist': typeof AdminBlacklistRoute
+  '/admin/categorias': typeof AdminCategoriasRoute
+  '/admin/clientes': typeof AdminClientesRoute
+  '/admin/configuracoes': typeof AdminConfiguracoesRoute
+  '/admin/logs': typeof AdminLogsRoute
+  '/admin/mineracao': typeof AdminMineracaoRoute
+  '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
+  '/admin/qualidade': typeof AdminQualidadeRoute
+  '/admin/suporte': typeof AdminSuporteRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/auth'
     | '/buscar'
     | '/configuracoes'
@@ -260,7 +359,17 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upgrade'
     | '/utm'
+    | '/admin/blacklist'
+    | '/admin/categorias'
+    | '/admin/clientes'
+    | '/admin/configuracoes'
+    | '/admin/logs'
+    | '/admin/mineracao'
+    | '/admin/palavras-chave'
+    | '/admin/qualidade'
+    | '/admin/suporte'
     | '/oferta/$id'
+    | '/admin/'
     | '/api/public/hooks/refresh-offers'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -286,11 +395,22 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upgrade'
     | '/utm'
+    | '/admin/blacklist'
+    | '/admin/categorias'
+    | '/admin/clientes'
+    | '/admin/configuracoes'
+    | '/admin/logs'
+    | '/admin/mineracao'
+    | '/admin/palavras-chave'
+    | '/admin/qualidade'
+    | '/admin/suporte'
     | '/oferta/$id'
+    | '/admin'
     | '/api/public/hooks/refresh-offers'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/auth'
     | '/buscar'
     | '/configuracoes'
@@ -312,12 +432,23 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/upgrade'
     | '/utm'
+    | '/admin/blacklist'
+    | '/admin/categorias'
+    | '/admin/clientes'
+    | '/admin/configuracoes'
+    | '/admin/logs'
+    | '/admin/mineracao'
+    | '/admin/palavras-chave'
+    | '/admin/qualidade'
+    | '/admin/suporte'
     | '/oferta/$id'
+    | '/admin/'
     | '/api/public/hooks/refresh-offers'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   BuscarRoute: typeof BuscarRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
@@ -492,6 +623,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -499,12 +637,82 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/oferta/$id': {
       id: '/oferta/$id'
       path: '/oferta/$id'
       fullPath: '/oferta/$id'
       preLoaderRoute: typeof OfertaIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/suporte': {
+      id: '/admin/suporte'
+      path: '/suporte'
+      fullPath: '/admin/suporte'
+      preLoaderRoute: typeof AdminSuporteRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/qualidade': {
+      id: '/admin/qualidade'
+      path: '/qualidade'
+      fullPath: '/admin/qualidade'
+      preLoaderRoute: typeof AdminQualidadeRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/palavras-chave': {
+      id: '/admin/palavras-chave'
+      path: '/palavras-chave'
+      fullPath: '/admin/palavras-chave'
+      preLoaderRoute: typeof AdminPalavrasChaveRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/mineracao': {
+      id: '/admin/mineracao'
+      path: '/mineracao'
+      fullPath: '/admin/mineracao'
+      preLoaderRoute: typeof AdminMineracaoRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/logs': {
+      id: '/admin/logs'
+      path: '/logs'
+      fullPath: '/admin/logs'
+      preLoaderRoute: typeof AdminLogsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/configuracoes': {
+      id: '/admin/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/admin/configuracoes'
+      preLoaderRoute: typeof AdminConfiguracoesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/clientes': {
+      id: '/admin/clientes'
+      path: '/clientes'
+      fullPath: '/admin/clientes'
+      preLoaderRoute: typeof AdminClientesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/categorias': {
+      id: '/admin/categorias'
+      path: '/categorias'
+      fullPath: '/admin/categorias'
+      preLoaderRoute: typeof AdminCategoriasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/blacklist': {
+      id: '/admin/blacklist'
+      path: '/blacklist'
+      fullPath: '/admin/blacklist'
+      preLoaderRoute: typeof AdminBlacklistRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/api/public/hooks/refresh-offers': {
       id: '/api/public/hooks/refresh-offers'
@@ -516,8 +724,37 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdminRouteChildren {
+  AdminBlacklistRoute: typeof AdminBlacklistRoute
+  AdminCategoriasRoute: typeof AdminCategoriasRoute
+  AdminClientesRoute: typeof AdminClientesRoute
+  AdminConfiguracoesRoute: typeof AdminConfiguracoesRoute
+  AdminLogsRoute: typeof AdminLogsRoute
+  AdminMineracaoRoute: typeof AdminMineracaoRoute
+  AdminPalavrasChaveRoute: typeof AdminPalavrasChaveRoute
+  AdminQualidadeRoute: typeof AdminQualidadeRoute
+  AdminSuporteRoute: typeof AdminSuporteRoute
+  AdminIndexRoute: typeof AdminIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminBlacklistRoute: AdminBlacklistRoute,
+  AdminCategoriasRoute: AdminCategoriasRoute,
+  AdminClientesRoute: AdminClientesRoute,
+  AdminConfiguracoesRoute: AdminConfiguracoesRoute,
+  AdminLogsRoute: AdminLogsRoute,
+  AdminMineracaoRoute: AdminMineracaoRoute,
+  AdminPalavrasChaveRoute: AdminPalavrasChaveRoute,
+  AdminQualidadeRoute: AdminQualidadeRoute,
+  AdminSuporteRoute: AdminSuporteRoute,
+  AdminIndexRoute: AdminIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   BuscarRoute: BuscarRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
