@@ -1,10 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { getActiveSearchPlan } from "@/lib/meta-keywords";
-import { classifyStatus, detectNoise, inferProductType, inferStructure, stripSnapshotSecrets } from "@/lib/offer-heuristics";
-import { classifyCategoryFromText } from "@/lib/meta-keywords";
+import {
+  classifyStatus,
+  inferProductType,
+  inferStructure,
+  stripSnapshotSecrets,
+} from "@/lib/offer-heuristics";
 
 // Endpoint chamado pelo cron (pg_cron) a cada 24h para atualizar as ofertas.
-// Também pode ser disparado manualmente via POST autenticado com apikey.
+// Também pode ser disparado manualmente pelo painel admin.
 
 interface MetaAdItem {
   id?: string;
@@ -27,7 +30,6 @@ interface MetaResponse {
 }
 
 const META_API = "https://graph.facebook.com/v20.0/ads_archive";
-const PAGE_LIMIT = 50;
 
 async function fetchMeta(params: URLSearchParams): Promise<MetaResponse> {
   const url = `${META_API}?${params.toString()}`;
@@ -43,6 +45,7 @@ async function searchTerm(opts: {
   token: string;
   term: string;
   country: string;
+  limit: number;
 }): Promise<MetaAdItem[]> {
   const params = new URLSearchParams({
     access_token: opts.token,
@@ -50,7 +53,7 @@ async function searchTerm(opts: {
     ad_reached_countries: JSON.stringify([opts.country]),
     ad_active_status: "ACTIVE",
     ad_type: "ALL",
-    limit: String(PAGE_LIMIT),
+    limit: String(opts.limit),
     fields: [
       "id",
       "page_id",
@@ -77,8 +80,6 @@ function computeActiveDays(start?: string): number {
   return Math.max(0, Math.floor(diff / (1000 * 60 * 60 * 24)));
 }
 
-// Normaliza o idioma real do anúncio a partir do que a Meta retorna em `languages`
-// (ex: ["pt","es"]). Fallback para o idioma do grupo de busca quando ausente.
 function normalizeAdLanguage(langs: string[] | undefined, fallback: string): string {
   const first = (langs?.[0] || "").toLowerCase();
   if (first.startsWith("pt")) return "PT";
@@ -88,10 +89,6 @@ function normalizeAdLanguage(langs: string[] | undefined, fallback: string): str
   return first.slice(0, 2).toUpperCase();
 }
 
-
-// Faz scraping da página do snapshot da Meta pra extrair a mídia real e o link
-// de destino do anúncio. A API pública não retorna esses campos diretamente.
-// Se qualquer etapa falhar (403, HTML mudou, timeout), retorna null nos campos.
 interface SnapshotMedia {
   imageUrl: string | null;
   videoUrl: string | null;
@@ -99,7 +96,6 @@ interface SnapshotMedia {
 }
 
 function decodeMetaJsonString(raw: string): string {
-  // Meta serializa em JSON dentro do HTML — precisa desescapar \/ e \u00XX.
   try {
     return JSON.parse(`"${raw}"`);
   } catch {
@@ -152,12 +148,19 @@ async function extractSnapshotMedia(snapshotUrl: string | null): Promise<Snapsho
   }
 }
 
-
 async function runRefresh() {
   const token = process.env.META_ACCESS_TOKEN;
   if (!token) throw new Error("META_ACCESS_TOKEN não configurado");
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const {
+    loadActiveKeywords,
+    loadActiveBlacklist,
+    loadActiveCategories,
+    loadMiningSettings,
+    buildSearchPlan,
+    buildBlacklistMatcher,
+  } = await import("@/lib/mining-config.server");
 
   const startedAt = new Date().toISOString();
   const { data: runRow } = await supabaseAdmin
@@ -167,24 +170,39 @@ async function runRefresh() {
     .single();
   const runId = runRow?.id as string | undefined;
 
-  const plan = getActiveSearchPlan();
+  // Carrega TODA a configuração do banco — nada de listas fixas no código.
+  const [keywords, blacklist, activeCategories, settings] = await Promise.all([
+    loadActiveKeywords(),
+    loadActiveBlacklist(),
+    loadActiveCategories(),
+    loadMiningSettings(),
+  ]);
+  const plan = buildSearchPlan(keywords, settings);
+  const matchBlacklist = buildBlacklistMatcher(blacklist);
+
   const errors: string[] = [];
-  // Mapa: page_id -> { ads: MetaAdItem[], meta: { category, language, country, term } }
   const byPage = new Map<
     string,
     {
-      ads: (MetaAdItem & { _category: string; _language: string; _term: string })[];
+      ads: (MetaAdItem & {
+        _category: string | null;
+        _language: string;
+        _term: string;
+      })[];
       pageName: string;
     }
   >();
 
+  let searched = 0;
   for (const step of plan) {
     try {
       const items = await searchTerm({
         token,
         term: step.term,
         country: step.country,
+        limit: settings.per_keyword_limit,
       });
+      searched += items.length;
       for (const ad of items) {
         const pageId = ad.page_id;
         if (!pageId) continue;
@@ -202,13 +220,9 @@ async function runRefresh() {
         byPage.set(pageId, bucket);
       }
     } catch (err) {
-      errors.push(`${step.category}/${step.term}: ${(err as Error).message}`);
+      errors.push(`${step.category ?? "—"}/${step.term}: ${(err as Error).message}`);
     }
   }
-
-  // NÃO desativamos nada antes do upsert. A desativação só acontece no final,
-  // e apenas se a coleta foi válida (ver bloco após o loop de upsert abaixo).
-  // Isso evita que uma falha da Meta API (bloqueio, 429, timeout) zere o Dashboard.
 
   const totalAdsCollected = Array.from(byPage.values()).reduce(
     (acc, b) => acc + b.ads.length,
@@ -219,14 +233,13 @@ async function runRefresh() {
     byPage.size > 0 && totalAdsCollected > 0 && errorRate < 0.5;
 
   let upserts = 0;
-  let skippedNoise = 0;
+  let skippedBlacklist = 0;
   let deactivated = 0;
   if (collectionValid) {
     for (const [pageId, bucket] of byPage.entries()) {
       const activeAdsCount = bucket.ads.length;
       const status = classifyStatus(activeAdsCount);
 
-      // Deduplica anúncios por ad archive id, mantém o primeiro por página
       const seen = new Set<string>();
       for (const ad of bucket.ads) {
         const archiveId = ad.id;
@@ -238,27 +251,31 @@ async function runRefresh() {
         const desc = ad.ad_creative_link_descriptions?.[0] ?? "";
         const fullText = `${bucket.pageName} ${title} ${bodyText} ${desc}`;
 
-        // Bloqueia anúncios políticos/eleitorais e apps de drama/novela.
-        if (detectNoise(fullText)) {
-          skippedNoise++;
+        const snapshot = stripSnapshotSecrets(ad.ad_snapshot_url);
+        const media = await extractSnapshotMedia(snapshot);
+
+        // Blacklist ANTES da classificação — bloqueia por texto, page name ou domínio.
+        if (
+          matchBlacklist({
+            text: fullText,
+            pageName: bucket.pageName,
+            link: media.linkUrl,
+          })
+        ) {
+          skippedBlacklist++;
           continue;
         }
 
         const structure = inferStructure(`${title} ${bodyText}`);
         const activeDays = computeActiveDays(ad.ad_delivery_start_time);
-        const snapshot = stripSnapshotSecrets(ad.ad_snapshot_url);
-
-        // Tenta extrair mídia direta + link de destino via scraping do snapshot.
-        const media = await extractSnapshotMedia(snapshot);
         const creativeUrl = media.videoUrl ?? media.imageUrl ?? null;
         const creativeType: "image" | "video" = media.videoUrl ? "video" : "image";
 
-        // Só atribui a categoria sugerida pelo termo se o texto realmente confirma.
-        // Caso contrário, marca como "Sem categoria" (oculta por padrão no Dashboard).
-        const finalCategory = classifyCategoryFromText(
-          `${title} ${bodyText} ${desc}`,
-          ad._category as import("@/lib/meta-keywords").MetaCategory,
-        );
+        // Categoria: usa o hint da palavra-chave se ela ainda estiver ativa no banco.
+        const finalCategory =
+          ad._category && activeCategories.has(ad._category)
+            ? ad._category
+            : "Sem categoria";
 
         const row = {
           ad_archive_id: archiveId,
@@ -266,7 +283,6 @@ async function runRefresh() {
           page_name: bucket.pageName,
           category: finalCategory,
           language: normalizeAdLanguage(ad.languages, ad._language),
-
           country: "BR",
           headline: title || bodyText.slice(0, 120),
           description: bodyText || desc,
@@ -282,7 +298,6 @@ async function runRefresh() {
           status,
           structure,
           product_type: inferProductType(`${title} ${bodyText} ${desc}`),
-
           search_term: ad._term,
           last_seen: new Date().toISOString(),
         };
@@ -290,16 +305,11 @@ async function runRefresh() {
         const { error } = await supabaseAdmin
           .from("meta_offers")
           .upsert(row, { onConflict: "ad_archive_id" });
-        if (error) {
-          errors.push(`upsert ${archiveId}: ${error.message}`);
-        } else {
-          upserts++;
-        }
+        if (error) errors.push(`upsert ${archiveId}: ${error.message}`);
+        else upserts++;
       }
     }
 
-    // Só agora — após uma coleta válida e todos os upserts — desativa apenas
-    // os anúncios que NÃO reapareceram nesta rodada (last_seen anterior ao início).
     const { count } = await supabaseAdmin
       .from("meta_offers")
       .update({ is_active: false }, { count: "exact" })
@@ -312,18 +322,19 @@ async function runRefresh() {
     );
   }
 
-
   const runStatus = !collectionValid
     ? "blocked"
     : errors.length
       ? "partial"
       : "success";
 
+  const finishedAt = new Date().toISOString();
+
   if (runId) {
     await supabaseAdmin
       .from("meta_refresh_runs")
       .update({
-        finished_at: new Date().toISOString(),
+        finished_at: finishedAt,
         status: runStatus,
         offers_upserted: upserts,
         pages_seen: byPage.size,
@@ -331,14 +342,36 @@ async function runRefresh() {
         details: {
           errors: errors.slice(0, 50),
           plan_size: plan.length,
+          keywords_active: keywords.length,
+          blacklist_active: blacklist.length,
+          settings: settings as unknown as Record<string, unknown>,
           collection_valid: collectionValid,
           total_ads_collected: totalAdsCollected,
           error_rate: Number(errorRate.toFixed(3)),
           deactivated,
-        },
+          skipped_blacklist: skippedBlacklist,
+        } as never,
       })
       .eq("id", runId);
   }
+
+  // Registro em mining_logs — auditoria da execução.
+  await supabaseAdmin.from("mining_logs").insert({
+    kind: "run",
+    status: runStatus,
+    summary: `plan=${plan.length} pages=${byPage.size} upserts=${upserts} descartados=${skippedBlacklist} erros=${errors.length}`,
+    details: {
+      started_at: startedAt,
+      finished_at: finishedAt,
+      searched,
+      approved: upserts,
+      discarded: skippedBlacklist,
+      deactivated,
+      plan_size: plan.length,
+      errors: errors.slice(0, 20),
+      settings: settings as unknown as Record<string, unknown>,
+    } as never,
+  });
 
   return {
     ok: true,
@@ -346,7 +379,7 @@ async function runRefresh() {
     pages: byPage.size,
     offers: upserts,
     deactivated,
-    skippedNoise,
+    skippedBlacklist,
     errors: errors.length,
     plan: plan.length,
   };
