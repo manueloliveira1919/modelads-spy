@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          kind: string | null
           updated_at: string
           word: string
         }
@@ -28,6 +29,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          kind?: string | null
           updated_at?: string
           word: string
         }
@@ -36,6 +38,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          kind?: string | null
           updated_at?: string
           word?: string
         }
@@ -281,6 +284,48 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_settings: {
+        Row: {
+          created_at: string
+          domain: string | null
+          id: string
+          logo_url: string | null
+          platform_name: string
+          singleton: boolean
+          status: string
+          support_email: string | null
+          support_whatsapp: string | null
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          logo_url?: string | null
+          platform_name?: string
+          singleton?: boolean
+          status?: string
+          support_email?: string | null
+          support_whatsapp?: string | null
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string | null
+          id?: string
+          logo_url?: string | null
+          platform_name?: string
+          singleton?: boolean
+          status?: string
+          support_email?: string | null
+          support_whatsapp?: string | null
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -288,6 +333,7 @@ export type Database = {
           email: string | null
           first_name: string | null
           id: string
+          is_suspended: boolean
           last_name: string | null
           phone: string | null
           updated_at: string
@@ -298,6 +344,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id: string
+          is_suspended?: boolean
           last_name?: string | null
           phone?: string | null
           updated_at?: string
@@ -308,6 +355,7 @@ export type Database = {
           email?: string | null
           first_name?: string | null
           id?: string
+          is_suspended?: boolean
           last_name?: string | null
           phone?: string | null
           updated_at?: string
