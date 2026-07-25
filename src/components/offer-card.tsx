@@ -218,10 +218,16 @@ function MediaBadges({ offer }: { offer: Offer }) {
   );
 }
 
+const LANG_FLAGS: Record<string, string> = {
+  PT: "🇧🇷",
+  ES: "🇪🇸",
+  EN: "🇺🇸",
+};
+
 function LangBadge({ lang }: { lang: string }) {
   return (
     <span className="rounded-md bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur">
-      {lang}
+      {LANG_FLAGS[lang] ?? ""} {lang}
     </span>
   );
 }
