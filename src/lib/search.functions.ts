@@ -97,6 +97,12 @@ export const searchOffersLive = createServerFn({ method: "POST" })
       }
       const items = json.data ?? [];
 
+      // Blacklist do banco — aplicada também na busca ao vivo.
+      const { loadActiveBlacklist, buildBlacklistMatcher } = await import(
+        "./mining-config.server"
+      );
+      const matchBlacklist = buildBlacklistMatcher(await loadActiveBlacklist());
+
       // Conta anúncios ativos por página (a partir desta amostra).
       const perPage = new Map<string, number>();
       for (const ad of items) {
@@ -115,8 +121,13 @@ export const searchOffersLive = createServerFn({ method: "POST" })
         const title = ad.ad_creative_link_titles?.[0] ?? "";
         const desc = ad.ad_creative_link_descriptions?.[0] ?? "";
         const pageName = ad.page_name ?? "Página desconhecida";
-        // Filtra anúncios políticos e apps de drama/novela também na busca ao vivo.
-        if (detectNoise(`${pageName} ${title} ${body} ${desc}`)) continue;
+        if (
+          matchBlacklist({
+            text: `${pageName} ${title} ${body} ${desc}`,
+            pageName,
+          })
+        )
+          continue;
         seen.add(pageId);
         const activeAds = perPage.get(pageId) ?? 1;
         results.push({
