@@ -251,6 +251,45 @@ export type Database = {
         }
         Relationships: []
       }
+      mining_settings: {
+        Row: {
+          ads_limit: number
+          auto_refresh: boolean
+          countries: string[]
+          created_at: string
+          id: string
+          languages: string[]
+          page_size: number
+          per_keyword_limit: number
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          ads_limit?: number
+          auto_refresh?: boolean
+          countries?: string[]
+          created_at?: string
+          id?: string
+          languages?: string[]
+          page_size?: number
+          per_keyword_limit?: number
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          ads_limit?: number
+          auto_refresh?: boolean
+          countries?: string[]
+          created_at?: string
+          id?: string
+          languages?: string[]
+          page_size?: number
+          per_keyword_limit?: number
+          singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           code: string
@@ -365,27 +404,39 @@ export type Database = {
       search_keywords: {
         Row: {
           category: string | null
+          country: string
           created_at: string
           id: string
           is_active: boolean
+          language: string
+          niche: string | null
+          priority: number
           updated_at: string
           weight: number
           word: string
         }
         Insert: {
           category?: string | null
+          country?: string
           created_at?: string
           id?: string
           is_active?: boolean
+          language?: string
+          niche?: string | null
+          priority?: number
           updated_at?: string
           weight?: number
           word: string
         }
         Update: {
           category?: string | null
+          country?: string
           created_at?: string
           id?: string
           is_active?: boolean
+          language?: string
+          niche?: string | null
+          priority?: number
           updated_at?: string
           weight?: number
           word?: string
