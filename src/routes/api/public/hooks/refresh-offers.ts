@@ -344,13 +344,13 @@ async function runRefresh() {
           plan_size: plan.length,
           keywords_active: keywords.length,
           blacklist_active: blacklist.length,
-          settings,
+          settings: settings as unknown as Record<string, unknown>,
           collection_valid: collectionValid,
           total_ads_collected: totalAdsCollected,
           error_rate: Number(errorRate.toFixed(3)),
           deactivated,
           skipped_blacklist: skippedBlacklist,
-        },
+        } as never,
       })
       .eq("id", runId);
   }
