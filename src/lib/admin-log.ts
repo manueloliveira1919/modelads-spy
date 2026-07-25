@@ -16,7 +16,7 @@ export async function logSystem(opts: {
       action: opts.action,
       kind: opts.kind ?? "admin",
       result: opts.result ?? "success",
-      metadata: opts.metadata ?? {},
+      metadata: (opts.metadata ?? {}) as never,
     });
   } catch {
     /* noop */
