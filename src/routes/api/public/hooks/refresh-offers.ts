@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   classifyStatus,
+  extractPrice,
   inferProductType,
   inferStructure,
   stripSnapshotSecrets,
@@ -31,8 +32,7 @@ interface MetaResponse {
 
 const META_API = "https://graph.facebook.com/v20.0/ads_archive";
 
-async function fetchMeta(params: URLSearchParams): Promise<MetaResponse> {
-  const url = `${META_API}?${params.toString()}`;
+async function fetchMeta(url: string): Promise<MetaResponse> {
   const res = await fetch(url);
   const json = (await res.json()) as MetaResponse;
   if (!res.ok || json.error) {
@@ -41,12 +41,12 @@ async function fetchMeta(params: URLSearchParams): Promise<MetaResponse> {
   return json;
 }
 
-async function searchTerm(opts: {
+function buildSearchUrl(opts: {
   token: string;
   term: string;
   country: string;
   limit: number;
-}): Promise<MetaAdItem[]> {
+}): string {
   const params = new URLSearchParams({
     access_token: opts.token,
     search_terms: opts.term,
@@ -68,8 +68,27 @@ async function searchTerm(opts: {
       "publisher_platforms",
     ].join(","),
   });
-  const json = await fetchMeta(params);
-  return json.data ?? [];
+  return `${META_API}?${params.toString()}`;
+}
+
+// Paginate via paging.next (Meta returns full URL), respecting max_pages.
+async function searchTermPaginated(opts: {
+  token: string;
+  term: string;
+  country: string;
+  limit: number;
+  maxPages: number;
+}): Promise<MetaAdItem[]> {
+  const all: MetaAdItem[] = [];
+  let url = buildSearchUrl(opts);
+  for (let page = 0; page < Math.max(1, opts.maxPages); page++) {
+    const json = await fetchMeta(url);
+    all.push(...(json.data ?? []));
+    const next = json.paging?.next;
+    if (!next) break;
+    url = next;
+  }
+  return all;
 }
 
 function computeActiveDays(start?: string): number {
@@ -148,6 +167,31 @@ async function extractSnapshotMedia(snapshotUrl: string | null): Promise<Snapsho
   }
 }
 
+// Score de qualidade 0-100. Cada critério vale ~12 pts; escalabilidade pesa mais.
+function computeQualityScore(inputs: {
+  languageOk: boolean;
+  categoryOk: boolean;
+  hasPrice: boolean;
+  hasLanding: boolean;
+  activeAds: number;
+  activeDays: number;
+  hasCreative: boolean;
+}): number {
+  let score = 0;
+  if (inputs.languageOk) score += 12;
+  if (inputs.categoryOk) score += 14;
+  if (inputs.hasPrice) score += 12;
+  if (inputs.hasLanding) score += 14;
+  if (inputs.hasCreative) score += 12;
+  if (inputs.activeAds >= 30) score += 18;
+  else if (inputs.activeAds >= 10) score += 12;
+  else if (inputs.activeAds >= 4) score += 6;
+  if (inputs.activeDays >= 30) score += 18;
+  else if (inputs.activeDays >= 15) score += 12;
+  else if (inputs.activeDays >= 7) score += 6;
+  return Math.min(100, score);
+}
+
 async function runRefresh() {
   const token = process.env.META_ACCESS_TOKEN;
   if (!token) throw new Error("META_ACCESS_TOKEN não configurado");
@@ -170,7 +214,6 @@ async function runRefresh() {
     .single();
   const runId = runRow?.id as string | undefined;
 
-  // Carrega TODA a configuração do banco — nada de listas fixas no código.
   const [keywords, blacklist, activeCategories, settings] = await Promise.all([
     loadActiveKeywords(),
     loadActiveBlacklist(),
@@ -179,8 +222,15 @@ async function runRefresh() {
   ]);
   const plan = buildSearchPlan(keywords, settings);
   const matchBlacklist = buildBlacklistMatcher(blacklist);
+  const allowedLangs = new Set(
+    (settings.languages ?? []).map((l) => l.toUpperCase()),
+  );
 
   const errors: string[] = [];
+  const discardReasons = new Map<string, number>();
+  const bumpDiscard = (reason: string) =>
+    discardReasons.set(reason, (discardReasons.get(reason) ?? 0) + 1);
+
   const byPage = new Map<
     string,
     {
@@ -196,11 +246,12 @@ async function runRefresh() {
   let searched = 0;
   for (const step of plan) {
     try {
-      const items = await searchTerm({
+      const items = await searchTermPaginated({
         token,
         term: step.term,
         country: step.country,
         limit: settings.per_keyword_limit,
+        maxPages: settings.max_pages,
       });
       searched += items.length;
       for (const ad of items) {
@@ -234,17 +285,30 @@ async function runRefresh() {
 
   let upserts = 0;
   let skippedBlacklist = 0;
+  let skippedDuplicate = 0;
+  let skippedLanguage = 0;
+  let skippedNoCategory = 0;
+  let skippedNoLanding = 0;
   let deactivated = 0;
+
   if (collectionValid) {
+    // Dedup composto por (page_id + headline + landing) através do run inteiro.
+    const compositeSeen = new Set<string>();
+
     for (const [pageId, bucket] of byPage.entries()) {
       const activeAdsCount = bucket.ads.length;
       const status = classifyStatus(activeAdsCount);
 
-      const seen = new Set<string>();
+      const seenArchive = new Set<string>();
       for (const ad of bucket.ads) {
         const archiveId = ad.id;
-        if (!archiveId || seen.has(archiveId)) continue;
-        seen.add(archiveId);
+        if (!archiveId) continue;
+        if (seenArchive.has(archiveId)) {
+          skippedDuplicate++;
+          bumpDiscard("duplicate_archive_id");
+          continue;
+        }
+        seenArchive.add(archiveId);
 
         const bodyText = ad.ad_creative_bodies?.[0] ?? "";
         const title = ad.ad_creative_link_titles?.[0] ?? "";
@@ -254,37 +318,84 @@ async function runRefresh() {
         const snapshot = stripSnapshotSecrets(ad.ad_snapshot_url);
         const media = await extractSnapshotMedia(snapshot);
 
-        // Blacklist ANTES da classificação — bloqueia por texto, page name ou domínio.
-        if (
-          matchBlacklist({
-            text: fullText,
-            pageName: bucket.pageName,
-            link: media.linkUrl,
-          })
-        ) {
+        // 1) Blacklist (palavra, expressão, página, domínio, regex).
+        const hit = matchBlacklist({
+          text: fullText,
+          pageName: bucket.pageName,
+          link: media.linkUrl,
+        });
+        if (hit) {
           skippedBlacklist++;
+          bumpDiscard(`blacklist:${hit.kind}`);
           continue;
         }
+
+        // 2) Idioma — se admin restringiu, respeita.
+        const language = normalizeAdLanguage(ad.languages, ad._language);
+        if (allowedLangs.size && !allowedLangs.has(language) && !allowedLangs.has("BR")) {
+          // BR ~ PT: quando lista permitir BR, aceitamos PT.
+          if (!(allowedLangs.has("BR") && language === "PT")) {
+            skippedLanguage++;
+            bumpDiscard("language_mismatch");
+            continue;
+          }
+        }
+
+        // 3) Categoria: precisa ter categoria válida vinda da keyword.
+        const finalCategory =
+          ad._category && activeCategories.has(ad._category)
+            ? ad._category
+            : null;
+        if (!finalCategory) {
+          skippedNoCategory++;
+          bumpDiscard("category_missing");
+          continue;
+        }
+
+        // 4) Dedupe composto — page_id + headline + landing.
+        const headline = title || bodyText.slice(0, 120);
+        const compositeKey = `${pageId}|${headline.slice(0, 100)}|${media.linkUrl ?? ""}`;
+        if (compositeSeen.has(compositeKey)) {
+          skippedDuplicate++;
+          bumpDiscard("duplicate_composite");
+          continue;
+        }
+        compositeSeen.add(compositeKey);
 
         const structure = inferStructure(`${title} ${bodyText}`);
         const activeDays = computeActiveDays(ad.ad_delivery_start_time);
         const creativeUrl = media.videoUrl ?? media.imageUrl ?? null;
         const creativeType: "image" | "video" = media.videoUrl ? "video" : "image";
+        const hasPrice = extractPrice(`${title} ${bodyText} ${desc}`) !== null;
+        const hasLanding = !!media.linkUrl;
+        const hasCreative = !!creativeUrl;
 
-        // Categoria: usa o hint da palavra-chave se ela ainda estiver ativa no banco.
-        const finalCategory =
-          ad._category && activeCategories.has(ad._category)
-            ? ad._category
-            : "Sem categoria";
+        // Landing page é um mínimo importante: se não temos landing E não temos criativo,
+        // é ruído — descarta. Se tem pelo menos criativo, mantém (comum em ads sem CTA externo).
+        if (!hasLanding && !hasCreative) {
+          skippedNoLanding++;
+          bumpDiscard("no_landing_no_creative");
+          continue;
+        }
+
+        const qualityScore = computeQualityScore({
+          languageOk: allowedLangs.size === 0 || allowedLangs.has(language) || (allowedLangs.has("BR") && language === "PT"),
+          categoryOk: true,
+          hasPrice,
+          hasLanding,
+          activeAds: activeAdsCount,
+          activeDays,
+          hasCreative,
+        });
 
         const row = {
           ad_archive_id: archiveId,
           page_id: pageId,
           page_name: bucket.pageName,
           category: finalCategory,
-          language: normalizeAdLanguage(ad.languages, ad._language),
+          language,
           country: "BR",
-          headline: title || bodyText.slice(0, 120),
+          headline,
           description: bodyText || desc,
           creative_url: creativeUrl,
           creative_type: creativeType,
@@ -299,9 +410,11 @@ async function runRefresh() {
           structure,
           product_type: inferProductType(`${title} ${bodyText} ${desc}`),
           search_term: ad._term,
+          quality_score: qualityScore,
           last_seen: new Date().toISOString(),
         };
 
+        // Sempre upsert por ad_archive_id — prioriza atualização sobre duplicação.
         const { error } = await supabaseAdmin
           .from("meta_offers")
           .upsert(row, { onConflict: "ad_archive_id" });
@@ -329,6 +442,9 @@ async function runRefresh() {
       : "success";
 
   const finishedAt = new Date().toISOString();
+  const discardBreakdown = Object.fromEntries(discardReasons.entries());
+  const skippedNoise =
+    skippedBlacklist + skippedDuplicate + skippedLanguage + skippedNoCategory + skippedNoLanding;
 
   if (runId) {
     await supabaseAdmin
@@ -350,22 +466,28 @@ async function runRefresh() {
           error_rate: Number(errorRate.toFixed(3)),
           deactivated,
           skipped_blacklist: skippedBlacklist,
+          skipped_duplicate: skippedDuplicate,
+          skipped_language: skippedLanguage,
+          skipped_no_category: skippedNoCategory,
+          skipped_no_landing: skippedNoLanding,
+          skipped_noise: skippedNoise,
+          discard_breakdown: discardBreakdown,
         } as never,
       })
       .eq("id", runId);
   }
 
-  // Registro em mining_logs — auditoria da execução.
   await supabaseAdmin.from("mining_logs").insert({
     kind: "run",
     status: runStatus,
-    summary: `plan=${plan.length} pages=${byPage.size} upserts=${upserts} descartados=${skippedBlacklist} erros=${errors.length}`,
+    summary: `plan=${plan.length} pages=${byPage.size} upserts=${upserts} descartados=${skippedNoise} erros=${errors.length}`,
     details: {
       started_at: startedAt,
       finished_at: finishedAt,
       searched,
       approved: upserts,
-      discarded: skippedBlacklist,
+      discarded: skippedNoise,
+      discard_breakdown: discardBreakdown,
       deactivated,
       plan_size: plan.length,
       errors: errors.slice(0, 20),
@@ -380,6 +502,10 @@ async function runRefresh() {
     offers: upserts,
     deactivated,
     skippedBlacklist,
+    skippedDuplicate,
+    skippedLanguage,
+    skippedNoCategory,
+    skippedNoLanding,
     errors: errors.length,
     plan: plan.length,
   };

@@ -24,7 +24,9 @@ export interface MiningSettings {
   page_size: number;
   per_keyword_limit: number;
   auto_refresh: boolean;
+  max_pages: number;
 }
+
 
 export async function loadActiveKeywords(): Promise<KeywordRow[]> {
   const { data, error } = await supabaseAdmin
@@ -68,8 +70,10 @@ export async function loadMiningSettings(): Promise<MiningSettings> {
     page_size: row.page_size ?? 50,
     per_keyword_limit: row.per_keyword_limit ?? 50,
     auto_refresh: row.auto_refresh ?? true,
+    max_pages: row.max_pages ?? 2,
   };
 }
+
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -103,16 +107,20 @@ export function buildBlacklistMatcher(list: BlacklistRow[]): BlacklistMatcher {
 
   const fn: BlacklistMatcher = (opts) => {
     for (const c of compiled) {
-      const target =
-        c.kind === "pagina" || c.kind === "página" || c.kind === "page"
-          ? (opts.pageName ?? "")
-          : c.kind === "dominio" || c.kind === "domínio" || c.kind === "domain"
-            ? (opts.link ?? "")
-            : opts.text;
+      const isPage =
+        c.kind === "pagina" || c.kind === "página" || c.kind === "page";
+      const isDomain =
+        c.kind === "dominio" || c.kind === "domínio" || c.kind === "domain";
+      const target = isPage
+        ? (opts.pageName ?? "")
+        : isDomain
+          ? (opts.link ?? "")
+          : opts.text; // exato, palavra, contém, expressao, regex → texto completo
       if (target && c.regex.test(target)) return { kind: c.kind, word: c.word };
     }
     return null;
   };
+
   fn.size = compiled.length;
   return fn;
 }

@@ -128,6 +128,7 @@ export type Database = {
           page_name: string
           page_url: string | null
           product_type: string | null
+          quality_score: number
           search_term: string | null
           status: string
           structure: string | null
@@ -156,6 +157,7 @@ export type Database = {
           page_name: string
           page_url?: string | null
           product_type?: string | null
+          quality_score?: number
           search_term?: string | null
           status?: string
           structure?: string | null
@@ -184,6 +186,7 @@ export type Database = {
           page_name?: string
           page_url?: string | null
           product_type?: string | null
+          quality_score?: number
           search_term?: string | null
           status?: string
           structure?: string | null
@@ -259,6 +262,7 @@ export type Database = {
           created_at: string
           id: string
           languages: string[]
+          max_pages: number
           page_size: number
           per_keyword_limit: number
           singleton: boolean
@@ -271,6 +275,7 @@ export type Database = {
           created_at?: string
           id?: string
           languages?: string[]
+          max_pages?: number
           page_size?: number
           per_keyword_limit?: number
           singleton?: boolean
@@ -283,6 +288,7 @@ export type Database = {
           created_at?: string
           id?: string
           languages?: string[]
+          max_pages?: number
           page_size?: number
           per_keyword_limit?: number
           singleton?: boolean
@@ -567,6 +573,7 @@ export type Database = {
           page_name: string
           page_url: string | null
           product_type: string | null
+          quality_score: number
           search_term: string | null
           status: string
           structure: string | null
