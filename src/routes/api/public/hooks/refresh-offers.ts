@@ -369,8 +369,8 @@ async function runRefresh() {
       deactivated,
       plan_size: plan.length,
       errors: errors.slice(0, 20),
-      settings,
-    },
+      settings: settings as unknown as Record<string, unknown>,
+    } as never,
   });
 
   return {
