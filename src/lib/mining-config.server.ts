@@ -107,16 +107,20 @@ export function buildBlacklistMatcher(list: BlacklistRow[]): BlacklistMatcher {
 
   const fn: BlacklistMatcher = (opts) => {
     for (const c of compiled) {
-      const target =
-        c.kind === "pagina" || c.kind === "página" || c.kind === "page"
-          ? (opts.pageName ?? "")
-          : c.kind === "dominio" || c.kind === "domínio" || c.kind === "domain"
-            ? (opts.link ?? "")
-            : opts.text;
+      const isPage =
+        c.kind === "pagina" || c.kind === "página" || c.kind === "page";
+      const isDomain =
+        c.kind === "dominio" || c.kind === "domínio" || c.kind === "domain";
+      const target = isPage
+        ? (opts.pageName ?? "")
+        : isDomain
+          ? (opts.link ?? "")
+          : opts.text; // exato, palavra, contém, expressao, regex → texto completo
       if (target && c.regex.test(target)) return { kind: c.kind, word: c.word };
     }
     return null;
   };
+
   fn.size = compiled.length;
   return fn;
 }
