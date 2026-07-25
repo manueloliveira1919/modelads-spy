@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { Search, RefreshCw } from "lucide-react";
+import { Search, RefreshCw, ListFilter, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
-import { RequireAuth } from "@/components/require-auth";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
 import {
@@ -47,11 +46,7 @@ export const Route = createFileRoute("/")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(offersQuery);
   },
-  component: () => (
-    <RequireAuth>
-      <Dashboard />
-    </RequireAuth>
-  ),
+  component: Dashboard,
   errorComponent: ({ error }) => (
     <AppShell>
       <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -73,6 +68,7 @@ function Dashboard() {
   const [query, setQuery] = useState("");
 
   const [refreshing, setRefreshing] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -104,6 +100,14 @@ function Dashboard() {
     }
   }
 
+
+  const activeFilterCount =
+    (category !== "todas" ? 1 : 0) +
+    (language !== "todos" ? 1 : 0) +
+    (structure !== "todas" ? 1 : 0) +
+    (productType !== "todos" ? 1 : 0) +
+    (funnel !== "todos" ? 1 : 0) +
+    (scale !== "escalando" ? 1 : 0);
 
   const filtered = useMemo(() => {
     const list = offers.filter((o) => {
@@ -160,6 +164,24 @@ function Dashboard() {
               />
             </div>
             <button
+              onClick={() => setFiltersOpen((v) => !v)}
+              className={cn(
+                "inline-flex items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors",
+                filtersOpen || activeFilterCount > 0
+                  ? "border-brand bg-brand/10 text-brand"
+                  : "border-border bg-card text-foreground hover:border-accent",
+              )}
+            >
+              <ListFilter className="h-4 w-4" />
+              Filtros
+              {activeFilterCount > 0 && (
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-brand-foreground">
+                  {activeFilterCount}
+                </span>
+              )}
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", filtersOpen && "rotate-180")} />
+            </button>
+            <button
               onClick={handleRefresh}
               disabled={refreshing}
               className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
@@ -177,6 +199,7 @@ function Dashboard() {
           </div>
         )}
 
+        {filtersOpen && (
         <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
           <FilterRow label="Status de Escala">
             <FilterChip active={scale === "escalando"} onClick={() => setScale("escalando")}>
@@ -267,6 +290,7 @@ function Dashboard() {
           </FilterRow>
 
         </div>
+        )}
 
 
         {filtered.length === 0 ? (
