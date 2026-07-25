@@ -24,7 +24,9 @@ export interface MiningSettings {
   page_size: number;
   per_keyword_limit: number;
   auto_refresh: boolean;
+  max_pages: number;
 }
+
 
 export async function loadActiveKeywords(): Promise<KeywordRow[]> {
   const { data, error } = await supabaseAdmin
