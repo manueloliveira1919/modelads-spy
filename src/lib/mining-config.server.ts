@@ -70,8 +70,10 @@ export async function loadMiningSettings(): Promise<MiningSettings> {
     page_size: row.page_size ?? 50,
     per_keyword_limit: row.per_keyword_limit ?? 50,
     auto_refresh: row.auto_refresh ?? true,
+    max_pages: row.max_pages ?? 2,
   };
 }
+
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
