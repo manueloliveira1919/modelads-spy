@@ -3,19 +3,19 @@ import { useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import {
   ArrowLeft,
-  Clock,
   Copy,
   Download,
   ExternalLink,
   FileText,
-  Layers,
   Check,
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { StatusBadge } from "@/components/offer-card";
+import { StatusBadge, CATEGORY_STYLES } from "@/components/offer-card";
 import { getOffer } from "@/lib/offers.functions";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+
+const LANG_FLAGS: Record<string, string> = { PT: "🇧🇷", ES: "🇪🇸", EN: "🇺🇸" };
 
 const offerQuery = (id: string) =>
   queryOptions({
@@ -153,14 +153,27 @@ Status: ${statusLabel}`;
                 </p>
                 <h1 className="mt-1 font-display text-2xl font-bold">{offer.page}</h1>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Tag>{offer.category}</Tag>
-                {offer.structure && (
-                  <Tag icon={<Layers className="h-3 w-3" />}>{offer.structure}</Tag>
-                )}
-                <Tag>{offer.language}</Tag>
-                <Tag icon={<Clock className="h-3 w-3" />}>{offer.activeDays}d ativo</Tag>
-                <Tag>{offer.activeAds} anúncios</Tag>
+              <div className="grid grid-cols-3 gap-2">
+                <InfoBox label="Categoria" value={offer.category} className={CATEGORY_STYLES[offer.category]} />
+                <InfoBox
+                  label="Estrutura"
+                  value={offer.structure ?? "—"}
+                  className="bg-vsl/15 text-vsl ring-1 ring-inset ring-vsl/30"
+                />
+                <InfoBox
+                  label="Idioma"
+                  value={`${LANG_FLAGS[offer.language] ?? ""} ${offer.language}`}
+                />
+                <InfoBox label="Dias ativo" value={`⏰ ${offer.activeDays}d`} />
+                <InfoBox
+                  label="Anúncios"
+                  value={offer.activeAds > 50 && offer.status === "escaladissima" ? `${offer.activeAds} 🔥` : offer.activeAds}
+                />
+                <InfoBox label="Status" value={statusLabel} className={cn(
+                  offer.status === "escaladissima" && "bg-hot/15 text-hot ring-1 ring-inset ring-hot/30",
+                  offer.status === "crescendo" && "bg-warm/15 text-warm ring-1 ring-inset ring-warm/30",
+                  offer.status === "testando" && "bg-secondary text-secondary-foreground",
+                )} />
               </div>
               <div className="rounded-xl border border-border bg-background p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -215,6 +228,7 @@ Status: ${statusLabel}`;
               <div className="mt-4 space-y-2">
                 {offer.linkUrl ? (
                   <ExternalLinkRow
+                    emoji="🌐"
                     href={offer.linkUrl}
                     title="Ver página de destino"
                     subtitle="Abrir a landing page do anúncio"
@@ -225,12 +239,14 @@ Status: ${statusLabel}`;
                   </div>
                 )}
                 <ExternalLinkRow
+                  emoji="📘"
                   href={offer.pageUrl}
                   title="Página do anunciante"
                   subtitle="Ver perfil no Facebook"
                 />
                 {offer.adSnapshotUrl && (
                   <ExternalLinkRow
+                    emoji="🎬"
                     href={offer.adSnapshotUrl}
                     title="Ver anúncio original"
                     subtitle="Abrir prévia do criativo na Meta"
@@ -238,6 +254,7 @@ Status: ${statusLabel}`;
                 )}
                 {offer.adLibraryUrl && (
                   <ExternalLinkRow
+                    emoji="📚"
                     href={offer.adLibraryUrl}
                     title="Biblioteca de Anúncios"
                     subtitle="Ver todos os anúncios ativos"
@@ -253,12 +270,20 @@ Status: ${statusLabel}`;
   );
 }
 
-function Tag({ children, icon }: { children: React.ReactNode; icon?: React.ReactNode }) {
+function InfoBox({
+  label,
+  value,
+  className,
+}: {
+  label: string;
+  value: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2.5 py-1 text-xs font-medium text-secondary-foreground">
-      {icon}
-      {children}
-    </span>
+    <div className={cn("rounded-lg px-2.5 py-2 text-center", className ?? "bg-secondary text-secondary-foreground")}>
+      <div className="truncate text-sm font-bold">{value}</div>
+      <div className="mt-0.5 text-[10px] uppercase tracking-wide opacity-80">{label}</div>
+    </div>
   );
 }
 
@@ -337,10 +362,12 @@ function ExternalLinkRow({
   href,
   title,
   subtitle,
+  emoji,
 }: {
   href: string;
   title: string;
   subtitle: string;
+  emoji?: string;
 }) {
   return (
     <a
@@ -350,7 +377,10 @@ function ExternalLinkRow({
       className="flex items-center justify-between rounded-lg border border-border bg-background px-4 py-3 hover:border-accent"
     >
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium">{title}</p>
+        <p className="truncate text-base font-bold text-foreground">
+          {emoji && <span className="mr-1.5">{emoji}</span>}
+          {title}
+        </p>
         <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
       </div>
       <ExternalLink className="h-4 w-4 shrink-0 text-muted-foreground" />
