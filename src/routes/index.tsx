@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { Search, RefreshCw, ListFilter, ChevronDown } from "lucide-react";
+import { Search, RefreshCw, ListFilter, ChevronDown, Star, Wand2, Compass, Crown } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { OfferCard } from "@/components/offer-card";
@@ -58,6 +59,19 @@ export const Route = createFileRoute("/")({
 
 type ScaleFilter = "escalando" | "todos" | "escaladissima";
 
+function useFavoritesCount() {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    try {
+      const arr = JSON.parse(localStorage.getItem("modelads:favorites") || "[]");
+      setCount(Array.isArray(arr) ? arr.length : 0);
+    } catch {
+      setCount(0);
+    }
+  }, []);
+  return count;
+}
+
 function Dashboard() {
   const [category, setCategory] = useState<OfferCategory | "todas">("todas");
   const [language, setLanguage] = useState<OfferLanguage | "todos">("todos");
@@ -74,6 +88,11 @@ function Dashboard() {
 
   const { data } = useSuspenseQuery(offersQuery);
   const offers = data.offers;
+  const favCount = useFavoritesCount();
+  const { user, isAdmin, isPro } = useAuth();
+  const displayName =
+    (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0];
+  const planLabel = isAdmin ? "Admin" : isPro ? "Pro" : "Starter";
 
   async function handleRefresh() {
     if (refreshing) return;
@@ -143,6 +162,23 @@ function Dashboard() {
   return (
     <AppShell>
       <div className="space-y-8">
+        <div>
+          <h2 className="font-display text-2xl font-extrabold text-gold">
+            👋 Bom garimpo{displayName ? `, ${displayName}` : ""}.
+          </h2>
+          <p className="mt-1.5 font-mono text-sm text-muted-foreground">
+            O banco tem <span className="font-semibold text-hot">{escaladas} escaladíssimas</span> e{" "}
+            <span className="font-semibold text-warm">{crescendo} crescendo</span> agora mesmo.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <StatCard icon={<Star className="h-4 w-4" />} label="Favoritos" value={favCount} />
+          <StatCard icon={<Wand2 className="h-4 w-4" />} label="Ferramentas usadas" value="Em breve" />
+          <StatCard icon={<Compass className="h-4 w-4" />} label="Análises Spy AI" value="Em breve" />
+          <StatCard icon={<Crown className="h-4 w-4" />} label="Plano atual" value={planLabel} />
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
           <div className="min-w-0">
             <h1 className="font-display text-3xl font-bold tracking-tight sm:text-4xl">
@@ -308,6 +344,24 @@ function Dashboard() {
         )}
       </div>
     </AppShell>
+  );
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-4">
+      <div className="text-muted-foreground">{icon}</div>
+      <div className="mt-2 truncate font-display text-lg font-bold text-foreground">{value}</div>
+      <div className="mt-0.5 text-xs text-muted-foreground">{label}</div>
+    </div>
   );
 }
 
