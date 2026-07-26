@@ -156,16 +156,12 @@ export function OfferCard({ offer }: { offer: Offer }) {
               label="anúncios"
               value={offer.activeAds}
             />
-            {price ? (
-              <MiniStatBox
-                icon={<Tag className="h-3 w-3" />}
-                label="ticket"
-                value={price}
-                valueClassName="text-warm"
-              />
-            ) : (
-              <div />
-            )}
+            <MiniStatBox
+              icon={<Tag className="h-3 w-3" />}
+              label="ticket"
+              value={price ?? "—"}
+              valueClassName={price ? "text-warm" : "text-muted-foreground"}
+            />
           </div>
         </div>
       </Link>
