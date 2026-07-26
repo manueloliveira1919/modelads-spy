@@ -7,8 +7,8 @@ import {
   stripSnapshotSecrets,
 } from "@/lib/offer-heuristics";
 
-// Endpoint chamado pelo cron (pg_cron) a cada 24h para atualizar as ofertas.
-// Também pode ser disparado manualmente pelo painel admin.
+// Endpoint chamado pelo cron (pg_cron) e pelo painel admin.
+// Segurança: exige service-role, x-cron-secret ou bearer de usuário admin.
 
 interface MetaAdItem {
   id?: string;
@@ -31,6 +31,9 @@ interface MetaResponse {
 }
 
 const META_API = "https://graph.facebook.com/v20.0/ads_archive";
+const SNAPSHOT_BATCH_SIZE = 8;
+const SNAPSHOT_TIMEOUT_MS = 8000;
+const SNAPSHOT_MAX_ATTEMPTS = 3;
 
 async function fetchMeta(url: string): Promise<MetaResponse> {
   const res = await fetch(url);
@@ -71,7 +74,6 @@ function buildSearchUrl(opts: {
   return `${META_API}?${params.toString()}`;
 }
 
-// Paginate via paging.next (Meta returns full URL), respecting max_pages.
 async function searchTermPaginated(opts: {
   token: string;
   term: string;
@@ -130,11 +132,12 @@ function firstMatch(html: string, patterns: RegExp[]): string | null {
   return null;
 }
 
-async function extractSnapshotMedia(snapshotUrl: string | null): Promise<SnapshotMedia> {
-  if (!snapshotUrl) return { imageUrl: null, videoUrl: null, linkUrl: null };
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function fetchSnapshotOnce(snapshotUrl: string): Promise<SnapshotMedia> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), SNAPSHOT_TIMEOUT_MS);
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 8000);
     const res = await fetch(snapshotUrl, {
       signal: controller.signal,
       headers: {
@@ -143,10 +146,8 @@ async function extractSnapshotMedia(snapshotUrl: string | null): Promise<Snapsho
         "accept-language": "pt-BR,pt;q=0.9,en;q=0.8",
       },
     });
-    clearTimeout(timer);
-    if (!res.ok) return { imageUrl: null, videoUrl: null, linkUrl: null };
+    if (!res.ok) throw new Error(`snapshot http ${res.status}`);
     const html = await res.text();
-
     const videoUrl = firstMatch(html, [
       /"video_hd_url":"([^"]+)"/,
       /"video_sd_url":"([^"]+)"/,
@@ -160,14 +161,60 @@ async function extractSnapshotMedia(snapshotUrl: string | null): Promise<Snapsho
       /"link_url":"([^"]+)"/,
       /"snapshot_url":"([^"]+)".*?"link_url":"([^"]+)"/,
     ]);
-
     return { imageUrl, videoUrl, linkUrl };
-  } catch {
-    return { imageUrl: null, videoUrl: null, linkUrl: null };
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-// Score de qualidade 0-100. Cada critério vale ~12 pts; escalabilidade pesa mais.
+interface SnapshotOutcome {
+  media: SnapshotMedia;
+  attempts: number;
+  error: string | null;
+}
+
+async function extractSnapshotMedia(
+  snapshotUrl: string | null,
+): Promise<SnapshotOutcome> {
+  const empty: SnapshotMedia = { imageUrl: null, videoUrl: null, linkUrl: null };
+  if (!snapshotUrl) return { media: empty, attempts: 0, error: null };
+  let lastErr: unknown = null;
+  for (let attempt = 1; attempt <= SNAPSHOT_MAX_ATTEMPTS; attempt++) {
+    try {
+      const media = await fetchSnapshotOnce(snapshotUrl);
+      return { media, attempts: attempt, error: null };
+    } catch (err) {
+      lastErr = err;
+      if (attempt < SNAPSHOT_MAX_ATTEMPTS) {
+        // Backoff exponencial: 400ms, 800ms, ...
+        await sleep(400 * 2 ** (attempt - 1));
+      }
+    }
+  }
+  return {
+    media: empty,
+    attempts: SNAPSHOT_MAX_ATTEMPTS,
+    error: (lastErr as Error)?.message ?? "snapshot failed",
+  };
+}
+
+// Executa `fn` em lotes paralelos de `size`. Erros individuais viram resultados nulos.
+async function runInBatches<T, R>(
+  items: T[],
+  size: number,
+  fn: (item: T, idx: number) => Promise<R>,
+): Promise<(R | null)[]> {
+  const out: (R | null)[] = new Array(items.length).fill(null);
+  for (let i = 0; i < items.length; i += size) {
+    const chunk = items.slice(i, i + size);
+    const results = await Promise.allSettled(chunk.map((it, j) => fn(it, i + j)));
+    results.forEach((r, j) => {
+      out[i + j] = r.status === "fulfilled" ? r.value : null;
+    });
+  }
+  return out;
+}
+
 function computeQualityScore(inputs: {
   languageOk: boolean;
   categoryOk: boolean;
@@ -192,7 +239,12 @@ function computeQualityScore(inputs: {
   return Math.min(100, score);
 }
 
-async function runRefresh() {
+interface RunOptions {
+  triggeredBy: "cron" | "admin" | "service";
+  respectAutoRefresh: boolean;
+}
+
+async function runRefresh(opts: RunOptions) {
   const token = process.env.META_ACCESS_TOKEN;
   if (!token) throw new Error("META_ACCESS_TOKEN não configurado");
 
@@ -206,13 +258,8 @@ async function runRefresh() {
     buildBlacklistMatcher,
   } = await import("@/lib/mining-config.server");
 
+  const t0 = Date.now();
   const startedAt = new Date().toISOString();
-  const { data: runRow } = await supabaseAdmin
-    .from("meta_refresh_runs")
-    .insert({ status: "running", started_at: startedAt })
-    .select("id")
-    .single();
-  const runId = runRow?.id as string | undefined;
 
   const [keywords, blacklist, activeCategories, settings] = await Promise.all([
     loadActiveKeywords(),
@@ -220,6 +267,25 @@ async function runRefresh() {
     loadActiveCategories(),
     loadMiningSettings(),
   ]);
+
+  // Cron respeita mining_settings.auto_refresh.
+  if (opts.respectAutoRefresh && !settings.auto_refresh) {
+    await supabaseAdmin.from("mining_logs").insert({
+      kind: "run",
+      status: "skipped",
+      summary: "auto_refresh desligado — cron ignorado",
+      details: { triggered_by: opts.triggeredBy, started_at: startedAt } as never,
+    });
+    return { ok: true, skipped: true, reason: "auto_refresh_disabled" };
+  }
+
+  const { data: runRow } = await supabaseAdmin
+    .from("meta_refresh_runs")
+    .insert({ status: "running", started_at: startedAt })
+    .select("id")
+    .single();
+  const runId = runRow?.id as string | undefined;
+
   const plan = buildSearchPlan(keywords, settings);
   const matchBlacklist = buildBlacklistMatcher(blacklist);
   const allowedLangs = new Set(
@@ -231,18 +297,15 @@ async function runRefresh() {
   const bumpDiscard = (reason: string) =>
     discardReasons.set(reason, (discardReasons.get(reason) ?? 0) + 1);
 
-  const byPage = new Map<
-    string,
-    {
-      ads: (MetaAdItem & {
-        _category: string | null;
-        _language: string;
-        _term: string;
-      })[];
-      pageName: string;
-    }
-  >();
+  type EnrichedAd = MetaAdItem & {
+    _category: string | null;
+    _language: string;
+    _term: string;
+  };
+  const byPage = new Map<string, { ads: EnrichedAd[]; pageName: string }>();
 
+  // ---------- Fase 1: consultas Meta ----------
+  const tMetaStart = Date.now();
   let searched = 0;
   for (const step of plan) {
     try {
@@ -274,6 +337,7 @@ async function runRefresh() {
       errors.push(`${step.category ?? "—"}/${step.term}: ${(err as Error).message}`);
     }
   }
+  const metaMs = Date.now() - tMetaStart;
 
   const totalAdsCollected = Array.from(byPage.values()).reduce(
     (acc, b) => acc + b.ads.length,
@@ -290,38 +354,74 @@ async function runRefresh() {
   let skippedNoCategory = 0;
   let skippedNoLanding = 0;
   let deactivated = 0;
+  let snapshotErrors = 0;
+  let snapshotRetries = 0;
+  let snapshotMs = 0;
+  let writeMs = 0;
+  let classifyMs = 0;
 
   if (collectionValid) {
-    // Dedup composto por (page_id + headline + landing) através do run inteiro.
-    const compositeSeen = new Set<string>();
-
+    // Achata todos os anúncios preservando o page bucket.
+    type FlatAd = { pageId: string; pageName: string; activeAdsCount: number; ad: EnrichedAd };
+    const flat: FlatAd[] = [];
+    const seenArchiveGlobal = new Set<string>();
     for (const [pageId, bucket] of byPage.entries()) {
-      const activeAdsCount = bucket.ads.length;
-      const status = classifyStatus(activeAdsCount);
-
-      const seenArchive = new Set<string>();
       for (const ad of bucket.ads) {
         const archiveId = ad.id;
         if (!archiveId) continue;
-        if (seenArchive.has(archiveId)) {
+        if (seenArchiveGlobal.has(archiveId)) {
           skippedDuplicate++;
           bumpDiscard("duplicate_archive_id");
           continue;
         }
-        seenArchive.add(archiveId);
+        seenArchiveGlobal.add(archiveId);
+        flat.push({
+          pageId,
+          pageName: bucket.pageName,
+          activeAdsCount: bucket.ads.length,
+          ad,
+        });
+      }
+    }
+
+    // ---------- Fase 2: snapshots em paralelo ----------
+    const tSnapStart = Date.now();
+    const snapshotUrls = flat.map((f) => stripSnapshotSecrets(f.ad.ad_snapshot_url));
+    const snapshotResults = await runInBatches(
+      snapshotUrls,
+      SNAPSHOT_BATCH_SIZE,
+      (url) => extractSnapshotMedia(url),
+    );
+    snapshotMs = Date.now() - tSnapStart;
+    for (const r of snapshotResults) {
+      if (!r) {
+        snapshotErrors++;
+        continue;
+      }
+      if (r.error) snapshotErrors++;
+      if (r.attempts > 1) snapshotRetries += r.attempts - 1;
+    }
+
+    // ---------- Fase 3: classificação + gravação ----------
+    const tClassifyStart = Date.now();
+    const compositeSeen = new Set<string>();
+    const rowsToUpsert: Record<string, unknown>[] = [];
+
+    for (let i = 0; i < flat.length; i++) {
+      try {
+        const { pageId, pageName, activeAdsCount, ad } = flat[i];
+        const snapshotRes = snapshotResults[i];
+        const media = snapshotRes?.media ?? { imageUrl: null, videoUrl: null, linkUrl: null };
+        const snapshot = snapshotUrls[i];
 
         const bodyText = ad.ad_creative_bodies?.[0] ?? "";
         const title = ad.ad_creative_link_titles?.[0] ?? "";
         const desc = ad.ad_creative_link_descriptions?.[0] ?? "";
-        const fullText = `${bucket.pageName} ${title} ${bodyText} ${desc}`;
+        const fullText = `${pageName} ${title} ${bodyText} ${desc}`;
 
-        const snapshot = stripSnapshotSecrets(ad.ad_snapshot_url);
-        const media = await extractSnapshotMedia(snapshot);
-
-        // 1) Blacklist (palavra, expressão, página, domínio, regex).
         const hit = matchBlacklist({
           text: fullText,
-          pageName: bucket.pageName,
+          pageName,
           link: media.linkUrl,
         });
         if (hit) {
@@ -330,10 +430,8 @@ async function runRefresh() {
           continue;
         }
 
-        // 2) Idioma — se admin restringiu, respeita.
         const language = normalizeAdLanguage(ad.languages, ad._language);
         if (allowedLangs.size && !allowedLangs.has(language) && !allowedLangs.has("BR")) {
-          // BR ~ PT: quando lista permitir BR, aceitamos PT.
           if (!(allowedLangs.has("BR") && language === "PT")) {
             skippedLanguage++;
             bumpDiscard("language_mismatch");
@@ -341,18 +439,14 @@ async function runRefresh() {
           }
         }
 
-        // 3) Categoria: precisa ter categoria válida vinda da keyword.
         const finalCategory =
-          ad._category && activeCategories.has(ad._category)
-            ? ad._category
-            : null;
+          ad._category && activeCategories.has(ad._category) ? ad._category : null;
         if (!finalCategory) {
           skippedNoCategory++;
           bumpDiscard("category_missing");
           continue;
         }
 
-        // 4) Dedupe composto — page_id + headline + landing.
         const headline = title || bodyText.slice(0, 120);
         const compositeKey = `${pageId}|${headline.slice(0, 100)}|${media.linkUrl ?? ""}`;
         if (compositeSeen.has(compositeKey)) {
@@ -370,8 +464,6 @@ async function runRefresh() {
         const hasLanding = !!media.linkUrl;
         const hasCreative = !!creativeUrl;
 
-        // Landing page é um mínimo importante: se não temos landing E não temos criativo,
-        // é ruído — descarta. Se tem pelo menos criativo, mantém (comum em ads sem CTA externo).
         if (!hasLanding && !hasCreative) {
           skippedNoLanding++;
           bumpDiscard("no_landing_no_creative");
@@ -379,7 +471,10 @@ async function runRefresh() {
         }
 
         const qualityScore = computeQualityScore({
-          languageOk: allowedLangs.size === 0 || allowedLangs.has(language) || (allowedLangs.has("BR") && language === "PT"),
+          languageOk:
+            allowedLangs.size === 0 ||
+            allowedLangs.has(language) ||
+            (allowedLangs.has("BR") && language === "PT"),
           categoryOk: true,
           hasPrice,
           hasLanding,
@@ -388,10 +483,10 @@ async function runRefresh() {
           hasCreative,
         });
 
-        const row = {
-          ad_archive_id: archiveId,
+        rowsToUpsert.push({
+          ad_archive_id: ad.id,
           page_id: pageId,
-          page_name: bucket.pageName,
+          page_name: pageName,
           category: finalCategory,
           language,
           country: "BR",
@@ -406,29 +501,46 @@ async function runRefresh() {
           is_active: true,
           active_days: activeDays,
           active_ads_count: activeAdsCount,
-          status,
+          status: classifyStatus(activeAdsCount),
           structure,
           product_type: inferProductType(`${title} ${bodyText} ${desc}`),
           search_term: ad._term,
           quality_score: qualityScore,
           last_seen: new Date().toISOString(),
-        };
-
-        // Sempre upsert por ad_archive_id — prioriza atualização sobre duplicação.
-        const { error } = await supabaseAdmin
-          .from("meta_offers")
-          .upsert(row, { onConflict: "ad_archive_id" });
-        if (error) errors.push(`upsert ${archiveId}: ${error.message}`);
-        else upserts++;
+        });
+      } catch (err) {
+        errors.push(`classify ${flat[i]?.ad?.id}: ${(err as Error).message}`);
       }
     }
+    classifyMs = Date.now() - tClassifyStart;
 
-    const { count } = await supabaseAdmin
-      .from("meta_offers")
-      .update({ is_active: false }, { count: "exact" })
-      .eq("is_active", true)
-      .lt("last_seen", startedAt);
-    deactivated = count ?? 0;
+    // ---------- Fase 4: upsert em lote ----------
+    const tWriteStart = Date.now();
+    const CHUNK = 200;
+    for (let i = 0; i < rowsToUpsert.length; i += CHUNK) {
+      const chunk = rowsToUpsert.slice(i, i + CHUNK);
+      try {
+        const { error } = await supabaseAdmin
+          .from("meta_offers")
+          .upsert(chunk as never, { onConflict: "ad_archive_id" });
+        if (error) errors.push(`upsert chunk: ${error.message}`);
+        else upserts += chunk.length;
+      } catch (err) {
+        errors.push(`upsert chunk: ${(err as Error).message}`);
+      }
+    }
+    writeMs = Date.now() - tWriteStart;
+
+    try {
+      const { count } = await supabaseAdmin
+        .from("meta_offers")
+        .update({ is_active: false }, { count: "exact" })
+        .eq("is_active", true)
+        .lt("last_seen", startedAt);
+      deactivated = count ?? 0;
+    } catch (err) {
+      errors.push(`deactivate: ${(err as Error).message}`);
+    }
   } else {
     errors.push(
       `coleta invalida: pages=${byPage.size} ads=${totalAdsCollected} errorRate=${errorRate.toFixed(2)} — mantendo ofertas atuais ativas`,
@@ -442,9 +554,28 @@ async function runRefresh() {
       : "success";
 
   const finishedAt = new Date().toISOString();
+  const totalMs = Date.now() - t0;
   const discardBreakdown = Object.fromEntries(discardReasons.entries());
   const skippedNoise =
-    skippedBlacklist + skippedDuplicate + skippedLanguage + skippedNoCategory + skippedNoLanding;
+    skippedBlacklist +
+    skippedDuplicate +
+    skippedLanguage +
+    skippedNoCategory +
+    skippedNoLanding;
+
+  const metrics = {
+    total_ms: totalMs,
+    meta_ms: metaMs,
+    snapshot_ms: snapshotMs,
+    classify_ms: classifyMs,
+    write_ms: writeMs,
+    snapshot_batch_size: SNAPSHOT_BATCH_SIZE,
+    snapshot_errors: snapshotErrors,
+    snapshot_retries: snapshotRetries,
+    avg_snapshot_ms:
+      totalAdsCollected > 0 ? Math.round(snapshotMs / totalAdsCollected) : 0,
+    triggered_by: opts.triggeredBy,
+  };
 
   if (runId) {
     await supabaseAdmin
@@ -472,6 +603,7 @@ async function runRefresh() {
           skipped_no_landing: skippedNoLanding,
           skipped_noise: skippedNoise,
           discard_breakdown: discardBreakdown,
+          metrics,
         } as never,
       })
       .eq("id", runId);
@@ -480,7 +612,7 @@ async function runRefresh() {
   await supabaseAdmin.from("mining_logs").insert({
     kind: "run",
     status: runStatus,
-    summary: `plan=${plan.length} pages=${byPage.size} upserts=${upserts} descartados=${skippedNoise} erros=${errors.length}`,
+    summary: `plan=${plan.length} pages=${byPage.size} upserts=${upserts} descartados=${skippedNoise} erros=${errors.length} ${totalMs}ms`,
     details: {
       started_at: startedAt,
       finished_at: finishedAt,
@@ -492,6 +624,7 @@ async function runRefresh() {
       plan_size: plan.length,
       errors: errors.slice(0, 20),
       settings: settings as unknown as Record<string, unknown>,
+      metrics,
     } as never,
   });
 
@@ -508,7 +641,51 @@ async function runRefresh() {
     skippedNoLanding,
     errors: errors.length,
     plan: plan.length,
+    metrics,
   };
+}
+
+// ---------- Autenticação do endpoint ----------
+async function authorize(
+  request: Request,
+): Promise<{ ok: true; source: RunOptions["triggeredBy"] } | { ok: false; reason: string }> {
+  const cronSecret = process.env.CRON_SECRET;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  const headerCron = request.headers.get("x-cron-secret");
+  if (cronSecret && headerCron && headerCron === cronSecret) {
+    return { ok: true, source: "cron" };
+  }
+
+  const apiKey = request.headers.get("apikey");
+  if (serviceKey && apiKey && apiKey === serviceKey) {
+    return { ok: true, source: "service" };
+  }
+
+  const auth = request.headers.get("authorization") ?? "";
+  const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : null;
+  if (bearer && serviceKey && bearer === serviceKey) {
+    return { ok: true, source: "service" };
+  }
+  if (bearer) {
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data, error } = await supabaseAdmin.auth.getUser(bearer);
+      if (error || !data.user) return { ok: false, reason: "invalid_token" };
+      const { data: role } = await supabaseAdmin
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", data.user.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (role) return { ok: true, source: "admin" };
+      return { ok: false, reason: "not_admin" };
+    } catch {
+      return { ok: false, reason: "auth_error" };
+    }
+  }
+
+  return { ok: false, reason: "missing_credentials" };
 }
 
 export const Route = createFileRoute("/api/public/hooks/refresh-offers")({
@@ -518,11 +695,21 @@ export const Route = createFileRoute("/api/public/hooks/refresh-offers")({
         Response.json({
           ok: true,
           endpoint: "refresh-offers",
-          hint: "POST para disparar a atualização (usado pelo cron).",
+          hint: "POST autenticado (admin bearer, service role ou x-cron-secret).",
         }),
-      POST: async () => {
+      POST: async ({ request }) => {
+        const auth = await authorize(request);
+        if (!auth.ok) {
+          return new Response(
+            JSON.stringify({ ok: false, error: "unauthorized", reason: auth.reason }),
+            { status: 401, headers: { "content-type": "application/json" } },
+          );
+        }
         try {
-          const result = await runRefresh();
+          const result = await runRefresh({
+            triggeredBy: auth.source,
+            respectAutoRefresh: auth.source === "cron",
+          });
           return Response.json(result);
         } catch (err) {
           const message = (err as Error).message;
