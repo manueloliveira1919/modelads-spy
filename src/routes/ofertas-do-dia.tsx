@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Flame } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
-import { RequireAuth } from "@/components/require-auth";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
 
@@ -24,19 +23,17 @@ export const Route = createFileRoute("/ofertas-do-dia")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(offersQuery);
   },
-  component: () => (
-    <RequireAuth>
-      <Page />
-    </RequireAuth>
-  ),
+  component: Page,
 });
 
 function Page() {
   const { data } = useSuspenseQuery(offersQuery);
 
-  // "Do dia" = ativos há 1 dia ou menos. Fallback: até 3 dias se estiver vazio.
-  const recent = data.offers.filter((o) => o.activeDays <= 1);
-  const fallback = data.offers.filter((o) => o.activeDays <= 3);
+  // "Do dia" = ativos há 1 dia ou menos, e só ofertas ja mineradas/validadas
+  // (crescendo ou escaladissima) — "testando" nunca aparece aqui.
+  const validadas = data.offers.filter((o) => o.status !== "testando");
+  const recent = validadas.filter((o) => o.activeDays <= 1);
+  const fallback = validadas.filter((o) => o.activeDays <= 3);
   const list = recent.length > 0 ? recent : fallback;
 
   return (
