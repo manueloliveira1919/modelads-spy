@@ -77,7 +77,12 @@ function MineracaoPage() {
 
   const mineMut = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/public/hooks/refresh-offers", { method: "POST" });
+      const { data: sess } = await supabase.auth.getSession();
+      const token = sess.session?.access_token;
+      const res = await fetch("/api/public/hooks/refresh-offers", {
+        method: "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       if (!res.ok) throw new Error(await res.text());
       return res.json();
     },
