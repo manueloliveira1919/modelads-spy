@@ -50,7 +50,7 @@ function useFavorite(id: string) {
 }
 
 // Paleta por categoria — cores sutis com boa legibilidade no dark mode.
-const CATEGORY_STYLES: Record<OfferCategory, string> = {
+export const CATEGORY_STYLES: Record<OfferCategory, string> = {
   Info: "bg-sky-500/15 text-sky-300 ring-1 ring-inset ring-sky-500/30",
   Nutra: "bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30",
   Relacionamento: "bg-pink-500/15 text-pink-300 ring-1 ring-inset ring-pink-500/30",
@@ -136,14 +136,14 @@ export function OfferCard({ offer }: { offer: Offer }) {
             )}
           </div>
 
-          {/* ESTATÍSTICAS */}
-          <div className="mt-auto grid grid-cols-3 gap-2 rounded-xl border border-border/70 bg-background/40 p-3">
-            <Stat
+          {/* ESTATÍSTICAS — cada uma na sua caixinha, estilo destacado */}
+          <div className="mt-auto grid grid-cols-3 gap-1.5">
+            <MiniStatBox
               icon={<Clock className="h-3 w-3" />}
-              label="Ativo"
-              value={`${offer.activeDays}d`}
+              label="dias"
+              value={`${offer.activeDays}`}
             />
-            <Stat
+            <MiniStatBox
               icon={
                 offer.status === "escaladissima" ? (
                   <Flame className="h-3 w-3 text-hot" />
@@ -153,19 +153,15 @@ export function OfferCard({ offer }: { offer: Offer }) {
                   <Sparkles className="h-3 w-3" />
                 )
               }
-              label="Anúncios"
+              label="anúncios"
               value={offer.activeAds}
-              highlight
             />
-            {price ? (
-              <Stat
-                icon={<Tag className="h-3 w-3 text-brand" />}
-                label="Ticket"
-                value={price}
-              />
-            ) : (
-              <div />
-            )}
+            <MiniStatBox
+              icon={<Tag className="h-3 w-3" />}
+              label="ticket"
+              value={price ?? "—"}
+              valueClassName={price ? "text-warm" : "text-muted-foreground"}
+            />
           </div>
         </div>
       </Link>
@@ -205,6 +201,30 @@ export function OfferCard({ offer }: { offer: Offer }) {
   );
 }
 
+function MiniStatBox({
+  icon,
+  label,
+  value,
+  valueClassName,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  valueClassName?: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/60 py-1.5 text-center">
+      <div className={cn("truncate font-display text-sm font-bold leading-none", valueClassName ?? "text-foreground")}>
+        {value}
+      </div>
+      <div className="mt-1 flex items-center justify-center gap-1 text-[9px] uppercase tracking-wider text-muted-foreground">
+        {icon}
+        {label}
+      </div>
+    </div>
+  );
+}
+
 function MediaBadges({ offer }: { offer: Offer }) {
   return (
     <>
@@ -218,40 +238,17 @@ function MediaBadges({ offer }: { offer: Offer }) {
   );
 }
 
+const LANG_FLAGS: Record<string, string> = {
+  PT: "🇧🇷",
+  ES: "🇪🇸",
+  EN: "🇺🇸",
+};
+
 function LangBadge({ lang }: { lang: string }) {
   return (
     <span className="rounded-md bg-black/60 px-2 py-1 text-[10px] font-medium text-white backdrop-blur">
-      {lang}
+      {LANG_FLAGS[lang] ?? ""} {lang}
     </span>
-  );
-}
-
-function Stat({
-  icon,
-  label,
-  value,
-  highlight,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: React.ReactNode;
-  highlight?: boolean;
-}) {
-  return (
-    <div className="min-w-0">
-      <div className="flex items-center gap-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-        {icon}
-        {label}
-      </div>
-      <div
-        className={cn(
-          "mt-0.5 truncate font-display font-bold leading-none text-foreground",
-          highlight ? "text-xl" : "text-sm",
-        )}
-      >
-        {value}
-      </div>
-    </div>
   );
 }
 
