@@ -603,39 +603,72 @@ async function runRefresh(opts: RunOptions) {
       }
     }
     classifyMs = Date.now() - tClassifyStart;
+    await checkpoint("classify.phase.done", {
+      classify_ms: classifyMs,
+      rows_ready: rowsToUpsert.length,
+      skipped_blacklist: skippedBlacklist,
+      skipped_duplicate: skippedDuplicate,
+      skipped_language: skippedLanguage,
+      skipped_no_category: skippedNoCategory,
+      skipped_no_landing: skippedNoLanding,
+    });
 
     // ---------- Fase 4: upsert em lote ----------
     const tWriteStart = Date.now();
     const CHUNK = 200;
+    await checkpoint("write.phase.start", { rows: rowsToUpsert.length, chunk: CHUNK });
     for (let i = 0; i < rowsToUpsert.length; i += CHUNK) {
       const chunk = rowsToUpsert.slice(i, i + CHUNK);
+      const tChunk = Date.now();
       try {
         const { error } = await supabaseAdmin
           .from("meta_offers")
           .upsert(chunk as never, { onConflict: "ad_archive_id" });
         if (error) errors.push(`upsert chunk: ${error.message}`);
         else upserts += chunk.length;
+        await checkpoint("write.chunk.done", {
+          offset: i,
+          size: chunk.length,
+          chunk_ms: Date.now() - tChunk,
+          upserts_so_far: upserts,
+          error: error?.message ?? null,
+        });
       } catch (err) {
         errors.push(`upsert chunk: ${(err as Error).message}`);
+        await checkpoint(
+          "write.chunk.error",
+          { offset: i, size: chunk.length, error: (err as Error).message },
+          "error",
+        );
       }
     }
     writeMs = Date.now() - tWriteStart;
+    await checkpoint("write.phase.done", { write_ms: writeMs, upserts });
 
     try {
+      const tDeact = Date.now();
       const { count } = await supabaseAdmin
         .from("meta_offers")
         .update({ is_active: false }, { count: "exact" })
         .eq("is_active", true)
         .lt("last_seen", startedAt);
       deactivated = count ?? 0;
+      await checkpoint("deactivate.done", { deactivated, deactivate_ms: Date.now() - tDeact });
     } catch (err) {
       errors.push(`deactivate: ${(err as Error).message}`);
+      await checkpoint("deactivate.error", { error: (err as Error).message }, "error");
     }
   } else {
     errors.push(
       `coleta invalida: pages=${byPage.size} ads=${totalAdsCollected} errorRate=${errorRate.toFixed(2)} — mantendo ofertas atuais ativas`,
     );
+    await checkpoint(
+      "collection.invalid",
+      { pages: byPage.size, ads: totalAdsCollected, error_rate: Number(errorRate.toFixed(3)) },
+      "error",
+    );
   }
+
 
   const runStatus = !collectionValid
     ? "blocked"
