@@ -465,6 +465,11 @@ async function runRefresh(opts: RunOptions) {
     // ---------- Fase 2: snapshots em paralelo ----------
     const tSnapStart = Date.now();
     const snapshotUrls = flat.map((f) => stripSnapshotSecrets(f.ad.ad_snapshot_url));
+    await checkpoint("snapshot.phase.start", {
+      total: snapshotUrls.length,
+      batch_size: SNAPSHOT_BATCH_SIZE,
+      timeout_ms: SNAPSHOT_TIMEOUT_MS,
+    });
     const snapshotResults = await runInBatches(
       snapshotUrls,
       SNAPSHOT_BATCH_SIZE,
@@ -479,6 +484,13 @@ async function runRefresh(opts: RunOptions) {
       if (r.error) snapshotErrors++;
       if (r.attempts > 1) snapshotRetries += r.attempts - 1;
     }
+    await checkpoint("snapshot.phase.done", {
+      snapshot_ms: snapshotMs,
+      snapshot_errors: snapshotErrors,
+      snapshot_retries: snapshotRetries,
+      avg_snapshot_ms: snapshotUrls.length ? Math.round(snapshotMs / snapshotUrls.length) : 0,
+    });
+
 
     // ---------- Fase 3: classificação + gravação ----------
     const tClassifyStart = Date.now();
