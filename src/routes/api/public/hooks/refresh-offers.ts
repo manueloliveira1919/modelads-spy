@@ -346,7 +346,19 @@ async function runRefresh(opts: RunOptions) {
   // ---------- Fase 1: consultas Meta ----------
   const tMetaStart = Date.now();
   let searched = 0;
+  await checkpoint("meta.phase.start", { plan_size: plan.length });
+  let stepIndex = 0;
   for (const step of plan) {
+    stepIndex++;
+    const tStep = Date.now();
+    await checkpoint("keyword.start", {
+      index: stepIndex,
+      total: plan.length,
+      term: step.term,
+      category: step.category,
+      country: step.country,
+      language: step.language,
+    });
     try {
       const items = await searchTermPaginated({
         token,
@@ -354,6 +366,11 @@ async function runRefresh(opts: RunOptions) {
         country: step.country,
         limit: settings.per_keyword_limit,
         maxPages: settings.max_pages,
+      });
+      await checkpoint("meta.fetch.done", {
+        term: step.term,
+        returned: items.length,
+        fetch_ms: Date.now() - tStep,
       });
       searched += items.length;
       for (const ad of items) {
@@ -372,8 +389,20 @@ async function runRefresh(opts: RunOptions) {
         });
         byPage.set(pageId, bucket);
       }
+      await checkpoint("keyword.done", {
+        term: step.term,
+        step_ms: Date.now() - tStep,
+        pages_so_far: byPage.size,
+        searched_so_far: searched,
+      });
     } catch (err) {
-      errors.push(`${step.category ?? "—"}/${step.term}: ${(err as Error).message}`);
+      const msg = (err as Error).message;
+      errors.push(`${step.category ?? "—"}/${step.term}: ${msg}`);
+      await checkpoint(
+        "keyword.error",
+        { term: step.term, error: msg, step_ms: Date.now() - tStep },
+        "error",
+      );
     }
   }
   const metaMs = Date.now() - tMetaStart;
@@ -385,6 +414,16 @@ async function runRefresh(opts: RunOptions) {
   const errorRate = plan.length > 0 ? errors.length / plan.length : 1;
   const collectionValid =
     byPage.size > 0 && totalAdsCollected > 0 && errorRate < 0.5;
+
+  await checkpoint("meta.phase.done", {
+    meta_ms: metaMs,
+    pages_seen: byPage.size,
+    total_ads_collected: totalAdsCollected,
+    error_rate: Number(errorRate.toFixed(3)),
+    collection_valid: collectionValid,
+    errors_so_far: errors.length,
+  });
+
 
   let upserts = 0;
   let skippedBlacklist = 0;
