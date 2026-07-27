@@ -261,12 +261,48 @@ async function runRefresh(opts: RunOptions) {
   const t0 = Date.now();
   const startedAt = new Date().toISOString();
 
+  // Checkpoint persistente — grava um row em mining_logs para cada etapa.
+  // Não altera a lógica do pipeline; apenas observabilidade.
+  const runTag = `run_${t0}_${Math.random().toString(36).slice(2, 8)}`;
+  const checkpoint = async (
+    step: string,
+    payload: Record<string, unknown> = {},
+    status: "ok" | "error" | "info" = "info",
+  ) => {
+    try {
+      await supabaseAdmin.from("mining_logs").insert({
+        kind: "checkpoint",
+        status,
+        summary: `[${runTag}] ${step}`,
+        details: {
+          step,
+          run_tag: runTag,
+          ts: new Date().toISOString(),
+          elapsed_ms: Date.now() - t0,
+          ...payload,
+        } as never,
+      });
+    } catch {
+      /* nunca quebrar pipeline por causa de log */
+    }
+  };
+
+  await checkpoint("run.start", { triggered_by: opts.triggeredBy, started_at: startedAt });
+
+  const tLoadStart = Date.now();
   const [keywords, blacklist, activeCategories, settings] = await Promise.all([
     loadActiveKeywords(),
     loadActiveBlacklist(),
     loadActiveCategories(),
     loadMiningSettings(),
   ]);
+  await checkpoint("config.loaded", {
+    load_ms: Date.now() - tLoadStart,
+    keywords_count: keywords.length,
+    blacklist_count: blacklist.length,
+    categories_count: activeCategories.size,
+    settings_snapshot: settings as unknown as Record<string, unknown>,
+  });
 
   // Cron respeita mining_settings.auto_refresh.
   if (opts.respectAutoRefresh && !settings.auto_refresh) {
@@ -276,6 +312,7 @@ async function runRefresh(opts: RunOptions) {
       summary: "auto_refresh desligado — cron ignorado",
       details: { triggered_by: opts.triggeredBy, started_at: startedAt } as never,
     });
+    await checkpoint("run.skipped", { reason: "auto_refresh_disabled" });
     return { ok: true, skipped: true, reason: "auto_refresh_disabled" };
   }
 
@@ -285,12 +322,14 @@ async function runRefresh(opts: RunOptions) {
     .select("id")
     .single();
   const runId = runRow?.id as string | undefined;
+  await checkpoint("run.created", { run_id: runId });
 
   const plan = buildSearchPlan(keywords, settings);
   const matchBlacklist = buildBlacklistMatcher(blacklist);
   const allowedLangs = new Set(
     (settings.languages ?? []).map((l) => l.toUpperCase()),
   );
+  await checkpoint("plan.built", { plan_size: plan.length, allowed_langs: [...allowedLangs] });
 
   const errors: string[] = [];
   const discardReasons = new Map<string, number>();
@@ -307,7 +346,19 @@ async function runRefresh(opts: RunOptions) {
   // ---------- Fase 1: consultas Meta ----------
   const tMetaStart = Date.now();
   let searched = 0;
+  await checkpoint("meta.phase.start", { plan_size: plan.length });
+  let stepIndex = 0;
   for (const step of plan) {
+    stepIndex++;
+    const tStep = Date.now();
+    await checkpoint("keyword.start", {
+      index: stepIndex,
+      total: plan.length,
+      term: step.term,
+      category: step.category,
+      country: step.country,
+      language: step.language,
+    });
     try {
       const items = await searchTermPaginated({
         token,
@@ -315,6 +366,11 @@ async function runRefresh(opts: RunOptions) {
         country: step.country,
         limit: settings.per_keyword_limit,
         maxPages: settings.max_pages,
+      });
+      await checkpoint("meta.fetch.done", {
+        term: step.term,
+        returned: items.length,
+        fetch_ms: Date.now() - tStep,
       });
       searched += items.length;
       for (const ad of items) {
@@ -333,8 +389,20 @@ async function runRefresh(opts: RunOptions) {
         });
         byPage.set(pageId, bucket);
       }
+      await checkpoint("keyword.done", {
+        term: step.term,
+        step_ms: Date.now() - tStep,
+        pages_so_far: byPage.size,
+        searched_so_far: searched,
+      });
     } catch (err) {
-      errors.push(`${step.category ?? "—"}/${step.term}: ${(err as Error).message}`);
+      const msg = (err as Error).message;
+      errors.push(`${step.category ?? "—"}/${step.term}: ${msg}`);
+      await checkpoint(
+        "keyword.error",
+        { term: step.term, error: msg, step_ms: Date.now() - tStep },
+        "error",
+      );
     }
   }
   const metaMs = Date.now() - tMetaStart;
@@ -346,6 +414,16 @@ async function runRefresh(opts: RunOptions) {
   const errorRate = plan.length > 0 ? errors.length / plan.length : 1;
   const collectionValid =
     byPage.size > 0 && totalAdsCollected > 0 && errorRate < 0.5;
+
+  await checkpoint("meta.phase.done", {
+    meta_ms: metaMs,
+    pages_seen: byPage.size,
+    total_ads_collected: totalAdsCollected,
+    error_rate: Number(errorRate.toFixed(3)),
+    collection_valid: collectionValid,
+    errors_so_far: errors.length,
+  });
+
 
   let upserts = 0;
   let skippedBlacklist = 0;
@@ -387,6 +465,11 @@ async function runRefresh(opts: RunOptions) {
     // ---------- Fase 2: snapshots em paralelo ----------
     const tSnapStart = Date.now();
     const snapshotUrls = flat.map((f) => stripSnapshotSecrets(f.ad.ad_snapshot_url));
+    await checkpoint("snapshot.phase.start", {
+      total: snapshotUrls.length,
+      batch_size: SNAPSHOT_BATCH_SIZE,
+      timeout_ms: SNAPSHOT_TIMEOUT_MS,
+    });
     const snapshotResults = await runInBatches(
       snapshotUrls,
       SNAPSHOT_BATCH_SIZE,
@@ -401,6 +484,13 @@ async function runRefresh(opts: RunOptions) {
       if (r.error) snapshotErrors++;
       if (r.attempts > 1) snapshotRetries += r.attempts - 1;
     }
+    await checkpoint("snapshot.phase.done", {
+      snapshot_ms: snapshotMs,
+      snapshot_errors: snapshotErrors,
+      snapshot_retries: snapshotRetries,
+      avg_snapshot_ms: snapshotUrls.length ? Math.round(snapshotMs / snapshotUrls.length) : 0,
+    });
+
 
     // ---------- Fase 3: classificação + gravação ----------
     const tClassifyStart = Date.now();
@@ -513,39 +603,72 @@ async function runRefresh(opts: RunOptions) {
       }
     }
     classifyMs = Date.now() - tClassifyStart;
+    await checkpoint("classify.phase.done", {
+      classify_ms: classifyMs,
+      rows_ready: rowsToUpsert.length,
+      skipped_blacklist: skippedBlacklist,
+      skipped_duplicate: skippedDuplicate,
+      skipped_language: skippedLanguage,
+      skipped_no_category: skippedNoCategory,
+      skipped_no_landing: skippedNoLanding,
+    });
 
     // ---------- Fase 4: upsert em lote ----------
     const tWriteStart = Date.now();
     const CHUNK = 200;
+    await checkpoint("write.phase.start", { rows: rowsToUpsert.length, chunk: CHUNK });
     for (let i = 0; i < rowsToUpsert.length; i += CHUNK) {
       const chunk = rowsToUpsert.slice(i, i + CHUNK);
+      const tChunk = Date.now();
       try {
         const { error } = await supabaseAdmin
           .from("meta_offers")
           .upsert(chunk as never, { onConflict: "ad_archive_id" });
         if (error) errors.push(`upsert chunk: ${error.message}`);
         else upserts += chunk.length;
+        await checkpoint("write.chunk.done", {
+          offset: i,
+          size: chunk.length,
+          chunk_ms: Date.now() - tChunk,
+          upserts_so_far: upserts,
+          error: error?.message ?? null,
+        });
       } catch (err) {
         errors.push(`upsert chunk: ${(err as Error).message}`);
+        await checkpoint(
+          "write.chunk.error",
+          { offset: i, size: chunk.length, error: (err as Error).message },
+          "error",
+        );
       }
     }
     writeMs = Date.now() - tWriteStart;
+    await checkpoint("write.phase.done", { write_ms: writeMs, upserts });
 
     try {
+      const tDeact = Date.now();
       const { count } = await supabaseAdmin
         .from("meta_offers")
         .update({ is_active: false }, { count: "exact" })
         .eq("is_active", true)
         .lt("last_seen", startedAt);
       deactivated = count ?? 0;
+      await checkpoint("deactivate.done", { deactivated, deactivate_ms: Date.now() - tDeact });
     } catch (err) {
       errors.push(`deactivate: ${(err as Error).message}`);
+      await checkpoint("deactivate.error", { error: (err as Error).message }, "error");
     }
   } else {
     errors.push(
       `coleta invalida: pages=${byPage.size} ads=${totalAdsCollected} errorRate=${errorRate.toFixed(2)} — mantendo ofertas atuais ativas`,
     );
+    await checkpoint(
+      "collection.invalid",
+      { pages: byPage.size, ads: totalAdsCollected, error_rate: Number(errorRate.toFixed(3)) },
+      "error",
+    );
   }
+
 
   const runStatus = !collectionValid
     ? "blocked"
@@ -578,6 +701,7 @@ async function runRefresh(opts: RunOptions) {
   };
 
   if (runId) {
+    await checkpoint("run.update.start", { run_id: runId, status: runStatus });
     await supabaseAdmin
       .from("meta_refresh_runs")
       .update({
@@ -604,10 +728,21 @@ async function runRefresh(opts: RunOptions) {
           skipped_noise: skippedNoise,
           discard_breakdown: discardBreakdown,
           metrics,
+          run_tag: runTag,
         } as never,
       })
       .eq("id", runId);
+    await checkpoint("run.update.done", { run_id: runId });
   }
+
+  await checkpoint("run.finished", {
+    status: runStatus,
+    total_ms: totalMs,
+    upserts,
+    pages: byPage.size,
+    errors: errors.length,
+  });
+
 
   await supabaseAdmin.from("mining_logs").insert({
     kind: "run",
