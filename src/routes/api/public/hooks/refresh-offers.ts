@@ -701,6 +701,7 @@ async function runRefresh(opts: RunOptions) {
   };
 
   if (runId) {
+    await checkpoint("run.update.start", { run_id: runId, status: runStatus });
     await supabaseAdmin
       .from("meta_refresh_runs")
       .update({
@@ -727,10 +728,21 @@ async function runRefresh(opts: RunOptions) {
           skipped_noise: skippedNoise,
           discard_breakdown: discardBreakdown,
           metrics,
+          run_tag: runTag,
         } as never,
       })
       .eq("id", runId);
+    await checkpoint("run.update.done", { run_id: runId });
   }
+
+  await checkpoint("run.finished", {
+    status: runStatus,
+    total_ms: totalMs,
+    upserts,
+    pages: byPage.size,
+    errors: errors.length,
+  });
+
 
   await supabaseAdmin.from("mining_logs").insert({
     kind: "run",
