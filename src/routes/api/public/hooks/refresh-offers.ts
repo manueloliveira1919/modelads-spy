@@ -261,12 +261,48 @@ async function runRefresh(opts: RunOptions) {
   const t0 = Date.now();
   const startedAt = new Date().toISOString();
 
+  // Checkpoint persistente — grava um row em mining_logs para cada etapa.
+  // Não altera a lógica do pipeline; apenas observabilidade.
+  const runTag = `run_${t0}_${Math.random().toString(36).slice(2, 8)}`;
+  const checkpoint = async (
+    step: string,
+    payload: Record<string, unknown> = {},
+    status: "ok" | "error" | "info" = "info",
+  ) => {
+    try {
+      await supabaseAdmin.from("mining_logs").insert({
+        kind: "checkpoint",
+        status,
+        summary: `[${runTag}] ${step}`,
+        details: {
+          step,
+          run_tag: runTag,
+          ts: new Date().toISOString(),
+          elapsed_ms: Date.now() - t0,
+          ...payload,
+        } as never,
+      });
+    } catch {
+      /* nunca quebrar pipeline por causa de log */
+    }
+  };
+
+  await checkpoint("run.start", { triggered_by: opts.triggeredBy, started_at: startedAt });
+
+  const tLoadStart = Date.now();
   const [keywords, blacklist, activeCategories, settings] = await Promise.all([
     loadActiveKeywords(),
     loadActiveBlacklist(),
     loadActiveCategories(),
     loadMiningSettings(),
   ]);
+  await checkpoint("config.loaded", {
+    load_ms: Date.now() - tLoadStart,
+    keywords_count: keywords.length,
+    blacklist_count: blacklist.length,
+    categories_count: activeCategories.size,
+    settings_snapshot: settings as unknown as Record<string, unknown>,
+  });
 
   // Cron respeita mining_settings.auto_refresh.
   if (opts.respectAutoRefresh && !settings.auto_refresh) {
@@ -276,6 +312,7 @@ async function runRefresh(opts: RunOptions) {
       summary: "auto_refresh desligado — cron ignorado",
       details: { triggered_by: opts.triggeredBy, started_at: startedAt } as never,
     });
+    await checkpoint("run.skipped", { reason: "auto_refresh_disabled" });
     return { ok: true, skipped: true, reason: "auto_refresh_disabled" };
   }
 
@@ -285,12 +322,14 @@ async function runRefresh(opts: RunOptions) {
     .select("id")
     .single();
   const runId = runRow?.id as string | undefined;
+  await checkpoint("run.created", { run_id: runId });
 
   const plan = buildSearchPlan(keywords, settings);
   const matchBlacklist = buildBlacklistMatcher(blacklist);
   const allowedLangs = new Set(
     (settings.languages ?? []).map((l) => l.toUpperCase()),
   );
+  await checkpoint("plan.built", { plan_size: plan.length, allowed_langs: [...allowedLangs] });
 
   const errors: string[] = [];
   const discardReasons = new Map<string, number>();
