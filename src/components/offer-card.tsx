@@ -67,7 +67,7 @@ export function OfferCard({ offer }: { offer: Offer }) {
   const price = extractPrice(`${offer.headline} ${offer.description}`);
 
   return (
-    <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:border-accent hover:shadow-lg hover:shadow-black/20 active:translate-y-0">
+    <article className="group card-elevate relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm active:translate-y-0">
       <Link
         to="/oferta/$id"
         params={{ id: offer.id }}
