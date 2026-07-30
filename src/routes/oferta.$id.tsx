@@ -120,6 +120,7 @@ function OfferDetail() {
   const { data } = useSuspenseQuery(offerQuery(params.id));
   const offer = data.offer!;
   const [expanded, setExpanded] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
 
   const price = extractPrice(`${offer.headline} ${offer.description}`);
   const statusLabel =
