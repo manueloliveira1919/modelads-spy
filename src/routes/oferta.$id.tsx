@@ -375,8 +375,33 @@ function OfferDetail() {
                   className="sm:col-span-2"
                 />
               </div>
+
+              {/* COMPARTILHAMENTO */}
+              <div className="mt-5 border-t border-border pt-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <h3 className="font-display text-sm font-semibold">Compartilhar oferta</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Envie os dados completos dessa oferta para o seu time.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShareOpen(true)}
+                    className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white shadow-lg shadow-brand/25 transition-all duration-200 hover:-translate-y-0.5 hover:opacity-95 sm:w-auto"
+                    style={{
+                      background:
+                        "linear-gradient(90deg, #3B82F6 0%, #6D7CFF 50%, #8B5CF6 100%)",
+                    }}
+                  >
+                    <Share2 className="h-4 w-4" />
+                    Compartilhar oferta
+                  </button>
+                </div>
+              </div>
             </section>
           </div>
+
 
           {/* ---------------- COLUNA DIREITA ---------------- */}
           <aside className="space-y-4">
