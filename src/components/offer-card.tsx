@@ -51,15 +51,16 @@ function useFavorite(id: string) {
 
 // Paleta por categoria — cores sutis com boa legibilidade no dark mode.
 export const CATEGORY_STYLES: Record<OfferCategory, string> = {
-  Info: "bg-sky-500/15 text-sky-300 ring-1 ring-inset ring-sky-500/30",
-  Nutra: "bg-emerald-500/15 text-emerald-300 ring-1 ring-inset ring-emerald-500/30",
-  Relacionamento: "bg-pink-500/15 text-pink-300 ring-1 ring-inset ring-pink-500/30",
-  "Finanças": "bg-amber-500/15 text-amber-300 ring-1 ring-inset ring-amber-500/30",
-  "Saúde": "bg-teal-500/15 text-teal-300 ring-1 ring-inset ring-teal-500/30",
-  Mentoria: "bg-violet-500/15 text-violet-300 ring-1 ring-inset ring-violet-500/30",
-  "Aplicativo/App": "bg-cyan-500/15 text-cyan-300 ring-1 ring-inset ring-cyan-500/30",
+  Info: "bg-[#3B82F6]/15 text-[#93BBFF] ring-1 ring-inset ring-[#3B82F6]/30",
+  Nutra: "bg-[#3B82F6]/15 text-[#93BBFF] ring-1 ring-inset ring-[#3B82F6]/30",
+  Relacionamento: "bg-[#EC4899]/15 text-[#F9A8D4] ring-1 ring-inset ring-[#EC4899]/30",
+  "Finanças": "bg-[#FBBF24]/15 text-[#FCD34D] ring-1 ring-inset ring-[#FBBF24]/30",
+  "Saúde": "bg-[#22C55E]/15 text-[#86EFAC] ring-1 ring-inset ring-[#22C55E]/30",
+  Mentoria: "bg-[#8B5CF6]/15 text-[#C4B5FD] ring-1 ring-inset ring-[#8B5CF6]/30",
+  "Aplicativo/App": "bg-[#1DB8FF]/15 text-[#7DD8FF] ring-1 ring-inset ring-[#1DB8FF]/30",
   "Sem categoria": "bg-secondary text-secondary-foreground",
 };
+
 
 export function OfferCard({ offer }: { offer: Offer }) {
   const { fav, toggle } = useFavorite(offer.id);
