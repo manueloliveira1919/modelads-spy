@@ -112,19 +112,19 @@ function PlanCard({
       className={cn(
         "relative flex flex-col rounded-2xl border p-6 sm:p-8",
         featured
-          ? "border-brand/60 bg-gradient-to-b from-brand/10 to-card shadow-2xl shadow-brand/10"
+          ? "border-[#FFB800]/40 bg-gradient-to-b from-[#FFB800]/10 to-card shadow-2xl"
           : "border-border bg-card",
       )}
     >
       {badge && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-brand px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-foreground shadow-lg">
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-gold px-3 py-1 text-[10px] font-bold uppercase tracking-wider shadow-lg">
           {badge}
         </div>
       )}
       <div
         className={cn(
           "grid h-12 w-12 place-items-center rounded-xl",
-          featured ? "bg-brand text-brand-foreground" : "bg-muted text-foreground",
+          featured ? "bg-gradient-gold pro-shine" : "bg-muted text-foreground",
         )}
       >
         <Icon className="h-6 w-6" />
@@ -143,7 +143,7 @@ function PlanCard({
             <span
               className={cn(
                 "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full",
-                featured ? "bg-brand/20 text-brand" : "bg-emerald-500/15 text-emerald-400",
+                featured ? "bg-[#FFB800]/20 text-[#FFD86B]" : "bg-[#22C55E]/15 text-[#4ADE80]",
               )}
             >
               <Check className="h-3 w-3" strokeWidth={3} />
@@ -158,7 +158,7 @@ function PlanCard({
         className={cn(
           "mt-8 w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold transition",
           featured
-            ? "bg-brand text-brand-foreground shadow-lg shadow-brand/25 hover:brightness-110"
+            ? "bg-gradient-gold font-bold"
             : "border border-border bg-background text-foreground hover:bg-accent",
           ctaDisabled && "opacity-60 cursor-not-allowed",
         )}
