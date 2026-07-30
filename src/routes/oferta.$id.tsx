@@ -20,11 +20,13 @@ import {
   Library,
   Megaphone,
   MessageCircle,
+  Share2,
   Sparkles,
   Tag,
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge, CATEGORY_STYLES } from "@/components/offer-card";
+import { ShareOfferModal } from "@/components/share-offer-modal";
 import { getOffer } from "@/lib/offers.functions";
 import { extractPrice } from "@/lib/offer-heuristics";
 import { useAuth } from "@/lib/auth-context";
