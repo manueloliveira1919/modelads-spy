@@ -165,7 +165,7 @@ function Page() {
               <ListFilter className="h-4 w-4" />
               Filtros
               {activeFilterCount > 0 && (
-                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-brand-foreground">
+                <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-gradient-brand px-1 text-[10px] font-bold">
                   {activeFilterCount}
                 </span>
               )}
@@ -174,7 +174,7 @@ function Page() {
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-brand px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
               {refreshing ? "Atualizando…" : "Atualizar Ofertas"}
@@ -299,7 +299,7 @@ function FilterChip({
       className={cn(
         "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
         active
-          ? "border-brand bg-brand text-brand-foreground"
+          ? "border-brand bg-gradient-brand"
           : "border-border bg-background text-muted-foreground hover:border-accent hover:text-foreground",
       )}
     >

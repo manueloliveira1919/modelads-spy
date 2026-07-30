@@ -65,7 +65,7 @@ function ResetPasswordPage() {
     <div className="min-h-screen bg-background text-foreground grid place-items-center px-4 py-10">
       <div className="w-full max-w-md">
         <Link to="/" className="flex items-center justify-center gap-2 mb-8">
-          <div className="grid h-10 w-10 place-items-center rounded-lg bg-brand text-brand-foreground">
+          <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-brand">
             <Radar className="h-5 w-5" strokeWidth={2.5} />
           </div>
           <span className="font-display text-2xl font-bold tracking-tight">
@@ -122,7 +122,7 @@ function ResetPasswordPage() {
               <button
                 type="submit"
                 disabled={busy}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground hover:brightness-110 disabled:opacity-60"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-brand px-4 py-2.5 text-sm font-semibold hover:brightness-110 disabled:opacity-60"
               >
                 {busy && <Loader2 className="h-4 w-4 animate-spin" />}
                 Redefinir senha

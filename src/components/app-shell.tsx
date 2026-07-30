@@ -266,7 +266,7 @@ function UserFooter() {
 function Logo() {
   return (
     <div className="flex items-center gap-2">
-      <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-brand-foreground">
+      <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-brand">
         <Radar className="h-4 w-4" strokeWidth={2.5} />
       </div>
       <span className="font-display text-lg font-bold tracking-tight">

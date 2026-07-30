@@ -261,7 +261,7 @@ function Page() {
                     finalUrl
                       ? copied === "current"
                         ? "bg-brand/20 text-brand"
-                        : "bg-brand text-brand-foreground hover:opacity-90"
+                        : "bg-gradient-brand hover:opacity-90"
                       : "cursor-not-allowed bg-muted text-muted-foreground",
                   )}
                 >
