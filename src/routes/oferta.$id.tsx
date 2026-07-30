@@ -477,7 +477,39 @@ function OfferDetail() {
           </aside>
         </div>
       </div>
+
+      <ShareOfferModal
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        offer={{
+          title: offer.page,
+          category: offer.category,
+          structure: offer.structure ?? "—",
+          language: offer.language,
+          ticket: price ?? "—",
+          activeDays: offer.activeDays,
+          activeAds: offer.activeAds,
+          shareData: {
+            imageUrl: offer.creativeType === "image" ? offer.creativeUrl : null,
+            thumbnailUrl: offer.creativeUrl ?? null,
+            pageUrl: offer.pageUrl ?? "—",
+            advertiserUrl: offer.linkUrl ?? "—",
+            libraryUrl: offer.adLibraryUrl ?? "—",
+          },
+        }}
+      />
+
+      {/* Modela Spy IA — botão fixo */}
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/modela-spy-ai" })}
+        className="fixed bottom-5 right-5 z-40 inline-flex h-12 items-center gap-2 rounded-full bg-gradient-brand px-5 text-sm font-semibold shadow-xl shadow-brand/30 transition-all duration-200 hover:-translate-y-0.5 hover:opacity-95"
+      >
+        <Sparkles className="h-4 w-4" />
+        Modela Spy IA
+      </button>
     </AppShell>
+
   );
 }
 
