@@ -52,11 +52,11 @@ export function ProGate({ title, description, icon: Icon, children }: ProGatePro
       <div className="relative overflow-hidden rounded-2xl border border-brand/30 bg-card p-8 sm:p-12">
         <div className="absolute inset-0 bg-gradient-to-br from-brand/10 via-transparent to-transparent pointer-events-none" />
         <div className="relative flex flex-col items-center text-center">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-brand/15 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-gold pro-shine px-3 py-1 text-xs font-bold uppercase tracking-wider">
             <Lock className="h-3 w-3" />
             Recurso PRO
           </div>
-          <div className="mt-5 grid h-16 w-16 place-items-center rounded-2xl bg-brand/20 text-brand">
+          <div className="mt-5 grid h-16 w-16 place-items-center rounded-2xl bg-gradient-gold pro-shine">
             <Icon className="h-8 w-8" />
           </div>
           <h1 className="mt-5 font-display text-2xl font-bold sm:text-3xl">
@@ -67,7 +67,7 @@ export function ProGate({ title, description, icon: Icon, children }: ProGatePro
           </p>
           <Link
             to="/upgrade"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-brand-foreground shadow-lg shadow-brand/25 hover:brightness-110"
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-gradient-gold px-5 py-2.5 text-sm font-bold"
           >
             <Sparkles className="h-4 w-4" />
             Fazer upgrade para PRO

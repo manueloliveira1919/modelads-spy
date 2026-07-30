@@ -43,7 +43,7 @@ function Page() {
           </p>
           <Link
             to="/auth"
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:brightness-110"
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-gradient-brand px-4 py-2 text-sm font-semibold hover:brightness-110"
           >
             Entrar
           </Link>
@@ -89,7 +89,7 @@ function Page() {
             </p>
             <Link
               to="/upgrade"
-              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-brand-foreground hover:brightness-110"
+              className="mt-4 inline-flex items-center gap-2 rounded-lg bg-gradient-brand px-4 py-2 text-sm font-semibold hover:brightness-110"
             >
               <Sparkles className="h-4 w-4" />
               Fazer Upgrade

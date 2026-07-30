@@ -133,7 +133,7 @@ Status: ${statusLabel}`;
                       href={offer.adSnapshotUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-brand-foreground hover:opacity-90"
+                      className="inline-flex items-center gap-2 rounded-lg bg-gradient-brand px-4 py-2 text-xs font-semibold hover:opacity-90"
                     >
                       <ExternalLink className="h-3.5 w-3.5" />
                       Ver anúncio original

@@ -38,7 +38,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background text-foreground lg:flex">
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 border-r border-sidebar-border bg-sidebar">
         <div className="flex h-16 items-center gap-2 px-5">
-          <div className="grid h-8 w-8 place-items-center rounded-lg bg-brand text-brand-foreground">
+          <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-brand">
             <Radar className="h-4 w-4" strokeWidth={2.5} />
           </div>
           <div className="flex flex-col leading-tight">
@@ -64,15 +64,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   key={n.to}
                   to={n.to}
                   className={cn(
-                    "relative flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
                     active
-                      ? "bg-accent text-accent-foreground"
+                      ? "bg-gradient-brand text-white shadow-lg"
                       : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
                   )}
                 >
-                  {active && (
-                    <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-r bg-brand" />
-                  )}
+
                   <Icon className="h-4 w-4 shrink-0" />
                   <span className="flex-1 truncate">{n.label}</span>
                 </Link>

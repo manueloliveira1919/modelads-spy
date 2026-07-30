@@ -41,11 +41,11 @@ export function ProLockProvider({ children }: { children: ReactNode }) {
               <X className="h-4 w-4" />
             </button>
             <div className="relative p-6">
-              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-brand/20 text-brand">
+              <div className="grid h-14 w-14 place-items-center rounded-2xl bg-gradient-gold pro-shine">
                 <Lock className="h-7 w-7" />
               </div>
               <h2 className="mt-4 font-display text-2xl font-bold">
-                <span className="text-gradient-brand">Desbloqueie</span> o ModelAds PRO
+                <span className="text-gradient-gold">Desbloqueie</span> o ModelAds PRO
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Você está utilizando o plano Starter. Faça upgrade para desbloquear todas as
@@ -67,7 +67,7 @@ export function ProLockProvider({ children }: { children: ReactNode }) {
                     setOpen(false);
                     navigate({ to: "/upgrade" });
                   }}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-brand-foreground shadow-lg shadow-brand/25 hover:brightness-110"
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-gradient-gold px-4 py-2.5 text-sm font-bold"
                 >
                   <Sparkles className="h-4 w-4" />
                   Fazer Upgrade
