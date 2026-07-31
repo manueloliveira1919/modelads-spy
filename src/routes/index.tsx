@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Star, Wand2, Compass, Crown, Flame, TrendingUp, Sparkles, ArrowRight } from "lucide-react";
+import { Star, Wand2, Compass, Crown, Flame, TrendingUp, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AppShell } from "@/components/app-shell";
+import { LandingPage } from "@/components/landing-page";
 import { listOffers } from "@/lib/offers.functions";
 import { cn } from "@/lib/utils";
+
 
 const offersQuery = queryOptions({
   queryKey: ["offers"],
