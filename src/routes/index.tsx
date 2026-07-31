@@ -35,7 +35,7 @@ export const Route = createFileRoute("/")({
   loader: ({ context }) => {
     context.queryClient.ensureQueryData(offersQuery);
   },
-  component: Dashboard,
+  component: Home,
   errorComponent: ({ error }) => (
     <AppShell>
       <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
