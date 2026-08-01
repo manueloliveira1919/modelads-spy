@@ -815,9 +815,35 @@ async function authorize(
         .maybeSingle();
       if (role) return { ok: true, source: "admin" };
       return { ok: false, reason: "not_admin" };
-    } catch {
+    } catch (err) {
+      const e = err as Error;
+      const missing: string[] = [];
+      if (!process.env.CRON_SECRET) missing.push("CRON_SECRET");
+      if (!process.env.SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+      if (!process.env.SUPABASE_URL) missing.push("SUPABASE_URL");
+      const payload = {
+        function: "authorize",
+        message: e?.message ?? String(err),
+        name: e?.name ?? null,
+        stack: e?.stack ?? null,
+        missing_env: missing,
+        timestamp: new Date().toISOString(),
+      };
+      console.error("[refresh-offers] authorize() catch:", payload);
+      try {
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        await supabaseAdmin.from("mining_logs").insert({
+          kind: "auth_error",
+          status: "error",
+          summary: `authorize() falhou: ${payload.message}`,
+          details: payload as never,
+        });
+      } catch {
+        /* noop — log nunca pode quebrar a autorização */
+      }
       return { ok: false, reason: "auth_error" };
     }
+
   }
 
   return { ok: false, reason: "missing_credentials" };
