@@ -364,6 +364,21 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   return null;
 }
 
+// Enfileira os lotes de classificação/upsert de uma run.
+async function enqueueClassifyJobs(supabase: any, runId: string) {
+  const { data: rawRows } = await supabase.rpc("mining_get_raw_ids", { p_run_id: runId });
+  const ids = (rawRows ?? []).map((r: any) => r.ad_archive_id);
+  const jobs = [];
+  for (let i = 0; i < ids.length; i += ADS_PER_CLASSIFY_JOB) {
+    jobs.push({
+      run_id: runId,
+      kind: "classify.upsert",
+      payload: { ad_archive_ids: ids.slice(i, i + ADS_PER_CLASSIFY_JOB) },
+    });
+  }
+  if (jobs.length) await supabase.rpc("mining_enqueue_jobs", { p_jobs: jobs });
+}
+
 // ---------- Depois de um job terminar, decide se avança de fase ----------
 async function maybeAdvancePhase(supabase: any, job: MetaRefreshJob) {
   if (job.kind === "meta.search") {
@@ -376,13 +391,15 @@ async function maybeAdvancePhase(supabase: any, job: MetaRefreshJob) {
       p_to_phase: "snapshot",
     });
     if (!advanced) return;
-    await supabase.rpc("try_advance_run_phase", {
+    const { data: toClassify } = await supabase.rpc("try_advance_run_phase", {
       p_run_id: job.run_id,
       p_from_phase: "snapshot",
       p_to_phase: "classify",
     });
+    if (toClassify) await enqueueClassifyJobs(supabase, job.run_id);
   }
 
+  // Runs antigas ainda podem ter jobs de snapshot na fila.
   if (job.kind === "snapshot.extract") {
     if ((await remainingCount(supabase, job.run_id, "snapshot.extract")) > 0) return;
     const { data: advanced } = await supabase.rpc("try_advance_run_phase", {
@@ -391,18 +408,7 @@ async function maybeAdvancePhase(supabase: any, job: MetaRefreshJob) {
       p_to_phase: "classify",
     });
     if (!advanced) return;
-
-    const { data: rawRows } = await supabase.rpc("mining_get_raw_ids", { p_run_id: job.run_id });
-    const ids = (rawRows ?? []).map((r: any) => r.ad_archive_id);
-    const jobs = [];
-    for (let i = 0; i < ids.length; i += ADS_PER_CLASSIFY_JOB) {
-      jobs.push({
-        run_id: job.run_id,
-        kind: "classify.upsert",
-        payload: { ad_archive_ids: ids.slice(i, i + ADS_PER_CLASSIFY_JOB) },
-      });
-    }
-    if (jobs.length) await supabase.rpc("mining_enqueue_jobs", { p_jobs: jobs });
+    await enqueueClassifyJobs(supabase, job.run_id);
   }
 
   if (job.kind === "classify.upsert") {
