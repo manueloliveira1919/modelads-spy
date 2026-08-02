@@ -57,6 +57,18 @@ function NavLinks({
   pathname: string;
   onNavigate?: () => void;
 }) {
+  const { data: openTickets } = useQuery({
+    queryKey: ["admin", "tickets", "open-count"],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("support_tickets")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "open");
+      return count ?? 0;
+    },
+    staleTime: 60_000,
+  });
+
   return (
     <nav className="space-y-0.5">
       {NAV.map((n) => {
@@ -65,6 +77,7 @@ function NavLinks({
             ? pathname === "/admin"
             : pathname === n.to || pathname.startsWith(n.to + "/");
         const Icon = n.icon;
+        const badge = n.to === "/admin/suporte" ? (openTickets ?? 0) : 0;
         return (
           <Link
             key={n.to}
@@ -79,6 +92,11 @@ function NavLinks({
           >
             <Icon className="h-4 w-4 shrink-0" />
             <span className="flex-1 truncate">{n.label}</span>
+            {badge > 0 && (
+              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-400">
+                {badge}
+              </span>
+            )}
           </Link>
         );
       })}
