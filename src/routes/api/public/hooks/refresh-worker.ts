@@ -100,7 +100,10 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
           term: step.term,
           category: step.category,
           language_hint: step.language,
-          ad_snapshot_url: stripSnapshotSecrets(ad.ad_snapshot_url),
+          // Tabela interna (service role): guardamos a URL completa porque o token
+          // é obrigatório para abrir o snapshot. A versão sem token é gravada
+          // depois em meta_offers, que é a tabela exposta ao client.
+          ad_snapshot_url: ad.ad_snapshot_url ?? null,
           raw: ad,
         });
       }
@@ -195,10 +198,18 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
     try {
       const ad = raw.raw as MetaAdItem;
       const snapshot = snapshotByAd.get(raw.ad_archive_id);
+      // A Meta passou a bloquear a leitura do snapshot (retorna página de erro),
+      // então o domínio do anúncio (link caption) é a fonte principal de destino.
+      const caption = ad.ad_creative_link_captions?.[0]?.trim() ?? "";
+      const captionLink = caption
+        ? caption.startsWith("http")
+          ? caption
+          : `https://${caption.replace(/^\/+/, "")}`
+        : null;
       const media = {
         imageUrl: snapshot?.image_url ?? null,
         videoUrl: snapshot?.video_url ?? null,
-        linkUrl: snapshot?.link_url ?? null,
+        linkUrl: snapshot?.link_url ?? captionLink,
       };
 
       const bodyText = ad.ad_creative_bodies?.[0] ?? "";
@@ -243,7 +254,9 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
       const hasCreative = !!creativeUrl;
       const activeAdsCount = pageCounts.get(raw.page_id) ?? 1;
 
-      if (!hasLanding && !hasCreative) {
+      // Sem criativo/link não é motivo para descartar (a Meta não expõe mídia na
+      // API pública); descartamos apenas anúncios sem nenhum texto aproveitável.
+      if (!headline.trim()) {
         skipped.noLanding++;
         continue;
       }
@@ -270,7 +283,7 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
         description: bodyText || desc,
         creative_url: creativeUrl,
         creative_type: creativeType,
-        ad_snapshot_url: raw.ad_snapshot_url,
+        ad_snapshot_url: stripSnapshotSecrets(raw.ad_snapshot_url),
         page_url: `https://www.facebook.com/${raw.page_id}`,
         link_url: media.linkUrl,
         ad_start_date: ad.ad_delivery_start_time ?? null,
@@ -351,42 +364,42 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   return null;
 }
 
+// Enfileira os lotes de classificação/upsert de uma run.
+async function enqueueClassifyJobs(supabase: any, runId: string) {
+  const { data: rawRows } = await supabase.rpc("mining_get_raw_ids", { p_run_id: runId });
+  const ids = (rawRows ?? []).map((r: any) => r.ad_archive_id);
+  const jobs = [];
+  for (let i = 0; i < ids.length; i += ADS_PER_CLASSIFY_JOB) {
+    jobs.push({
+      run_id: runId,
+      kind: "classify.upsert",
+      payload: { ad_archive_ids: ids.slice(i, i + ADS_PER_CLASSIFY_JOB) },
+    });
+  }
+  if (jobs.length) await supabase.rpc("mining_enqueue_jobs", { p_jobs: jobs });
+}
+
 // ---------- Depois de um job terminar, decide se avança de fase ----------
 async function maybeAdvancePhase(supabase: any, job: MetaRefreshJob) {
   if (job.kind === "meta.search") {
     if ((await remainingCount(supabase, job.run_id, "meta.search")) > 0) return;
+    // Fase de snapshot desativada: a Meta bloqueia a leitura do ad_snapshot_url
+    // (devolve página de erro), então vamos direto para a classificação.
     const { data: advanced } = await supabase.rpc("try_advance_run_phase", {
       p_run_id: job.run_id,
       p_from_phase: "search",
       p_to_phase: "snapshot",
     });
     if (!advanced) return;
-
-    const { data: rawRows } = await supabase.rpc("mining_get_raw_for_snapshot", { p_run_id: job.run_id });
-    const items = rawRows ?? [];
-    const jobs = [];
-    for (let i = 0; i < items.length; i += ADS_PER_SNAPSHOT_JOB) {
-      jobs.push({
-        run_id: job.run_id,
-        kind: "snapshot.extract",
-        payload: {
-          items: items.slice(i, i + ADS_PER_SNAPSHOT_JOB).map((r: any) => ({
-            ad_archive_id: r.ad_archive_id,
-            snapshot_url: r.ad_snapshot_url,
-          })),
-        },
-      });
-    }
-    if (jobs.length) await supabase.rpc("mining_enqueue_jobs", { p_jobs: jobs });
-    else {
-      await supabase.rpc("try_advance_run_phase", {
-        p_run_id: job.run_id,
-        p_from_phase: "snapshot",
-        p_to_phase: "classify",
-      });
-    }
+    const { data: toClassify } = await supabase.rpc("try_advance_run_phase", {
+      p_run_id: job.run_id,
+      p_from_phase: "snapshot",
+      p_to_phase: "classify",
+    });
+    if (toClassify) await enqueueClassifyJobs(supabase, job.run_id);
   }
 
+  // Runs antigas ainda podem ter jobs de snapshot na fila.
   if (job.kind === "snapshot.extract") {
     if ((await remainingCount(supabase, job.run_id, "snapshot.extract")) > 0) return;
     const { data: advanced } = await supabase.rpc("try_advance_run_phase", {
@@ -395,18 +408,7 @@ async function maybeAdvancePhase(supabase: any, job: MetaRefreshJob) {
       p_to_phase: "classify",
     });
     if (!advanced) return;
-
-    const { data: rawRows } = await supabase.rpc("mining_get_raw_ids", { p_run_id: job.run_id });
-    const ids = (rawRows ?? []).map((r: any) => r.ad_archive_id);
-    const jobs = [];
-    for (let i = 0; i < ids.length; i += ADS_PER_CLASSIFY_JOB) {
-      jobs.push({
-        run_id: job.run_id,
-        kind: "classify.upsert",
-        payload: { ad_archive_ids: ids.slice(i, i + ADS_PER_CLASSIFY_JOB) },
-      });
-    }
-    if (jobs.length) await supabase.rpc("mining_enqueue_jobs", { p_jobs: jobs });
+    await enqueueClassifyJobs(supabase, job.run_id);
   }
 
   if (job.kind === "classify.upsert") {

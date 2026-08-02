@@ -11,6 +11,7 @@ export interface MetaAdItem {
   ad_creative_bodies?: string[];
   ad_creative_link_titles?: string[];
   ad_creative_link_descriptions?: string[];
+  ad_creative_link_captions?: string[];
   ad_snapshot_url?: string;
   ad_delivery_start_time?: string;
   ad_delivery_stop_time?: string;
@@ -58,6 +59,8 @@ export function buildSearchUrl(opts: {
       "ad_creative_bodies",
       "ad_creative_link_titles",
       "ad_creative_link_descriptions",
+      // Domínio de destino do anúncio — única fonte de link fornecida pela API.
+      "ad_creative_link_captions",
       "ad_snapshot_url",
       "ad_delivery_start_time",
       "ad_delivery_stop_time",
