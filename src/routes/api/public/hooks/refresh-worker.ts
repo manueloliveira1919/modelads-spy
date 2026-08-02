@@ -19,10 +19,8 @@ import {
   type MetaAdItem,
 } from "@/lib/meta-mining.server";
 
-// Worker de jobs — chamado pelo pg_cron a cada minuto. Não depende de
-// SUPABASE_SERVICE_ROLE_KEY: toda escrita passa pelas funções `mining_*`
-// do banco (RPC), que rodam com privilégio elevado por dentro mesmo
-// recebendo a chamada com a chave pública.
+// Worker de jobs — chamado pelo pg_cron a cada minuto. A fila e as RPCs
+// internas são acessadas pelo cliente privilegiado exclusivamente no servidor.
 
 const JOBS_PER_TICK = 3;
 
@@ -425,7 +423,9 @@ async function maybeAdvancePhase(supabase: any, job: MetaRefreshJob) {
   }
 }
 
-async function authorize(request: Request): Promise<{ ok: true } | { ok: false; reason: string }> {
+async function authorize(
+  request: Request,
+): Promise<{ ok: true; userId?: string } | { ok: false; reason: string }> {
   const cronSecret = process.env.CRON_SECRET;
   const headerCron = request.headers.get("x-cron-secret");
   if (cronSecret && headerCron && headerCron === cronSecret) return { ok: true };
@@ -436,9 +436,7 @@ async function authorize(request: Request): Promise<{ ok: true } | { ok: false; 
       const supabase = await serverSupabaseAnon();
       const { data, error } = await supabase.auth.getUser(bearer);
       if (error || !data.user) return { ok: false, reason: "invalid_token" };
-      const { data: isAdmin } = await supabase.rpc("mining_is_admin", { p_user_id: data.user.id });
-      if (isAdmin) return { ok: true };
-      return { ok: false, reason: "not_admin" };
+      return { ok: true, userId: data.user.id };
     } catch {
       return { ok: false, reason: "auth_error" };
     }
@@ -458,7 +456,27 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
             { status: 401, headers: { "content-type": "application/json" } },
           );
         }
-        const supabase = await serverSupabaseAnon();
+        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        if (auth.userId) {
+          const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc(
+            "mining_is_admin",
+            { p_user_id: auth.userId },
+          );
+          if (roleError) {
+            console.error("refresh-worker admin role check error", roleError.message);
+            return Response.json(
+              { ok: false, error: "authorization_check_failed" },
+              { status: 500 },
+            );
+          }
+          if (!isAdmin) {
+            return Response.json(
+              { ok: false, error: "unauthorized", reason: "not_admin" },
+              { status: 403 },
+            );
+          }
+        }
+        const supabase = supabaseAdmin;
 
         const { data: jobs, error: claimErr } = await supabase.rpc("claim_refresh_jobs", {
           p_limit: JOBS_PER_TICK,

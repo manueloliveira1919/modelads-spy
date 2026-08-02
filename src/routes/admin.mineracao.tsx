@@ -79,12 +79,18 @@ function MineracaoPage() {
     mutationFn: async () => {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData.session?.access_token;
+      if (!token) throw new Error("Sua sessão expirou. Entre novamente para executar a mineração.");
       const res = await fetch("/api/public/hooks/refresh-offers", {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(await res.text());
-      return res.json();
+      const data = (await res.json()) as { error?: string; reason?: string };
+      if (!res.ok) {
+        if (data.reason === "not_admin") throw new Error("Sua conta não tem permissão de administrador.");
+        if (data.reason === "invalid_token") throw new Error("Sua sessão expirou. Entre novamente.");
+        throw new Error(data.error ?? `Falha ao iniciar a mineração (HTTP ${res.status}).`);
+      }
+      return data;
     },
     onSuccess: async (data) => {
       await logSystem({
@@ -94,7 +100,7 @@ function MineracaoPage() {
       });
       qc.invalidateQueries({ queryKey: ["admin", "refresh_runs"] });
       qc.invalidateQueries({ queryKey: ["offers"] });
-      toast.success("Mineração concluída");
+      toast.success("Mineração enfileirada. O processamento começará em instantes.");
     },
     onError: (e) => toast.error((e as Error).message),
   });

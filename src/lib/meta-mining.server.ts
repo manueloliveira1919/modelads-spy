@@ -239,12 +239,9 @@ export const ADS_PER_SNAPSHOT_JOB = 16;
 // Tamanho de cada lote de anúncios por job de classificação/upsert.
 export const ADS_PER_CLASSIFY_JOB = 150;
 
-// Cliente Supabase que usa a chave PÚBLICA (SUPABASE_URL +
-// SUPABASE_PUBLISHABLE_KEY — sem o prefixo VITE_, para uso no servidor).
-// Essa chave já está configurada nos 3 ambientes do Vercel. As operações
-// sensíveis (escrever ofertas, criar runs, etc.) não dependem mais do
-// service role — passam pelas funções `mining_*` do banco (RPC), que
-// fazem a checagem de segurança por dentro.
+// Cliente público usado somente para validar tokens de usuário e para
+// leituras autorizadas pelas políticas do banco. Operações internas da fila
+// usam o cliente privilegiado carregado dentro dos handlers do servidor.
 export async function serverSupabaseAnon() {
   const { createClient } = await import("@supabase/supabase-js");
   const url = process.env.SUPABASE_URL!;
