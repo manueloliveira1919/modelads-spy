@@ -15,16 +15,14 @@ import {
   normalizeAdLanguage,
   runInBatches,
   searchTermPaginated,
+  serverSupabaseAnon,
   type MetaAdItem,
 } from "@/lib/meta-mining.server";
 
-// Worker de jobs — chamado pelo pg_cron a cada ~1 minuto (e também pode
-// ser chamado manualmente). Cada chamada reivindica alguns jobs pendentes
-// (via a função `claim_refresh_jobs`, que usa FOR UPDATE SKIP LOCKED —
-// dois workers nunca pegam o mesmo job) e processa só esses. Isso garante
-// que cada chamada termina em poucos segundos, bem dentro do limite de
-// CPU do Worker — diferente do endpoint antigo, que tentava fazer tudo
-// numa request só e por isso "morria" no meio de runs grandes.
+// Worker de jobs — chamado pelo pg_cron a cada minuto. Não depende de
+// SUPABASE_SERVICE_ROLE_KEY: toda escrita passa pelas funções `mining_*`
+// do banco (RPC), que rodam com privilégio elevado por dentro mesmo
+// recebendo a chamada com a chave pública.
 
 const JOBS_PER_TICK = 3;
 
@@ -38,47 +36,39 @@ interface MetaRefreshJob {
 }
 
 async function jobLog(
-  supabaseAdmin: any,
+  supabase: any,
   runId: string,
   kind: string,
   summary: string,
   details: Record<string, unknown>,
 ) {
   try {
-    await supabaseAdmin.from("mining_logs").insert({
-      kind: "job",
-      status: "ok",
-      summary,
-      details: { run_id: runId, job_kind: kind, ...details } as never,
+    await supabase.rpc("mining_log", {
+      p_kind: "job",
+      p_status: "ok",
+      p_summary: summary,
+      p_details: { run_id: runId, job_kind: kind, ...details },
     });
   } catch {
     /* nunca quebrar o worker por causa de log */
   }
 }
 
-async function markJobDone(supabaseAdmin: any, jobId: string, error: string | null) {
-  await supabaseAdmin
-    .from("meta_refresh_jobs")
-    .update({ status: error ? "failed" : "done", finished_at: new Date().toISOString(), error })
-    .eq("id", jobId);
+async function markJobDone(supabase: any, jobId: string, error: string | null) {
+  await supabase.rpc("mining_job_update_status", {
+    p_job_id: jobId,
+    p_status: error ? "failed" : "done",
+    p_error: error,
+  });
 }
 
-async function remainingCount(
-  supabaseAdmin: any,
-  runId: string,
-  kind: string,
-): Promise<number> {
-  const { count } = await supabaseAdmin
-    .from("meta_refresh_jobs")
-    .select("id", { count: "exact", head: true })
-    .eq("run_id", runId)
-    .eq("kind", kind)
-    .in("status", ["pending", "running"]);
-  return count ?? 0;
+async function remainingCount(supabase: any, runId: string, kind: string): Promise<number> {
+  const { data } = await supabase.rpc("mining_remaining_count", { p_run_id: runId, p_kind: kind });
+  return data ?? 0;
 }
 
 // ---------- Processa 1 job de busca na Meta ----------
-async function processSearchJob(supabaseAdmin: any, job: MetaRefreshJob) {
+async function processSearchJob(supabase: any, job: MetaRefreshJob) {
   const token = process.env.META_ACCESS_TOKEN;
   if (!token) throw new Error("META_ACCESS_TOKEN não configurado");
 
@@ -113,7 +103,7 @@ async function processSearchJob(supabaseAdmin: any, job: MetaRefreshJob) {
           category: step.category,
           language_hint: step.language,
           ad_snapshot_url: stripSnapshotSecrets(ad.ad_snapshot_url),
-          raw: ad as unknown as Record<string, unknown>,
+          raw: ad,
         });
       }
     } catch (err) {
@@ -122,16 +112,11 @@ async function processSearchJob(supabaseAdmin: any, job: MetaRefreshJob) {
   }
 
   if (rows.length) {
-    // ignoreDuplicates: se dois jobs acharem o mesmo ad_archive_id (termos
-    // que se sobrepõem), o segundo é descartado no próprio banco — dedupe
-    // robusto mesmo com vários jobs rodando em paralelo.
-    const { error } = await supabaseAdmin
-      .from("meta_refresh_ads_raw")
-      .upsert(rows as never, { onConflict: "run_id,ad_archive_id", ignoreDuplicates: true });
+    const { error } = await supabase.rpc("mining_upsert_raw", { p_rows: rows });
     if (error) errors.push(`upsert raw: ${error.message}`);
   }
 
-  await jobLog(supabaseAdmin, job.run_id, "meta.search", `busca: ${steps.length} termos, ${rows.length} anúncios`, {
+  await jobLog(supabase, job.run_id, "meta.search", `busca: ${steps.length} termos, ${rows.length} anúncios`, {
     terms: steps.length,
     ads_found: rows.length,
     errors,
@@ -141,7 +126,7 @@ async function processSearchJob(supabaseAdmin: any, job: MetaRefreshJob) {
 }
 
 // ---------- Processa 1 job de extração de snapshot ----------
-async function processSnapshotJob(supabaseAdmin: any, job: MetaRefreshJob) {
+async function processSnapshotJob(supabase: any, job: MetaRefreshJob) {
   const pairs = job.payload.items as { ad_archive_id: string; snapshot_url: string | null }[];
 
   const results = await runInBatches(pairs, 8, async (pair) => {
@@ -164,14 +149,12 @@ async function processSnapshotJob(supabaseAdmin: any, job: MetaRefreshJob) {
 
   let dbError: string | null = null;
   if (rows.length) {
-    const { error } = await supabaseAdmin
-      .from("meta_refresh_snapshots")
-      .upsert(rows as never, { onConflict: "run_id,ad_archive_id", ignoreDuplicates: true });
+    const { error } = await supabase.rpc("mining_upsert_snapshots", { p_rows: rows });
     if (error) dbError = `upsert snapshots: ${error.message}`;
   }
 
   const snapErrors = rows.filter((r) => r.error).length;
-  await jobLog(supabaseAdmin, job.run_id, "snapshot.extract", `snapshots: ${rows.length} processados, ${snapErrors} falharam`, {
+  await jobLog(supabase, job.run_id, "snapshot.extract", `snapshots: ${rows.length} processados, ${snapErrors} falharam`, {
     total: rows.length,
     failed: snapErrors,
   });
@@ -180,18 +163,19 @@ async function processSnapshotJob(supabaseAdmin: any, job: MetaRefreshJob) {
 }
 
 // ---------- Processa 1 job de classificação + upsert final ----------
-async function processClassifyJob(supabaseAdmin: any, job: MetaRefreshJob) {
+async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
   const { loadActiveBlacklist, loadActiveCategories, loadMiningSettings, buildBlacklistMatcher } =
     await import("@/lib/mining-config.server");
 
   const adIds = job.payload.ad_archive_ids as string[];
 
-  const [rawRes, snapRes, blacklist, activeCategories, settings] = await Promise.all([
-    supabaseAdmin.from("meta_refresh_ads_raw").select("*").eq("run_id", job.run_id).in("ad_archive_id", adIds),
-    supabaseAdmin.from("meta_refresh_snapshots").select("*").eq("run_id", job.run_id).in("ad_archive_id", adIds),
+  const [rawRes, snapRes, blacklist, activeCategories, settings, pageCountsRes] = await Promise.all([
+    supabase.rpc("mining_get_raw_rows", { p_run_id: job.run_id, p_ids: adIds }),
+    supabase.rpc("mining_get_snapshot_rows", { p_run_id: job.run_id, p_ids: adIds }),
     loadActiveBlacklist(),
     loadActiveCategories(),
     loadMiningSettings(),
+    supabase.rpc("mining_get_page_counts", { p_run_id: job.run_id }),
   ]);
 
   if (rawRes.error) throw new Error(`ler raw: ${rawRes.error.message}`);
@@ -202,14 +186,8 @@ async function processClassifyJob(supabaseAdmin: any, job: MetaRefreshJob) {
   const snapshotByAd = new Map<string, any>();
   for (const s of snapRes.data ?? []) snapshotByAd.set(s.ad_archive_id, s);
 
-  // Contagem de anúncios por página nesta run inteira — usada como proxy
-  // de "quão em escala" a página está (mesmo critério do código original).
-  const { data: pageRows } = await supabaseAdmin
-    .from("meta_refresh_ads_raw")
-    .select("page_id")
-    .eq("run_id", job.run_id);
   const pageCounts = new Map<string, number>();
-  for (const r of pageRows ?? []) pageCounts.set(r.page_id, (pageCounts.get(r.page_id) ?? 0) + 1);
+  for (const r of pageCountsRes.data ?? []) pageCounts.set(r.page_id, Number(r.cnt));
 
   const compositeSeen = new Set<string>();
   const rowsToUpsert: Record<string, unknown>[] = [];
@@ -316,14 +294,12 @@ async function processClassifyJob(supabaseAdmin: any, job: MetaRefreshJob) {
   let upserts = 0;
   let dbError: string | null = null;
   if (rowsToUpsert.length) {
-    const { error } = await supabaseAdmin
-      .from("meta_offers")
-      .upsert(rowsToUpsert as never, { onConflict: "ad_archive_id" });
+    const { data, error } = await supabase.rpc("mining_upsert_offers", { p_rows: rowsToUpsert });
     if (error) dbError = `upsert meta_offers: ${error.message}`;
-    else upserts = rowsToUpsert.length;
+    else upserts = data ?? rowsToUpsert.length;
   }
 
-  await jobLog(supabaseAdmin, job.run_id, "classify.upsert", `classificados: ${upserts} gravados de ${adIds.length}`, {
+  await jobLog(supabase, job.run_id, "classify.upsert", `classificados: ${upserts} gravados de ${adIds.length}`, {
     processed: adIds.length,
     upserts,
     ...skipped,
@@ -333,64 +309,35 @@ async function processClassifyJob(supabaseAdmin: any, job: MetaRefreshJob) {
 }
 
 // ---------- Finaliza a run: deactivate + métricas + fecha o registro ----------
-async function processFinalizeJob(supabaseAdmin: any, job: MetaRefreshJob) {
-  const { data: run } = await supabaseAdmin
-    .from("meta_refresh_runs")
-    .select("started_at")
-    .eq("id", job.run_id)
-    .single();
-  const startedAt = run?.started_at ?? new Date().toISOString();
-
-  const { count: deactivated } = await supabaseAdmin
-    .from("meta_offers")
-    .update({ is_active: false }, { count: "exact" })
-    .eq("is_active", true)
-    .lt("last_seen", startedAt);
-
-  const { count: pagesSeen } = await supabaseAdmin
-    .from("meta_refresh_ads_raw")
-    .select("page_id", { count: "exact", head: true })
-    .eq("run_id", job.run_id);
-
-  // Agrega os logs de cada job dessa run pra montar os totais finais.
-  const { data: jobLogs } = await supabaseAdmin
-    .from("mining_logs")
-    .select("details")
-    .eq("kind", "job")
-    .filter("details->>run_id", "eq", job.run_id);
-
-  let upserts = 0;
-  let searchErrors = 0;
-  for (const l of jobLogs ?? []) {
-    const d = l.details as Record<string, unknown>;
-    if (typeof d.upserts === "number") upserts += d.upserts;
-    if (Array.isArray(d.errors)) searchErrors += d.errors.length;
-  }
+async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
+  const { data: startedAt } = await supabase.rpc("mining_get_run_started_at", { p_run_id: job.run_id });
+  const { data: deactivated } = await supabase.rpc("mining_deactivate_stale", {
+    p_started_at: startedAt ?? new Date().toISOString(),
+  });
+  const { data: pagesSeen } = await supabase.rpc("mining_count_pages_seen", { p_run_id: job.run_id });
+  const { data: sums } = await supabase.rpc("mining_sum_job_logs", { p_run_id: job.run_id });
+  const upserts = Number(sums?.[0]?.upserts ?? 0);
+  const searchErrors = Number(sums?.[0]?.search_errors ?? 0);
 
   const status = searchErrors > 0 ? "partial" : upserts > 0 ? "success" : "blocked";
   const finishedAt = new Date().toISOString();
 
-  await supabaseAdmin
-    .from("meta_refresh_runs")
-    .update({
-      finished_at: finishedAt,
-      status,
-      offers_upserted: upserts,
-      pages_seen: pagesSeen ?? 0,
-      phase: "done",
-      error: searchErrors > 0 ? `${searchErrors} erro(s) durante a coleta — ver mining_logs` : null,
-      details: {
-        deactivated: deactivated ?? 0,
-        search_errors: searchErrors,
-      } as never,
-    })
-    .eq("id", job.run_id);
+  await supabase.rpc("mining_update_run", {
+    p_run_id: job.run_id,
+    p_status: status,
+    p_finished_at: finishedAt,
+    p_phase: "done",
+    p_offers_upserted: upserts,
+    p_pages_seen: pagesSeen ?? 0,
+    p_error: searchErrors > 0 ? `${searchErrors} erro(s) durante a coleta — ver mining_logs` : null,
+    p_details: { deactivated: deactivated ?? 0, search_errors: searchErrors },
+  });
 
-  await supabaseAdmin.from("mining_logs").insert({
-    kind: "run",
-    status,
-    summary: `run finalizada: ${upserts} ofertas, ${pagesSeen ?? 0} páginas, ${deactivated ?? 0} desativadas`,
-    details: {
+  await supabase.rpc("mining_log", {
+    p_kind: "run",
+    p_status: status,
+    p_summary: `run finalizada: ${upserts} ofertas, ${pagesSeen ?? 0} páginas, ${deactivated ?? 0} desativadas`,
+    p_details: {
       run_id: job.run_id,
       started_at: startedAt,
       finished_at: finishedAt,
@@ -398,31 +345,26 @@ async function processFinalizeJob(supabaseAdmin: any, job: MetaRefreshJob) {
       pages_seen: pagesSeen ?? 0,
       deactivated: deactivated ?? 0,
       search_errors: searchErrors,
-    } as never,
+    },
   });
 
-  // Limpeza — não precisamos mais guardar o estado intermediário dessa run.
-  await supabaseAdmin.from("meta_refresh_ads_raw").delete().eq("run_id", job.run_id);
-  await supabaseAdmin.from("meta_refresh_snapshots").delete().eq("run_id", job.run_id);
+  await supabase.rpc("mining_cleanup_run", { p_run_id: job.run_id });
 
   return null;
 }
 
 // ---------- Depois de um job terminar, decide se avança de fase ----------
-async function maybeAdvancePhase(supabaseAdmin: any, job: MetaRefreshJob) {
+async function maybeAdvancePhase(supabase: any, job: MetaRefreshJob) {
   if (job.kind === "meta.search") {
-    if ((await remainingCount(supabaseAdmin, job.run_id, "meta.search")) > 0) return;
-    const advanced = await supabaseAdmin.rpc("try_advance_run_phase", {
+    if ((await remainingCount(supabase, job.run_id, "meta.search")) > 0) return;
+    const { data: advanced } = await supabase.rpc("try_advance_run_phase", {
       p_run_id: job.run_id,
       p_from_phase: "search",
       p_to_phase: "snapshot",
     });
-    if (!advanced.data) return; // outro worker já fez essa transição
+    if (!advanced) return;
 
-    const { data: rawRows } = await supabaseAdmin
-      .from("meta_refresh_ads_raw")
-      .select("ad_archive_id, ad_snapshot_url")
-      .eq("run_id", job.run_id);
+    const { data: rawRows } = await supabase.rpc("mining_get_raw_for_snapshot", { p_run_id: job.run_id });
     const items = rawRows ?? [];
     const jobs = [];
     for (let i = 0; i < items.length; i += ADS_PER_SNAPSHOT_JOB) {
@@ -437,10 +379,9 @@ async function maybeAdvancePhase(supabaseAdmin: any, job: MetaRefreshJob) {
         },
       });
     }
-    if (jobs.length) await supabaseAdmin.from("meta_refresh_jobs").insert(jobs as never);
+    if (jobs.length) await supabase.rpc("mining_enqueue_jobs", { p_jobs: jobs });
     else {
-      // nada pra extrair (nenhum snapshot url) — pula direto pra classify
-      await supabaseAdmin.rpc("try_advance_run_phase", {
+      await supabase.rpc("try_advance_run_phase", {
         p_run_id: job.run_id,
         p_from_phase: "snapshot",
         p_to_phase: "classify",
@@ -449,18 +390,15 @@ async function maybeAdvancePhase(supabaseAdmin: any, job: MetaRefreshJob) {
   }
 
   if (job.kind === "snapshot.extract") {
-    if ((await remainingCount(supabaseAdmin, job.run_id, "snapshot.extract")) > 0) return;
-    const advanced = await supabaseAdmin.rpc("try_advance_run_phase", {
+    if ((await remainingCount(supabase, job.run_id, "snapshot.extract")) > 0) return;
+    const { data: advanced } = await supabase.rpc("try_advance_run_phase", {
       p_run_id: job.run_id,
       p_from_phase: "snapshot",
       p_to_phase: "classify",
     });
-    if (!advanced.data) return;
+    if (!advanced) return;
 
-    const { data: rawRows } = await supabaseAdmin
-      .from("meta_refresh_ads_raw")
-      .select("ad_archive_id")
-      .eq("run_id", job.run_id);
+    const { data: rawRows } = await supabase.rpc("mining_get_raw_ids", { p_run_id: job.run_id });
     const ids = (rawRows ?? []).map((r: any) => r.ad_archive_id);
     const jobs = [];
     for (let i = 0; i < ids.length; i += ADS_PER_CLASSIFY_JOB) {
@@ -470,35 +408,41 @@ async function maybeAdvancePhase(supabaseAdmin: any, job: MetaRefreshJob) {
         payload: { ad_archive_ids: ids.slice(i, i + ADS_PER_CLASSIFY_JOB) },
       });
     }
-    if (jobs.length) await supabaseAdmin.from("meta_refresh_jobs").insert(jobs as never);
+    if (jobs.length) await supabase.rpc("mining_enqueue_jobs", { p_jobs: jobs });
   }
 
   if (job.kind === "classify.upsert") {
-    if ((await remainingCount(supabaseAdmin, job.run_id, "classify.upsert")) > 0) return;
-    const advanced = await supabaseAdmin.rpc("try_advance_run_phase", {
+    if ((await remainingCount(supabase, job.run_id, "classify.upsert")) > 0) return;
+    const { data: advanced } = await supabase.rpc("try_advance_run_phase", {
       p_run_id: job.run_id,
       p_from_phase: "classify",
       p_to_phase: "finalize",
     });
-    if (!advanced.data) return;
-    await supabaseAdmin.from("meta_refresh_jobs").insert([
-      { run_id: job.run_id, kind: "run.finalize", payload: {} },
-    ] as never);
+    if (!advanced) return;
+    await supabase.rpc("mining_enqueue_jobs", {
+      p_jobs: [{ run_id: job.run_id, kind: "run.finalize", payload: {} }],
+    });
   }
 }
 
-async function authorize(
-  request: Request,
-): Promise<{ ok: true } | { ok: false; reason: string }> {
+async function authorize(request: Request): Promise<{ ok: true } | { ok: false; reason: string }> {
   const cronSecret = process.env.CRON_SECRET;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
   const headerCron = request.headers.get("x-cron-secret");
   if (cronSecret && headerCron && headerCron === cronSecret) return { ok: true };
-  const apiKey = request.headers.get("apikey");
-  if (serviceKey && apiKey && apiKey === serviceKey) return { ok: true };
   const auth = request.headers.get("authorization") ?? "";
   const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : null;
-  if (bearer && serviceKey && bearer === serviceKey) return { ok: true };
+  if (bearer) {
+    try {
+      const supabase = await serverSupabaseAnon();
+      const { data, error } = await supabase.auth.getUser(bearer);
+      if (error || !data.user) return { ok: false, reason: "invalid_token" };
+      const { data: isAdmin } = await supabase.rpc("mining_is_admin", { p_user_id: data.user.id });
+      if (isAdmin) return { ok: true };
+      return { ok: false, reason: "not_admin" };
+    } catch {
+      return { ok: false, reason: "auth_error" };
+    }
+  }
   return { ok: false, reason: "missing_credentials" };
 }
 
@@ -514,9 +458,9 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
             { status: 401, headers: { "content-type": "application/json" } },
           );
         }
-        const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const supabase = await serverSupabaseAnon();
 
-        const { data: jobs, error: claimErr } = await supabaseAdmin.rpc("claim_refresh_jobs", {
+        const { data: jobs, error: claimErr } = await supabase.rpc("claim_refresh_jobs", {
           p_limit: JOBS_PER_TICK,
         });
         if (claimErr) {
@@ -534,20 +478,20 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
         for (const job of claimed) {
           let error: string | null = null;
           try {
-            if (job.kind === "meta.search") error = await processSearchJob(supabaseAdmin, job);
-            else if (job.kind === "snapshot.extract") error = await processSnapshotJob(supabaseAdmin, job);
-            else if (job.kind === "classify.upsert") error = await processClassifyJob(supabaseAdmin, job);
-            else if (job.kind === "run.finalize") error = await processFinalizeJob(supabaseAdmin, job);
+            if (job.kind === "meta.search") error = await processSearchJob(supabase, job);
+            else if (job.kind === "snapshot.extract") error = await processSnapshotJob(supabase, job);
+            else if (job.kind === "classify.upsert") error = await processClassifyJob(supabase, job);
+            else if (job.kind === "run.finalize") error = await processFinalizeJob(supabase, job);
             else error = `kind desconhecido: ${job.kind}`;
           } catch (err) {
             error = (err as Error).message;
           }
-          await markJobDone(supabaseAdmin, job.id, error);
+          await markJobDone(supabase, job.id, error);
           if (!error) {
             try {
-              await maybeAdvancePhase(supabaseAdmin, job);
+              await maybeAdvancePhase(supabase, job);
             } catch (err) {
-              await jobLog(supabaseAdmin, job.run_id, job.kind, "erro ao avançar fase", {
+              await jobLog(supabase, job.run_id, job.kind, "erro ao avançar fase", {
                 error: (err as Error).message,
               });
             }
@@ -560,4 +504,3 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
     },
   },
 });
-
