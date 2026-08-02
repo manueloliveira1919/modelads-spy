@@ -4,18 +4,15 @@ import { KEYWORDS_PER_SEARCH_JOB, serverSupabaseAnon } from "@/lib/meta-mining.s
 // Endpoint chamado pelo cron (pg_cron) e pelo painel admin.
 // Segurança: exige x-cron-secret (cron) ou bearer de usuário admin logado.
 //
-// Não depende mais de SUPABASE_SERVICE_ROLE_KEY em nenhum momento — todas
-// as escritas passam pelas funções `mining_*` do banco (RPC), chamadas
-// com a chave pública. A proteção continua sendo esta verificação de
-// autorização abaixo, que roda ANTES de qualquer chamada ao banco.
+// As operações internas da fila usam o cliente privilegiado do servidor.
+// As RPCs de mineração permanecem inacessíveis para anon/authenticated.
 
 interface RunOptions {
   triggeredBy: "cron" | "admin" | "service";
   respectAutoRefresh: boolean;
 }
 
-async function enqueueRefresh(opts: RunOptions) {
-  const supabase = await serverSupabaseAnon();
+async function enqueueRefresh(supabase: any, opts: RunOptions) {
   const {
     loadActiveKeywords,
     loadMiningSettings,
@@ -96,7 +93,10 @@ async function enqueueRefresh(opts: RunOptions) {
 
 async function authorize(
   request: Request,
-): Promise<{ ok: true; source: RunOptions["triggeredBy"] } | { ok: false; reason: string }> {
+): Promise<
+  | { ok: true; source: RunOptions["triggeredBy"]; userId?: string }
+  | { ok: false; reason: string }
+> {
   const cronSecret = process.env.CRON_SECRET;
   const headerCron = request.headers.get("x-cron-secret");
   if (cronSecret && headerCron && headerCron === cronSecret) {
@@ -110,11 +110,7 @@ async function authorize(
       const supabase = await serverSupabaseAnon();
       const { data, error } = await supabase.auth.getUser(bearer);
       if (error || !data.user) return { ok: false, reason: "invalid_token" };
-      const { data: isAdmin } = await supabase.rpc("mining_is_admin", {
-        p_user_id: data.user.id,
-      });
-      if (isAdmin) return { ok: true, source: "admin" };
-      return { ok: false, reason: "not_admin" };
+      return { ok: true, source: "admin", userId: data.user.id };
     } catch (err) {
       return { ok: false, reason: `auth_error: ${(err as Error).message}` };
     }
@@ -141,7 +137,35 @@ export const Route = createFileRoute("/api/public/hooks/refresh-offers")({
           );
         }
         try {
-          const result = await enqueueRefresh({
+          const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+          if (auth.source === "admin") {
+            if (!auth.userId) {
+              return Response.json(
+                { ok: false, error: "unauthorized", reason: "invalid_token" },
+                { status: 401 },
+              );
+            }
+            const { data: isAdmin, error: roleError } = await supabaseAdmin.rpc(
+              "mining_is_admin",
+              { p_user_id: auth.userId },
+            );
+            if (roleError) {
+              console.error("refresh-offers admin role check error", roleError.message);
+              return Response.json(
+                { ok: false, error: "authorization_check_failed" },
+                { status: 500 },
+              );
+            }
+            if (!isAdmin) {
+              return Response.json(
+                { ok: false, error: "unauthorized", reason: "not_admin" },
+                { status: 403 },
+              );
+            }
+          }
+
+          const result = await enqueueRefresh(supabaseAdmin, {
             triggeredBy: auth.source,
             respectAutoRefresh: auth.source === "cron",
           });
