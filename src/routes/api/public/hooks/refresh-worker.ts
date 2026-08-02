@@ -273,7 +273,7 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
         description: bodyText || desc,
         creative_url: creativeUrl,
         creative_type: creativeType,
-        ad_snapshot_url: raw.ad_snapshot_url,
+        ad_snapshot_url: stripSnapshotSecrets(raw.ad_snapshot_url),
         page_url: `https://www.facebook.com/${raw.page_id}`,
         link_url: media.linkUrl,
         ad_start_date: ad.ad_delivery_start_time ?? null,
