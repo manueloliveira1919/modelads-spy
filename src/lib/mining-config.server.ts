@@ -1,6 +1,8 @@
 // Camada de configuração da mineração — carregada do banco.
 // Usada apenas em código server-side (server functions, server routes).
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { serverSupabaseAnon } from "@/lib/meta-mining.server";
+// Config de mineração é lida com a chave pública (só leitura, liberada
+// por policy) — não depende mais do service role.
 
 export interface KeywordRow {
   word: string;
@@ -29,6 +31,7 @@ export interface MiningSettings {
 
 
 export async function loadActiveKeywords(): Promise<KeywordRow[]> {
+  const supabaseAdmin = await serverSupabaseAnon();
   const { data, error } = await supabaseAdmin
     .from("search_keywords")
     .select("word, category, niche, language, country, priority")
@@ -40,6 +43,7 @@ export async function loadActiveKeywords(): Promise<KeywordRow[]> {
 }
 
 export async function loadActiveBlacklist(): Promise<BlacklistRow[]> {
+  const supabaseAdmin = await serverSupabaseAnon();
   const { data, error } = await supabaseAdmin
     .from("blacklist_words")
     .select("word, kind, category")
@@ -49,6 +53,7 @@ export async function loadActiveBlacklist(): Promise<BlacklistRow[]> {
 }
 
 export async function loadActiveCategories(): Promise<Set<string>> {
+  const supabaseAdmin = await serverSupabaseAnon();
   const { data } = await supabaseAdmin
     .from("keyword_categories")
     .select("name")
@@ -57,6 +62,7 @@ export async function loadActiveCategories(): Promise<Set<string>> {
 }
 
 export async function loadMiningSettings(): Promise<MiningSettings> {
+  const supabaseAdmin = await serverSupabaseAnon();
   const { data } = await supabaseAdmin
     .from("mining_settings")
     .select("*")
