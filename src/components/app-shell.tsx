@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   Flame,
   Heart,
-  
+  LifeBuoy,
   Menu,
   X,
   Radar,
