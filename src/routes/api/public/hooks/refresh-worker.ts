@@ -100,7 +100,10 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
           term: step.term,
           category: step.category,
           language_hint: step.language,
-          ad_snapshot_url: stripSnapshotSecrets(ad.ad_snapshot_url),
+          // Tabela interna (service role): guardamos a URL completa porque o token
+          // é obrigatório para abrir o snapshot. A versão sem token é gravada
+          // depois em meta_offers, que é a tabela exposta ao client.
+          ad_snapshot_url: ad.ad_snapshot_url ?? null,
           raw: ad,
         });
       }
