@@ -590,11 +590,51 @@ export type Database = {
         }
         Relationships: []
       }
+      support_ticket_messages: {
+        Row: {
+          attachment_path: string | null
+          author_id: string | null
+          body: string
+          created_at: string
+          id: string
+          is_admin: boolean
+          ticket_id: string
+        }
+        Insert: {
+          attachment_path?: string | null
+          author_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          ticket_id: string
+        }
+        Update: {
+          attachment_path?: string | null
+          author_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          is_admin?: boolean
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_messages_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_tickets: {
         Row: {
+          attachment_path: string | null
           created_at: string
           email: string
           id: string
+          last_message_at: string
           message: string | null
           name: string
           status: string
@@ -603,9 +643,11 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          attachment_path?: string | null
           created_at?: string
           email: string
           id?: string
+          last_message_at?: string
           message?: string | null
           name: string
           status?: string
@@ -614,9 +656,11 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          attachment_path?: string | null
           created_at?: string
           email?: string
           id?: string
+          last_message_at?: string
           message?: string | null
           name?: string
           status?: string
