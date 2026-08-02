@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
@@ -12,6 +13,8 @@ import {
   Settings,
   Radar,
   ArrowLeft,
+  Menu,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,8 +34,66 @@ const NAV: NavItem[] = [
   { to: "/admin/configuracoes", label: "Configurações", icon: Settings },
 ];
 
+function BrandMark() {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-brand">
+        <Radar className="h-4 w-4" strokeWidth={2.5} />
+      </div>
+      <div className="flex flex-col leading-tight">
+        <span className="font-display text-sm font-bold">Modelads</span>
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-brand">
+          Admin
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function NavLinks({
+  pathname,
+  onNavigate,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  return (
+    <nav className="space-y-0.5">
+      {NAV.map((n) => {
+        const active =
+          n.to === "/admin"
+            ? pathname === "/admin"
+            : pathname === n.to || pathname.startsWith(n.to + "/");
+        const Icon = n.icon;
+        return (
+          <Link
+            key={n.to}
+            to={n.to}
+            onClick={onNavigate}
+            className={cn(
+              "relative flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium transition-all duration-200",
+              active
+                ? "bg-gradient-brand text-white shadow-lg"
+                : "text-muted-foreground hover:bg-accent/60 hover:text-foreground",
+            )}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="flex-1 truncate">{n.label}</span>
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    setOpen(false);
+  }, [pathname]);
+
 
   return (
     <div className="min-h-screen bg-background text-foreground lg:flex">
