@@ -11,8 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtmRouteImport } from './routes/utm'
 import { Route as UpgradeRouteImport } from './routes/upgrade'
+import { Route as TermosRouteImport } from './routes/termos'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as PalavrasBloqueadasRouteImport } from './routes/palavras-bloqueadas'
 import { Route as OfertasDoDiaRouteImport } from './routes/ofertas-do-dia'
 import { Route as OfertasRouteImport } from './routes/ofertas'
@@ -23,6 +25,7 @@ import { Route as ModelaSpyAiRouteImport } from './routes/modela-spy-ai'
 import { Route as MinhaContaRouteImport } from './routes/minha-conta'
 import { Route as FerramentasRouteImport } from './routes/ferramentas'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
+import { Route as ExclusaoDeDadosRouteImport } from './routes/exclusao-de-dados'
 import { Route as EmBreveRouteImport } from './routes/em-breve'
 import { Route as CriadorVslRouteImport } from './routes/criador-vsl'
 import { Route as CriadorCriativosRouteImport } from './routes/criador-criativos'
@@ -55,6 +58,11 @@ const UpgradeRoute = UpgradeRouteImport.update({
   path: '/upgrade',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -63,6 +71,11 @@ const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PalavrasBloqueadasRoute = PalavrasBloqueadasRouteImport.update({
@@ -113,6 +126,11 @@ const FerramentasRoute = FerramentasRouteImport.update({
 const FavoritosRoute = FavoritosRouteImport.update({
   id: '/favoritos',
   path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExclusaoDeDadosRoute = ExclusaoDeDadosRouteImport.update({
+  id: '/exclusao-de-dados',
+  path: '/exclusao-de-dados',
   getParentRoute: () => rootRouteImport,
 } as any)
 const EmBreveRoute = EmBreveRouteImport.update({
@@ -232,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/criador-criativos': typeof CriadorCriativosRoute
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
+  '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
   '/minha-conta': typeof MinhaContaRoute
@@ -242,8 +261,10 @@ export interface FileRoutesByFullPath {
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termos': typeof TermosRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
   '/admin/blacklist': typeof AdminBlacklistRoute
@@ -268,6 +289,7 @@ export interface FileRoutesByTo {
   '/criador-criativos': typeof CriadorCriativosRoute
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
+  '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
   '/minha-conta': typeof MinhaContaRoute
@@ -278,8 +300,10 @@ export interface FileRoutesByTo {
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termos': typeof TermosRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
   '/admin/blacklist': typeof AdminBlacklistRoute
@@ -306,6 +330,7 @@ export interface FileRoutesById {
   '/criador-criativos': typeof CriadorCriativosRoute
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
+  '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
   '/minha-conta': typeof MinhaContaRoute
@@ -316,8 +341,10 @@ export interface FileRoutesById {
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
+  '/privacidade': typeof PrivacidadeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/termos': typeof TermosRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
   '/admin/blacklist': typeof AdminBlacklistRoute
@@ -345,6 +372,7 @@ export interface FileRouteTypes {
     | '/criador-criativos'
     | '/criador-vsl'
     | '/em-breve'
+    | '/exclusao-de-dados'
     | '/favoritos'
     | '/ferramentas'
     | '/minha-conta'
@@ -355,8 +383,10 @@ export interface FileRouteTypes {
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
+    | '/privacidade'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/termos'
     | '/upgrade'
     | '/utm'
     | '/admin/blacklist'
@@ -381,6 +411,7 @@ export interface FileRouteTypes {
     | '/criador-criativos'
     | '/criador-vsl'
     | '/em-breve'
+    | '/exclusao-de-dados'
     | '/favoritos'
     | '/ferramentas'
     | '/minha-conta'
@@ -391,8 +422,10 @@ export interface FileRouteTypes {
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
+    | '/privacidade'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/termos'
     | '/upgrade'
     | '/utm'
     | '/admin/blacklist'
@@ -418,6 +451,7 @@ export interface FileRouteTypes {
     | '/criador-criativos'
     | '/criador-vsl'
     | '/em-breve'
+    | '/exclusao-de-dados'
     | '/favoritos'
     | '/ferramentas'
     | '/minha-conta'
@@ -428,8 +462,10 @@ export interface FileRouteTypes {
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
+    | '/privacidade'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/termos'
     | '/upgrade'
     | '/utm'
     | '/admin/blacklist'
@@ -456,6 +492,7 @@ export interface RootRouteChildren {
   CriadorCriativosRoute: typeof CriadorCriativosRoute
   CriadorVslRoute: typeof CriadorVslRoute
   EmBreveRoute: typeof EmBreveRoute
+  ExclusaoDeDadosRoute: typeof ExclusaoDeDadosRoute
   FavoritosRoute: typeof FavoritosRoute
   FerramentasRoute: typeof FerramentasRoute
   MinhaContaRoute: typeof MinhaContaRoute
@@ -466,8 +503,10 @@ export interface RootRouteChildren {
   OfertasRoute: typeof OfertasRoute
   OfertasDoDiaRoute: typeof OfertasDoDiaRoute
   PalavrasBloqueadasRoute: typeof PalavrasBloqueadasRoute
+  PrivacidadeRoute: typeof PrivacidadeRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TermosRoute: typeof TermosRoute
   UpgradeRoute: typeof UpgradeRoute
   UtmRoute: typeof UtmRoute
   OfertaIdRoute: typeof OfertaIdRoute
@@ -490,6 +529,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UpgradeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -502,6 +548,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/palavras-bloqueadas': {
@@ -572,6 +625,13 @@ declare module '@tanstack/react-router' {
       path: '/favoritos'
       fullPath: '/favoritos'
       preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/exclusao-de-dados': {
+      id: '/exclusao-de-dados'
+      path: '/exclusao-de-dados'
+      fullPath: '/exclusao-de-dados'
+      preLoaderRoute: typeof ExclusaoDeDadosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/em-breve': {
@@ -762,6 +822,7 @@ const rootRouteChildren: RootRouteChildren = {
   CriadorCriativosRoute: CriadorCriativosRoute,
   CriadorVslRoute: CriadorVslRoute,
   EmBreveRoute: EmBreveRoute,
+  ExclusaoDeDadosRoute: ExclusaoDeDadosRoute,
   FavoritosRoute: FavoritosRoute,
   FerramentasRoute: FerramentasRoute,
   MinhaContaRoute: MinhaContaRoute,
@@ -772,8 +833,10 @@ const rootRouteChildren: RootRouteChildren = {
   OfertasRoute: OfertasRoute,
   OfertasDoDiaRoute: OfertasDoDiaRoute,
   PalavrasBloqueadasRoute: PalavrasBloqueadasRoute,
+  PrivacidadeRoute: PrivacidadeRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TermosRoute: TermosRoute,
   UpgradeRoute: UpgradeRoute,
   UtmRoute: UtmRoute,
   OfertaIdRoute: OfertaIdRoute,
@@ -782,3 +845,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

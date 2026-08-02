@@ -128,6 +128,7 @@ export type Database = {
           page_name: string
           page_url: string | null
           product_type: string | null
+          quality_score: number
           search_term: string | null
           status: string
           structure: string | null
@@ -156,6 +157,7 @@ export type Database = {
           page_name: string
           page_url?: string | null
           product_type?: string | null
+          quality_score?: number
           search_term?: string | null
           status?: string
           structure?: string | null
@@ -184,12 +186,107 @@ export type Database = {
           page_name?: string
           page_url?: string | null
           product_type?: string | null
+          quality_score?: number
           search_term?: string | null
           status?: string
           structure?: string | null
           updated_at?: string
         }
         Relationships: []
+      }
+      meta_refresh_ads_raw: {
+        Row: {
+          ad_archive_id: string
+          ad_snapshot_url: string | null
+          category: string | null
+          created_at: string
+          language_hint: string | null
+          page_id: string
+          page_name: string | null
+          raw: Json
+          run_id: string
+          term: string | null
+        }
+        Insert: {
+          ad_archive_id: string
+          ad_snapshot_url?: string | null
+          category?: string | null
+          created_at?: string
+          language_hint?: string | null
+          page_id: string
+          page_name?: string | null
+          raw: Json
+          run_id: string
+          term?: string | null
+        }
+        Update: {
+          ad_archive_id?: string
+          ad_snapshot_url?: string | null
+          category?: string | null
+          created_at?: string
+          language_hint?: string | null
+          page_id?: string
+          page_name?: string | null
+          raw?: Json
+          run_id?: string
+          term?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_refresh_ads_raw_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "meta_refresh_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meta_refresh_jobs: {
+        Row: {
+          attempts: number
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          kind: string
+          payload: Json
+          run_id: string
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          kind: string
+          payload?: Json
+          run_id: string
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          kind?: string
+          payload?: Json
+          run_id?: string
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_refresh_jobs_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "meta_refresh_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meta_refresh_runs: {
         Row: {
@@ -199,6 +296,7 @@ export type Database = {
           id: string
           offers_upserted: number
           pages_seen: number
+          phase: string
           started_at: string
           status: string
         }
@@ -209,6 +307,7 @@ export type Database = {
           id?: string
           offers_upserted?: number
           pages_seen?: number
+          phase?: string
           started_at?: string
           status?: string
         }
@@ -219,10 +318,55 @@ export type Database = {
           id?: string
           offers_upserted?: number
           pages_seen?: number
+          phase?: string
           started_at?: string
           status?: string
         }
         Relationships: []
+      }
+      meta_refresh_snapshots: {
+        Row: {
+          ad_archive_id: string
+          attempts: number
+          created_at: string
+          error: string | null
+          image_url: string | null
+          link_url: string | null
+          run_id: string
+          snapshot_url: string | null
+          video_url: string | null
+        }
+        Insert: {
+          ad_archive_id: string
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          image_url?: string | null
+          link_url?: string | null
+          run_id: string
+          snapshot_url?: string | null
+          video_url?: string | null
+        }
+        Update: {
+          ad_archive_id?: string
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          image_url?: string | null
+          link_url?: string | null
+          run_id?: string
+          snapshot_url?: string | null
+          video_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meta_refresh_snapshots_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "meta_refresh_runs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mining_logs: {
         Row: {
@@ -248,6 +392,48 @@ export type Database = {
           kind?: string
           status?: string
           summary?: string | null
+        }
+        Relationships: []
+      }
+      mining_settings: {
+        Row: {
+          ads_limit: number
+          auto_refresh: boolean
+          countries: string[]
+          created_at: string
+          id: string
+          languages: string[]
+          max_pages: number
+          page_size: number
+          per_keyword_limit: number
+          singleton: boolean
+          updated_at: string
+        }
+        Insert: {
+          ads_limit?: number
+          auto_refresh?: boolean
+          countries?: string[]
+          created_at?: string
+          id?: string
+          languages?: string[]
+          max_pages?: number
+          page_size?: number
+          per_keyword_limit?: number
+          singleton?: boolean
+          updated_at?: string
+        }
+        Update: {
+          ads_limit?: number
+          auto_refresh?: boolean
+          countries?: string[]
+          created_at?: string
+          id?: string
+          languages?: string[]
+          max_pages?: number
+          page_size?: number
+          per_keyword_limit?: number
+          singleton?: boolean
+          updated_at?: string
         }
         Relationships: []
       }
@@ -365,27 +551,39 @@ export type Database = {
       search_keywords: {
         Row: {
           category: string | null
+          country: string
           created_at: string
           id: string
           is_active: boolean
+          language: string
+          niche: string | null
+          priority: number
           updated_at: string
           weight: number
           word: string
         }
         Insert: {
           category?: string | null
+          country?: string
           created_at?: string
           id?: string
           is_active?: boolean
+          language?: string
+          niche?: string | null
+          priority?: number
           updated_at?: string
           weight?: number
           word: string
         }
         Update: {
           category?: string | null
+          country?: string
           created_at?: string
           id?: string
           is_active?: boolean
+          language?: string
+          niche?: string | null
+          priority?: number
           updated_at?: string
           weight?: number
           word?: string
@@ -484,6 +682,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      claim_refresh_jobs: {
+        Args: { p_limit?: number }
+        Returns: {
+          attempts: number
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          kind: string
+          payload: Json
+          run_id: string
+          started_at: string | null
+          status: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "meta_refresh_jobs"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -516,6 +735,7 @@ export type Database = {
           page_name: string
           page_url: string | null
           product_type: string | null
+          quality_score: number
           search_term: string | null
           status: string
           structure: string | null
@@ -527,6 +747,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      try_advance_run_phase: {
+        Args: { p_from_phase: string; p_run_id: string; p_to_phase: string }
+        Returns: boolean
       }
     }
     Enums: {

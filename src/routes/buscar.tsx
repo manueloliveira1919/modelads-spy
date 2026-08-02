@@ -105,7 +105,7 @@ function BuscarPage() {
           <button
             type="submit"
             disabled={mutation.isPending || !term.trim()}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-3 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-brand px-5 py-3 text-sm font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {mutation.isPending ? (
               <>
@@ -353,7 +353,7 @@ function LiveResultCard({ result }: { result: LiveSearchResult }) {
             href={result.adLibraryUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-brand px-3 text-sm font-semibold text-brand-foreground transition-opacity hover:opacity-90"
+            className="inline-flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-brand px-3 text-sm font-semibold"
           >
             <ExternalLink className="h-4 w-4" />
             Ver Biblioteca
@@ -414,7 +414,7 @@ function FilterChip({
       className={cn(
         "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
         active
-          ? "border-brand bg-brand text-brand-foreground"
+          ? "border-brand bg-gradient-brand"
           : "border-border bg-background text-muted-foreground hover:border-accent hover:text-foreground",
       )}
     >
