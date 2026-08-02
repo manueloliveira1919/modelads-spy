@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { Search, RefreshCw, ListFilter, ChevronDown, Flame } from "lucide-react";
-import { toast } from "sonner";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { Search, ListFilter, ChevronDown, Flame } from "lucide-react";
+
 import { AppShell } from "@/components/app-shell";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
@@ -61,37 +61,11 @@ function Page() {
   const [scale, setScale] = useState<ScaleFilter>("escalando");
   const [query, setQuery] = useState("");
 
-  const [refreshing, setRefreshing] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  const queryClient = useQueryClient();
   const { data } = useSuspenseQuery(offersQuery);
   const offers = data.offers;
 
-  async function handleRefresh() {
-    if (refreshing) return;
-    setRefreshing(true);
-    const t = toast.loading("Atualizando ofertas da Meta Ad Library…");
-    try {
-      const res = await fetch("/api/public/hooks/refresh-offers", { method: "POST" });
-      const json = (await res.json()) as {
-        ok?: boolean;
-        offers?: number;
-        pages?: number;
-        error?: string;
-      };
-      if (!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
-      await queryClient.invalidateQueries({ queryKey: ["offers"] });
-      toast.success(
-        `Atualizado: ${json.offers ?? 0} anúncios / ${json.pages ?? 0} páginas`,
-        { id: t },
-      );
-    } catch (err) {
-      toast.error(`Falha ao atualizar: ${(err as Error).message}`, { id: t });
-    } finally {
-      setRefreshing(false);
-    }
-  }
 
   const activeFilterCount =
     (category !== "todas" ? 1 : 0) +
@@ -170,14 +144,6 @@ function Page() {
                 </span>
               )}
               <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", filtersOpen && "rotate-180")} />
-            </button>
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-brand px-4 py-2.5 text-sm font-semibold transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
-              {refreshing ? "Atualizando…" : "Atualizar Ofertas"}
             </button>
           </div>
         </div>
