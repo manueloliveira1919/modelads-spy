@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   Flame,
   Heart,
-  
+  LifeBuoy,
   Menu,
   X,
   Radar,
@@ -55,6 +55,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
     title: "Conta",
     items: [
       { to: "/minha-conta", label: "Minha Conta", icon: User },
+      { to: "/suporte", label: "Suporte", icon: LifeBuoy },
       { to: "/configuracoes", label: "Configurações", icon: Settings },
     ],
   },

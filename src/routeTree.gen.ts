@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as UtmRouteImport } from './routes/utm'
 import { Route as UpgradeRouteImport } from './routes/upgrade'
 import { Route as TermosRouteImport } from './routes/termos'
+import { Route as SuporteRouteImport } from './routes/suporte'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
@@ -62,6 +63,11 @@ const UpgradeRoute = UpgradeRouteImport.update({
 const TermosRoute = TermosRouteImport.update({
   id: '/termos',
   path: '/termos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SuporteRoute = SuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -271,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/privacidade': typeof PrivacidadeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/suporte': typeof SuporteRoute
   '/termos': typeof TermosRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
@@ -311,6 +318,7 @@ export interface FileRoutesByTo {
   '/privacidade': typeof PrivacidadeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/suporte': typeof SuporteRoute
   '/termos': typeof TermosRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
@@ -353,6 +361,7 @@ export interface FileRoutesById {
   '/privacidade': typeof PrivacidadeRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/suporte': typeof SuporteRoute
   '/termos': typeof TermosRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
@@ -396,6 +405,7 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/suporte'
     | '/termos'
     | '/upgrade'
     | '/utm'
@@ -436,6 +446,7 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/suporte'
     | '/termos'
     | '/upgrade'
     | '/utm'
@@ -477,6 +488,7 @@ export interface FileRouteTypes {
     | '/privacidade'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/suporte'
     | '/termos'
     | '/upgrade'
     | '/utm'
@@ -519,6 +531,7 @@ export interface RootRouteChildren {
   PrivacidadeRoute: typeof PrivacidadeRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SuporteRoute: typeof SuporteRoute
   TermosRoute: typeof TermosRoute
   UpgradeRoute: typeof UpgradeRoute
   UtmRoute: typeof UtmRoute
@@ -548,6 +561,13 @@ declare module '@tanstack/react-router' {
       path: '/termos'
       fullPath: '/termos'
       preLoaderRoute: typeof TermosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/suporte': {
+      id: '/suporte'
+      path: '/suporte'
+      fullPath: '/suporte'
+      preLoaderRoute: typeof SuporteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitemap.xml': {
@@ -857,6 +877,7 @@ const rootRouteChildren: RootRouteChildren = {
   PrivacidadeRoute: PrivacidadeRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SuporteRoute: SuporteRoute,
   TermosRoute: TermosRoute,
   UpgradeRoute: UpgradeRoute,
   UtmRoute: UtmRoute,
@@ -867,13 +888,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
