@@ -368,36 +368,19 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
 async function maybeAdvancePhase(supabase: any, job: MetaRefreshJob) {
   if (job.kind === "meta.search") {
     if ((await remainingCount(supabase, job.run_id, "meta.search")) > 0) return;
+    // Fase de snapshot desativada: a Meta bloqueia a leitura do ad_snapshot_url
+    // (devolve página de erro), então vamos direto para a classificação.
     const { data: advanced } = await supabase.rpc("try_advance_run_phase", {
       p_run_id: job.run_id,
       p_from_phase: "search",
       p_to_phase: "snapshot",
     });
     if (!advanced) return;
-
-    const { data: rawRows } = await supabase.rpc("mining_get_raw_for_snapshot", { p_run_id: job.run_id });
-    const items = rawRows ?? [];
-    const jobs = [];
-    for (let i = 0; i < items.length; i += ADS_PER_SNAPSHOT_JOB) {
-      jobs.push({
-        run_id: job.run_id,
-        kind: "snapshot.extract",
-        payload: {
-          items: items.slice(i, i + ADS_PER_SNAPSHOT_JOB).map((r: any) => ({
-            ad_archive_id: r.ad_archive_id,
-            snapshot_url: r.ad_snapshot_url,
-          })),
-        },
-      });
-    }
-    if (jobs.length) await supabase.rpc("mining_enqueue_jobs", { p_jobs: jobs });
-    else {
-      await supabase.rpc("try_advance_run_phase", {
-        p_run_id: job.run_id,
-        p_from_phase: "snapshot",
-        p_to_phase: "classify",
-      });
-    }
+    await supabase.rpc("try_advance_run_phase", {
+      p_run_id: job.run_id,
+      p_from_phase: "snapshot",
+      p_to_phase: "classify",
+    });
   }
 
   if (job.kind === "snapshot.extract") {
