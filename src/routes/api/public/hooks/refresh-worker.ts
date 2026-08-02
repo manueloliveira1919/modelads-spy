@@ -198,10 +198,18 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
     try {
       const ad = raw.raw as MetaAdItem;
       const snapshot = snapshotByAd.get(raw.ad_archive_id);
+      // A Meta passou a bloquear a leitura do snapshot (retorna página de erro),
+      // então o domínio do anúncio (link caption) é a fonte principal de destino.
+      const caption = ad.ad_creative_link_captions?.[0]?.trim() ?? "";
+      const captionLink = caption
+        ? caption.startsWith("http")
+          ? caption
+          : `https://${caption.replace(/^\/+/, "")}`
+        : null;
       const media = {
         imageUrl: snapshot?.image_url ?? null,
         videoUrl: snapshot?.video_url ?? null,
-        linkUrl: snapshot?.link_url ?? null,
+        linkUrl: snapshot?.link_url ?? captionLink,
       };
 
       const bodyText = ad.ad_creative_bodies?.[0] ?? "";
