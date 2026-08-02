@@ -254,7 +254,9 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
       const hasCreative = !!creativeUrl;
       const activeAdsCount = pageCounts.get(raw.page_id) ?? 1;
 
-      if (!hasLanding && !hasCreative) {
+      // Sem criativo/link não é motivo para descartar (a Meta não expõe mídia na
+      // API pública); descartamos apenas anúncios sem nenhum texto aproveitável.
+      if (!headline.trim()) {
         skipped.noLanding++;
         continue;
       }
