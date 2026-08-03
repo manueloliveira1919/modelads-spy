@@ -214,22 +214,22 @@
 @utility bg-gradient-brand {
   background-image: var(--gradient-brand);
   color: #ffffff;
-  box-shadow: 0 0 25px rgba(29, 184, 255, 0.25);
+  box-shadow: 0 0 25px rgba(37, 99, 235, 0.28);
 
   &:hover {
-    filter: brightness(1.1) saturate(1.05);
-    box-shadow: 0 0 34px rgba(29, 184, 255, 0.38);
+    filter: brightness(1.12) saturate(1.05);
+    box-shadow: 0 0 34px rgba(59, 130, 246, 0.45);
   }
 }
 
 @utility bg-gradient-gold {
   background-image: var(--gradient-gold);
   color: #2b2100;
-  box-shadow: 0 0 22px rgba(255, 184, 0, 0.25);
+  box-shadow: 0 0 22px rgba(251, 191, 36, 0.28);
 
   &:hover {
     filter: brightness(1.06);
-    box-shadow: 0 0 32px rgba(255, 184, 0, 0.4);
+    box-shadow: 0 0 32px rgba(252, 211, 77, 0.45);
   }
 }
 
@@ -253,13 +253,16 @@
 }
 
 @utility pro-shine {
-  box-shadow: 0 0 0 1px rgba(255, 184, 0, 0.35), 0 0 26px -6px rgba(255, 184, 0, 0.35);
+  border-color: rgba(251, 191, 36, 0.35);
+  box-shadow: 0 0 0 1px rgba(251, 191, 36, 0.35), 0 0 34px -8px rgba(245, 158, 11, 0.45),
+    0 0 90px -40px rgba(252, 211, 77, 0.55);
 }
 
 @utility glow-brand {
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--brand-2) 40%, transparent),
-    0 10px 40px -12px rgba(29, 184, 255, 0.45);
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--brand-3) 40%, transparent),
+    0 10px 40px -12px rgba(59, 130, 246, 0.5);
 }
+
 
 @utility glow-hot {
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--hot) 40%, transparent),
