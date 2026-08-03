@@ -39,6 +39,19 @@ Quando uma categoria é escolhida, só as palavras daquela categoria entram na f
 
 Observação: a distribuição sugerida (100 palavras por categoria) é de conteúdo, não de código — dá para ajustar na tela de Palavras-chave desativando o excedente, sem perder nada.
 
+## Segurança da mudança (respostas às suas dúvidas)
+
+**Quebra a mineração que está rodando agora?** Não. A fila de tarefas fica no banco; alterar o código não apaga nem reinicia nada. Além disso, o processador que roda hoje é o do site publicado — as alterações só passam a valer depois de publicar. Ainda assim, o mais tranquilo é **aprovar agora e publicar depois que a execução atual terminar**, para o efeito da mudança ficar limpo de medir.
+
+**Aumentar para 6 é arriscado de bloqueio?** É um risco baixo. Cada ciclo passa de 3 para 6 tarefas por minuto — em pico, algo como 6 a 12 chamadas por minuto à API da Meta, bem abaixo dos limites normais de um app. O que costuma gerar bloqueio é rajada alta e contínua (20+ por minuto), não esse patamar.
+
+**Plano de segurança embutido:**
+- Se a Meta responder com erro de limite (código 4 / 17 / 613), a tarefa é reenfileirada e aguarda o ciclo seguinte, em vez de ser descartada — já existe o vigia que devolve tarefas presas para a fila.
+- Os erros de API por execução continuam registrados; se aparecerem erros de limite, basta voltar para 4 ou 3 num ajuste de uma linha.
+- Nada de subir para 10 ou 15 agora.
+
+**Sugestão de ordem:** aprovar o plano completo, aplicar Passo 1 + Passo 2 juntos e publicar após o fim da execução atual; na execução seguinte você já vê a barra de progresso e o tempo real. O Passo 3 (minerar por categoria) entra na sequência, sem depender dos outros.
+
 ## Detalhes técnicos
 
 - **Passo 1**: `JOBS_PER_TICK` de 3 → 6 em `src/routes/api/public/hooks/refresh-worker.ts` (o `claim_refresh_jobs` já recebe o limite por parâmetro; nada muda no banco).
