@@ -10,6 +10,7 @@ import { KEYWORDS_PER_SEARCH_JOB, serverSupabaseAnon } from "@/lib/meta-mining.s
 interface RunOptions {
   triggeredBy: "cron" | "admin" | "service";
   respectAutoRefresh: boolean;
+  category?: string | null;
 }
 
 async function enqueueRefresh(supabase: any, opts: RunOptions) {
@@ -36,9 +37,15 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     return { ok: true, skipped: true, reason: "auto_refresh_disabled" };
   }
 
-  const plan = buildSearchPlan(keywords, settings);
+  const category = opts.category?.trim() || null;
+  const plan = buildSearchPlan(keywords, settings, category);
   if (plan.length === 0) {
-    return { ok: false, error: "Plano de busca vazio — nenhuma keyword ativa elegível." };
+    return {
+      ok: false,
+      error: category
+        ? `Nenhuma palavra-chave ativa na categoria "${category}".`
+        : "Plano de busca vazio — nenhuma keyword ativa elegível.",
+    };
   }
 
   const { data: runId, error: runErr } = await supabase.rpc("mining_create_run", {
@@ -47,6 +54,12 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
   if (runErr || !runId) {
     throw new Error(`criar run: ${runErr?.message ?? "sem id retornado"}`);
   }
+
+  await supabase.rpc("mining_update_run", {
+    p_run_id: runId,
+    p_status: "running",
+    p_details: { category, triggered_by: opts.triggeredBy },
+  });
 
   const jobs: Record<string, unknown>[] = [];
   for (let i = 0; i < plan.length; i += KEYWORDS_PER_SEARCH_JOB) {
@@ -79,12 +92,14 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
       started_at: startedAt,
       plan_size: plan.length,
       jobs_enqueued: jobs.length,
+      category,
     },
   });
 
   return {
     ok: true,
     run_id: runId,
+    category,
     plan_size: plan.length,
     jobs_enqueued: jobs.length,
     note: "Mineração enfileirada. O worker (a cada minuto) processa os lotes aos poucos.",
@@ -165,9 +180,18 @@ export const Route = createFileRoute("/api/public/hooks/refresh-offers")({
             }
           }
 
+          let category: string | null = null;
+          try {
+            const body = (await request.json()) as { category?: string | null };
+            if (typeof body?.category === "string") category = body.category;
+          } catch {
+            /* corpo vazio = minerar todas as categorias */
+          }
+
           const result = await enqueueRefresh(supabaseAdmin, {
             triggeredBy: auth.source,
             respectAutoRefresh: auth.source === "cron",
+            category,
           });
           return Response.json(result);
         } catch (err) {

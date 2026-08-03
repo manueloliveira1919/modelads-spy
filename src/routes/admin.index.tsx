@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { summarizeProgress, useMiningProgress } from "@/components/mining-progress";
 import {
   Users,
   Sparkles,
@@ -28,7 +30,7 @@ function AdminDashboard() {
         supabase.from("meta_offers").select("id", { count: "exact", head: true }).eq("is_active", true),
         supabase
           .from("meta_refresh_runs")
-          .select("started_at, status, offers_upserted")
+          .select("id, started_at, status, offers_upserted")
           .order("started_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
@@ -62,6 +64,10 @@ function AdminDashboard() {
   });
 
   const s = statsQuery.data;
+  const runningNow = s?.lastRun?.status === "running";
+  const progressQuery = useMiningProgress(s?.lastRun?.id, !!runningNow);
+  const progress = progressQuery.data ?? null;
+  const summary = progress ? summarizeProgress(progress) : null;
   const STATS = [
     { label: "Clientes cadastrados", value: s?.users ?? "—", icon: Users, hint: "Total geral" },
     { label: "Plano Starter", value: s?.roleCounts.starter ?? "—", icon: Sparkles, hint: "Ativos" },
@@ -89,6 +95,29 @@ function AdminDashboard() {
           </Badge>
         }
       />
+
+      {runningNow && summary && progress && (
+        <Card className="mb-6 border-border/60">
+          <CardContent className="space-y-3 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Activity className="h-4 w-4 text-brand" />
+                Mineração em andamento — {summary.phaseLabel}
+                {summary.category && <Badge variant="secondary">{summary.category}</Badge>}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {summary.done}/{summary.total} tarefas · restante ~{summary.eta}
+              </span>
+            </div>
+            <Progress value={summary.percent} />
+            <div className="text-xs text-muted-foreground">
+              Encontrados: {progress.ads_found} · Aprovados: {progress.upserts} · Descartados:{" "}
+              {summary.discardedTotal}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {STATS.map((stat) => {

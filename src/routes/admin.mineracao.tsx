@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,6 +8,14 @@ import { AdminPageHeader } from "@/components/admin-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { MiningProgressPanel, useMiningProgress } from "@/components/mining-progress";
 import {
   Table,
   TableBody,
@@ -51,6 +60,7 @@ function formatDuration(startIso: string, endIso: string | null): string {
 
 function MineracaoPage() {
   const qc = useQueryClient();
+  const [category, setCategory] = useState<string>("__all__");
 
   const runsQuery = useQuery({
     queryKey: ["admin", "refresh_runs"],
@@ -66,6 +76,19 @@ function MineracaoPage() {
     refetchInterval: 15_000,
   });
 
+  const categoriesQuery = useQuery({
+    queryKey: ["admin", "categories", "active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("keyword_categories")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+
   const last = runsQuery.data?.[0];
   const running = last?.status === "running";
   const details = (last?.details ?? {}) as {
@@ -75,6 +98,9 @@ function MineracaoPage() {
     errors?: string[];
   };
 
+  const progressQuery = useMiningProgress(last?.id, running);
+  const progress = progressQuery.data ?? null;
+
   const mineMut = useMutation({
     mutationFn: async () => {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -82,10 +108,11 @@ function MineracaoPage() {
       if (!token) throw new Error("Sua sessão expirou. Entre novamente para executar a mineração.");
       const res = await fetch("/api/public/hooks/refresh-offers", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ category: category === "__all__" ? null : category }),
       });
-      const data = (await res.json()) as { error?: string; reason?: string };
-      if (!res.ok) {
+      const data = (await res.json()) as { ok?: boolean; error?: string; reason?: string };
+      if (!res.ok || data.ok === false) {
         if (data.reason === "not_admin") throw new Error("Sua conta não tem permissão de administrador.");
         if (data.reason === "invalid_token") throw new Error("Sua sessão expirou. Entre novamente.");
         throw new Error(data.error ?? `Falha ao iniciar a mineração (HTTP ${res.status}).`);
@@ -146,6 +173,19 @@ function MineracaoPage() {
         description="Acompanhe e opere a mineração de anúncios."
         actions={
           <>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Minerar todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Minerar todas</SelectItem>
+                {(categoriesQuery.data ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.name}>
+                    Apenas {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               className="gap-2"
               disabled={mineMut.isPending || running}
@@ -194,6 +234,19 @@ function MineracaoPage() {
           {running ? "Executando" : (last?.status ?? "Aguardando")}
         </Badge>
       </div>
+
+      {progress && (running || progress.status === "running") && (
+        <Card className="mb-6 border-border/60">
+          <CardHeader>
+            <CardTitle className="text-base">Progresso da execução</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MiningProgressPanel progress={progress} />
+          </CardContent>
+        </Card>
+      )}
+
+
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {METRICS.map((m) => {

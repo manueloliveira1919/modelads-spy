@@ -145,13 +145,16 @@ export interface SearchPlanStep {
 export function buildSearchPlan(
   keywords: KeywordRow[],
   settings: MiningSettings,
+  category?: string | null,
 ): SearchPlanStep[] {
   const allowedCountries = new Set(settings.countries);
   const allowedLangs = new Set(settings.languages);
+  const wanted = category?.trim().toLowerCase() || null;
   const plan: SearchPlanStep[] = [];
   for (const k of keywords) {
     if (allowedCountries.size && !allowedCountries.has(k.country)) continue;
     if (allowedLangs.size && !allowedLangs.has(k.language)) continue;
+    if (wanted && (k.category ?? "").trim().toLowerCase() !== wanted) continue;
     plan.push({
       term: k.word,
       category: k.category,
