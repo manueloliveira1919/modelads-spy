@@ -170,15 +170,15 @@
   }
 
   input:focus-visible, textarea:focus-visible, select:focus-visible {
-    border-color: var(--brand-2);
-    box-shadow: 0 0 0 1px var(--brand-2), 0 0 18px rgba(29, 184, 255, 0.18);
+    border-color: var(--brand-3);
+    box-shadow: 0 0 0 1px var(--brand-3), 0 0 18px rgba(59, 130, 246, 0.2);
     outline: none;
   }
 
   /* Scrollbar fina com thumb azul */
   * {
     scrollbar-width: thin;
-    scrollbar-color: var(--brand-2) #111827;
+    scrollbar-color: var(--brand-3) #0f172a;
   }
 
   ::-webkit-scrollbar {
@@ -187,13 +187,14 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #111827;
+    background: #0f172a;
   }
 
   ::-webkit-scrollbar-thumb {
     background: var(--gradient-brand);
     border-radius: 999px;
   }
+
 }
 
 @utility text-gradient-brand {
