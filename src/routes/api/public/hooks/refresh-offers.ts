@@ -92,12 +92,14 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
       started_at: startedAt,
       plan_size: plan.length,
       jobs_enqueued: jobs.length,
+      category,
     },
   });
 
   return {
     ok: true,
     run_id: runId,
+    category,
     plan_size: plan.length,
     jobs_enqueued: jobs.length,
     note: "Mineração enfileirada. O worker (a cada minuto) processa os lotes aos poucos.",
