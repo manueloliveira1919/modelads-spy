@@ -235,6 +235,19 @@ function MineracaoPage() {
         </Badge>
       </div>
 
+      {progress && (running || progress.status === "running") && (
+        <Card className="mb-6 border-border/60">
+          <CardHeader>
+            <CardTitle className="text-base">Progresso da execução</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MiningProgressPanel progress={progress} />
+          </CardContent>
+        </Card>
+      )}
+
+
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {METRICS.map((m) => {
           const Icon = m.icon;
