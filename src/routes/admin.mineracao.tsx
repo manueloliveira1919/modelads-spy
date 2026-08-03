@@ -60,6 +60,7 @@ function formatDuration(startIso: string, endIso: string | null): string {
 
 function MineracaoPage() {
   const qc = useQueryClient();
+  const [category, setCategory] = useState<string>("__all__");
 
   const runsQuery = useQuery({
     queryKey: ["admin", "refresh_runs"],
@@ -75,6 +76,19 @@ function MineracaoPage() {
     refetchInterval: 15_000,
   });
 
+  const categoriesQuery = useQuery({
+    queryKey: ["admin", "categories", "active"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("keyword_categories")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+
   const last = runsQuery.data?.[0];
   const running = last?.status === "running";
   const details = (last?.details ?? {}) as {
@@ -84,6 +98,9 @@ function MineracaoPage() {
     errors?: string[];
   };
 
+  const progressQuery = useMiningProgress(last?.id, running);
+  const progress = progressQuery.data ?? null;
+
   const mineMut = useMutation({
     mutationFn: async () => {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -91,10 +108,11 @@ function MineracaoPage() {
       if (!token) throw new Error("Sua sessão expirou. Entre novamente para executar a mineração.");
       const res = await fetch("/api/public/hooks/refresh-offers", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ category: category === "__all__" ? null : category }),
       });
-      const data = (await res.json()) as { error?: string; reason?: string };
-      if (!res.ok) {
+      const data = (await res.json()) as { ok?: boolean; error?: string; reason?: string };
+      if (!res.ok || data.ok === false) {
         if (data.reason === "not_admin") throw new Error("Sua conta não tem permissão de administrador.");
         if (data.reason === "invalid_token") throw new Error("Sua sessão expirou. Entre novamente.");
         throw new Error(data.error ?? `Falha ao iniciar a mineração (HTTP ${res.status}).`);
