@@ -180,9 +180,18 @@ export const Route = createFileRoute("/api/public/hooks/refresh-offers")({
             }
           }
 
+          let category: string | null = null;
+          try {
+            const body = (await request.json()) as { category?: string | null };
+            if (typeof body?.category === "string") category = body.category;
+          } catch {
+            /* corpo vazio = minerar todas as categorias */
+          }
+
           const result = await enqueueRefresh(supabaseAdmin, {
             triggeredBy: auth.source,
             respectAutoRefresh: auth.source === "cron",
+            category,
           });
           return Response.json(result);
         } catch (err) {
