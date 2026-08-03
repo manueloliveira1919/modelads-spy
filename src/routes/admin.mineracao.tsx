@@ -173,6 +173,19 @@ function MineracaoPage() {
         description="Acompanhe e opere a mineração de anúncios."
         actions={
           <>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Minerar todas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">Minerar todas</SelectItem>
+                {(categoriesQuery.data ?? []).map((c) => (
+                  <SelectItem key={c.id} value={c.name}>
+                    Apenas {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <Button
               className="gap-2"
               disabled={mineMut.isPending || running}
