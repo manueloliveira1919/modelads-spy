@@ -880,6 +880,7 @@ export type Database = {
         Args: { p_kind: string; p_run_id: string }
         Returns: number
       }
+      mining_run_progress: { Args: { p_run_id: string }; Returns: Json }
       mining_sum_job_logs: {
         Args: { p_run_id: string }
         Returns: {
