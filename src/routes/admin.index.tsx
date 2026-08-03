@@ -96,6 +96,29 @@ function AdminDashboard() {
         }
       />
 
+      {runningNow && summary && progress && (
+        <Card className="mb-6 border-border/60">
+          <CardContent className="space-y-3 p-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-sm font-medium">
+                <Activity className="h-4 w-4 text-brand" />
+                Mineração em andamento — {summary.phaseLabel}
+                {summary.category && <Badge variant="secondary">{summary.category}</Badge>}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {summary.done}/{summary.total} tarefas · restante ~{summary.eta}
+              </span>
+            </div>
+            <Progress value={summary.percent} />
+            <div className="text-xs text-muted-foreground">
+              Encontrados: {progress.ads_found} · Aprovados: {progress.upserts} · Descartados:{" "}
+              {summary.discardedTotal}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {STATS.map((stat) => {
           const Icon = stat.icon;
