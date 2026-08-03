@@ -143,7 +143,7 @@ function PlanCard({
             <span
               className={cn(
                 "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full",
-                featured ? "bg-[#FFB800]/20 text-[#FFD86B]" : "bg-[#22C55E]/15 text-[#4ADE80]",
+                featured ? "bg-gold/20 text-gold" : "bg-success/15 text-success",
               )}
             >
               <Check className="h-3 w-3" strokeWidth={3} />
