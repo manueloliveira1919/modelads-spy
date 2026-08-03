@@ -110,6 +110,11 @@ function KeywordsPage() {
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
   const [order, setOrder] = useState<"recent" | "az" | "weight">("recent");
   const [editing, setEditing] = useState<Partial<Keyword> | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFileName, setImportFileName] = useState("");
+  const [parsed, setParsed] = useState<{ rows: ParsedRow[]; invalid: number } | null>(null);
+  const [importProgress, setImportProgress] = useState<number | null>(null);
+
 
   const kwQuery = useQuery({
     queryKey: ["admin", "search_keywords"],
