@@ -46,7 +46,49 @@ import {
   Power,
   Search,
   Copy,
+  Upload,
+  Download,
+  Layers,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
+
+type ParsedRow = { category: string; word: string };
+
+function parseKeywordFile(text: string): { rows: ParsedRow[]; invalid: number } {
+  const lines = text.split(/\r?\n/);
+  const rows: ParsedRow[] = [];
+  let invalid = 0;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    const parts = line.split(/[,;\t]/).map((p) => p.trim().replace(/^"|"$/g, ""));
+    if (parts.length < 2 || !parts[0] || !parts[1]) {
+      invalid++;
+      continue;
+    }
+    const [category, word] = parts;
+    if (
+      category.toLowerCase() === "categoria" &&
+      word.toLowerCase() === "palavra"
+    ) {
+      continue;
+    }
+    rows.push({ category, word });
+  }
+  return { rows, invalid };
+}
+
+function downloadCsv(filename: string, content: string) {
+  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 
 export const Route = createFileRoute("/admin/palavras-chave")({
   component: KeywordsPage,
@@ -68,6 +110,11 @@ function KeywordsPage() {
   const [status, setStatus] = useState<"all" | "active" | "inactive">("all");
   const [order, setOrder] = useState<"recent" | "az" | "weight">("recent");
   const [editing, setEditing] = useState<Partial<Keyword> | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFileName, setImportFileName] = useState("");
+  const [parsed, setParsed] = useState<{ rows: ParsedRow[]; invalid: number } | null>(null);
+  const [importProgress, setImportProgress] = useState<number | null>(null);
+
 
   const kwQuery = useQuery({
     queryKey: ["admin", "search_keywords"],
@@ -164,22 +211,194 @@ function KeywordsPage() {
       qc.invalidateQueries({ queryKey: ["admin", "search_keywords"] }),
   });
 
+  const all = kwQuery.data ?? [];
+
+  const stats = useMemo(() => {
+    const byCategory = new Map<string, number>();
+    let active = 0;
+    let lastUpdate = "";
+    for (const k of all) {
+      const c = k.category ?? "Sem categoria";
+      byCategory.set(c, (byCategory.get(c) ?? 0) + 1);
+      if (k.is_active) active++;
+      if (k.updated_at > lastUpdate) lastUpdate = k.updated_at;
+    }
+    return {
+      total: all.length,
+      active,
+      lastUpdate,
+      byCategory: [...byCategory.entries()].sort((a, b) => b[1] - a[1]),
+    };
+  }, [all]);
+
+  const existingKeys = useMemo(
+    () =>
+      new Set(
+        all.map((k) => `${(k.category ?? "").toLowerCase()}|${k.word.toLowerCase()}`),
+      ),
+    [all],
+  );
+
+  const importSummary = useMemo(() => {
+    if (!parsed) return null;
+    const seen = new Set<string>();
+    const toCreate: ParsedRow[] = [];
+    let duplicates = 0;
+    for (const r of parsed.rows) {
+      const key = `${r.category.toLowerCase()}|${r.word.toLowerCase()}`;
+      if (existingKeys.has(key) || seen.has(key)) {
+        duplicates++;
+        continue;
+      }
+      seen.add(key);
+      toCreate.push(r);
+    }
+    return { toCreate, duplicates, invalid: parsed.invalid, total: parsed.rows.length };
+  }, [parsed, existingKeys]);
+
+  const importMut = useMutation({
+    mutationFn: async (rows: ParsedRow[]) => {
+      const known = new Set((catQuery.data ?? []).map((c) => c.toLowerCase()));
+      const newCats = [
+        ...new Set(
+          rows
+            .map((r) => r.category)
+            .filter((c) => !known.has(c.toLowerCase())),
+        ),
+      ];
+      if (newCats.length) {
+        await supabase
+          .from("keyword_categories")
+          .insert(newCats.map((name) => ({ name, is_active: true })));
+      }
+
+      const size = 200;
+      let created = 0;
+      for (let i = 0; i < rows.length; i += size) {
+        const chunk = rows.slice(i, i + size);
+        const { error } = await supabase.from("search_keywords").insert(
+          chunk.map((r) => ({
+            word: r.word,
+            category: r.category,
+            weight: 1,
+            is_active: true,
+          })),
+        );
+        if (error) throw error;
+        created += chunk.length;
+        setImportProgress(Math.round((created / rows.length) * 100));
+      }
+      await logSystem({
+        action: "keyword.import",
+        metadata: { created, categories: newCats.length, file: importFileName },
+      });
+      return created;
+    },
+    onSuccess: (created) => {
+      qc.invalidateQueries({ queryKey: ["admin", "search_keywords"] });
+      qc.invalidateQueries({ queryKey: ["admin", "keyword_categories"] });
+      toast.success(
+        `${created} palavras criadas · ${importSummary?.duplicates ?? 0} ignoradas`,
+      );
+      setImportOpen(false);
+      setParsed(null);
+      setImportFileName("");
+      setImportProgress(null);
+    },
+    onError: (e) => {
+      setImportProgress(null);
+      toast.error((e as Error).message);
+    },
+  });
+
+  function handleExport() {
+    const list = category === "all" ? all : all.filter((k) => k.category === category);
+    if (!list.length) {
+      toast.error("Nada para exportar");
+      return;
+    }
+    const csv = [
+      "categoria,palavra",
+      ...list.map(
+        (k) => `${(k.category ?? "Sem categoria").replace(/,/g, " ")},${k.word.replace(/,/g, " ")}`,
+      ),
+    ].join("\n");
+    const slug = category === "all" ? "todas" : category.toLowerCase().replace(/\s+/g, "-");
+    downloadCsv(
+      `palavras-chave-${slug}-${new Date().toISOString().slice(0, 10)}.csv`,
+      csv,
+    );
+    void logSystem({
+      action: "keyword.export",
+      metadata: { category, total: list.length },
+    });
+  }
+
   return (
     <div>
       <AdminPageHeader
         title="Palavras-chave"
         description="Gerencie termos usados na mineração."
         actions={
-          <Button
-            className="gap-2"
-            onClick={() =>
-              setEditing({ word: "", category: catQuery.data?.[0] ?? "", weight: 1, is_active: true })
-            }
-          >
-            <Plus className="h-4 w-4" /> Adicionar palavra
-          </Button>
+          <>
+            <Button
+              className="gap-2 bg-gradient-brand"
+              onClick={() =>
+                setEditing({ word: "", category: catQuery.data?.[0] ?? "", weight: 1, is_active: true })
+              }
+            >
+              <Plus className="h-4 w-4" /> Adicionar palavra-chave
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4" /> Importar CSV/TXT
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={handleExport}>
+              <Download className="h-4 w-4" /> Exportar CSV
+            </Button>
+          </>
         }
       />
+
+      <div className="mb-5 grid gap-4 md:grid-cols-3">
+        <Card className="p-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <CheckCircle2 className="h-3.5 w-3.5 text-success" /> Palavras ativas
+          </div>
+          <div className="mt-2 font-display text-3xl font-bold text-success">
+            {stats.active}
+          </div>
+          <p className="text-xs text-muted-foreground">de {stats.total} no total</p>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" /> Última atualização
+          </div>
+          <div className="mt-2 font-display text-lg font-bold">
+            {stats.lastUpdate
+              ? new Date(stats.lastUpdate).toLocaleString("pt-BR")
+              : "—"}
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Layers className="h-3.5 w-3.5" /> Por categoria
+          </div>
+          <div className="mt-2 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+            {stats.byCategory.length === 0 && (
+              <span className="text-sm text-muted-foreground">—</span>
+            )}
+            {stats.byCategory.map(([name, count]) => (
+              <Badge key={name} variant="secondary" className="gap-1">
+                {name}
+                <span className="font-bold text-brand">{count}</span>
+              </Badge>
+            ))}
+          </div>
+        </Card>
+      </div>
+
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="relative">
@@ -265,7 +484,7 @@ function KeywordsPage() {
                 <TableCell>{k.weight}</TableCell>
                 <TableCell>
                   {k.is_active ? (
-                    <Badge className="bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20">
+                    <Badge className="bg-success/15 text-success hover:bg-success/20">
                       Ativa
                     </Badge>
                   ) : (
@@ -376,6 +595,108 @@ function KeywordsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={importOpen}
+        onOpenChange={(o) => {
+          if (importMut.isPending) return;
+          setImportOpen(o);
+          if (!o) {
+            setParsed(null);
+            setImportFileName("");
+            setImportProgress(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Importar palavras-chave</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Envie um arquivo <strong>.csv</strong> ou <strong>.txt</strong> com uma
+              linha por palavra no formato:
+            </p>
+            <pre className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+              categoria,palavra{"\n"}Emagrecimento,secar barriga{"\n"}Renda Extra,ganhar dinheiro online
+            </pre>
+            <Input
+              type="file"
+              accept=".csv,.txt,text/csv,text/plain"
+              disabled={importMut.isPending}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setImportFileName(file.name);
+                const text = await file.text();
+                setParsed(parseKeywordFile(text));
+              }}
+            />
+
+            {importSummary && (
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                <div className="rounded-lg border border-border p-3">
+                  <div className="text-xs text-muted-foreground">Linhas</div>
+                  <div className="font-bold">{importSummary.total}</div>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <div className="text-xs text-muted-foreground">A criar</div>
+                  <div className="font-bold text-success">
+                    {importSummary.toCreate.length}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <div className="text-xs text-muted-foreground">Duplicadas</div>
+                  <div className="font-bold">{importSummary.duplicates}</div>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <div className="text-xs text-muted-foreground">Inválidas</div>
+                  <div className="font-bold text-destructive">
+                    {importSummary.invalid}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {importProgress !== null && (
+              <div className="space-y-1">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-gradient-brand transition-all"
+                    style={{ width: `${importProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Importando… {importProgress}%
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={importMut.isPending}
+              onClick={() => setImportOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="bg-gradient-brand"
+              disabled={
+                !importSummary ||
+                importSummary.toCreate.length === 0 ||
+                importMut.isPending
+              }
+              onClick={() =>
+                importSummary && importMut.mutate(importSummary.toCreate)
+              }
+            >
+              Importar {importSummary?.toCreate.length ?? 0} palavras
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+

@@ -178,7 +178,7 @@ function LogsPage() {
                     className={cn(
                       l.result === "error"
                         ? "bg-rose-500/15 text-rose-400 hover:bg-rose-500/20"
-                        : "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20",
+                        : "bg-success/15 text-success hover:bg-success/20",
                     )}
                   >
                     {l.result ?? "success"}

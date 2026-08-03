@@ -183,7 +183,7 @@ function MineracaoPage() {
             running
               ? "bg-amber-500/15 text-amber-400"
               : last?.status === "success"
-                ? "bg-emerald-500/15 text-emerald-400"
+                ? "bg-success/15 text-success"
                 : last?.status === "partial"
                   ? "bg-amber-500/15 text-amber-400"
                   : last?.status === "blocked"
