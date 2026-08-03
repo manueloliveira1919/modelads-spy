@@ -294,7 +294,7 @@ function BlacklistPage() {
                 <TableCell className="text-muted-foreground">{r.kind ?? "—"}</TableCell>
                 <TableCell>
                   {r.is_active ? (
-                    <Badge className="bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20">
+                    <Badge className="bg-success/15 text-success hover:bg-success/20">
                       Ativo
                     </Badge>
                   ) : (

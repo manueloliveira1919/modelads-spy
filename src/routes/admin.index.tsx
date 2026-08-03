@@ -84,8 +84,8 @@ function AdminDashboard() {
         title="Dashboard"
         description="Visão geral do painel administrativo."
         actions={
-          <Badge className="gap-1 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/20">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Sistema Online
+          <Badge className="gap-1 bg-success/15 text-success hover:bg-success/20">
+            <span className="h-1.5 w-1.5 rounded-full bg-success" /> Sistema Online
           </Badge>
         }
       />
