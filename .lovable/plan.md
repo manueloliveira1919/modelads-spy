@@ -1,40 +1,54 @@
-# Por que a mineração está demorando
+# Mineração: acelerar, mostrar progresso e minerar por categoria
 
-## Diagnóstico (verificado agora no banco)
+## Diagnóstico (confirmado no banco)
 
-A execução atual (iniciada às 18:59) **não travou** — ela está progredindo normalmente, só que é muito maior que as anteriores:
+A execução não está com erro — está apenas muito maior que antes:
 
-- Palavras-chave ativas hoje: **573** (depois da importação em massa por CSV).
-- O enfileirador divide em lotes de 8 palavras → **72 tarefas de busca**.
-- Situação às 19:10: 29 concluídas, 4 em execução, 39 pendentes.
-- O processador roda **1 vez por minuto** e pega no máximo **3 tarefas por vez**.
+- Palavras-chave ativas: **573** (antes ~73).
+- Lotes de 8 palavras → **72 tarefas de busca**.
+- O processador roda 1 vez por minuto e pega **3 tarefas** por vez.
+- Resultado: ~24 min só na busca + classificação/gravação → 25–35 min no total.
 
-Ou seja: 72 ÷ 3 = ~24 minutos só na fase de busca, mais a fase de classificação/gravação. As execuções anteriores tinham só 10 tarefas de busca (~8 min no total), por isso a média antiga de 8–12 minutos não vale mais.
+Nenhuma tarefa falhou e não houve erro da API da Meta nesta execução.
 
-Não há erro: nenhuma tarefa falhou, nenhum erro de API da Meta registrado, e há um vigia que reenfileira tarefas presas há mais de 10 minutos. A execução deve terminar sozinha em torno de 25–35 minutos no total.
+## Passo 1 — Dobrar a velocidade do processamento
 
-## O que dá para melhorar (escolha o que quiser aplicar)
+- Passar de **3 para 6 tarefas por ciclo** (1 ciclo por minuto).
+- Tempo esperado da mineração completa: **10–15 minutos**.
+- Sem subir mais que isso agora, para não arriscar bloqueio temporário da API da Meta.
 
-### 1. Acelerar o processamento (recomendado)
-Aumentar quantas tarefas o processador pega por minuto (de 3 para 6–8) e quantas palavras entram em cada lote. Isso reduz a execução completa de ~30 min para ~10 min, sem mudar nenhuma lógica de coleta.
+## Passo 2 — Barra de progresso na tela de Mineração (admin)
 
-Risco controlado: cada tarefa faz chamadas à API da Meta; subir demais pode gerar limite de taxa. Sugiro 6 tarefas por tique como ponto seguro.
+Enquanto houver execução em andamento, o painel passa a mostrar, com atualização automática a cada ~5s:
 
-### 2. Barra de progresso real na tela de Mineração
-Hoje o painel só mostra "Executando". Passaria a mostrar:
-- fase atual (busca / classificação / finalização);
-- contador "X de Y tarefas concluídas" com barra de progresso;
-- tempo decorrido e estimativa restante.
+- Fase atual, em sequência: **Buscando anúncios → Classificando → Salvando ofertas → Finalizando**.
+- Barra de progresso com contador real: "Buscando anúncios: 29/72".
+- **Tempo decorrido** e **tempo restante estimado** (baseado no ritmo real das tarefas já concluídas).
+- **Anúncios encontrados**, **aprovados** e **descartados pela blacklist** (e demais motivos de descarte já registrados: idioma, categoria, duplicado).
 
-Os dados já existem na fila de tarefas — é só exibir, com atualização automática a cada poucos segundos.
+O Dashboard do admin ganha o mesmo resumo em formato compacto: palavras ativas, tarefas concluídas, tempo restante, encontrados / aprovados / descartados.
 
-### 3. Aviso de execução longa
-Se passar de um limite (ex.: 40 min), mostrar um alerta discreto no painel em vez de deixar o admin no escuro.
+## Passo 3 — Minerar por categoria
+
+No painel de Mineração, um seletor antes de executar:
+
+- Minerar todas
+- Minerar apenas uma categoria (Emagrecimento, Saúde, Marketing, Finanças, Beleza… lista vinda das categorias cadastradas)
+
+Quando uma categoria é escolhida, só as palavras daquela categoria entram na fila — menos tarefas, execução mais curta e ofertas mais focadas. A categoria escolhida fica registrada no histórico de execuções.
+
+Observação: a distribuição sugerida (100 palavras por categoria) é de conteúdo, não de código — dá para ajustar na tela de Palavras-chave desativando o excedente, sem perder nada.
 
 ## Detalhes técnicos
 
-- Fonte dos números: tabelas `meta_refresh_runs`, `meta_refresh_jobs` e `search_keywords`.
-- Item 1: ajustar o limite de reivindicação usado pelo processador (`claim_refresh_jobs`, hoje 3) e, opcionalmente, `KEYWORDS_PER_SEARCH_JOB` em `src/lib/meta-mining.server.ts`.
-- Item 2: nova consulta agregada por `run_id` em `meta_refresh_jobs`, exibida em `src/routes/admin.mineracao.tsx` com `refetchInterval` curto enquanto houver execução em andamento.
-- Item 3: apenas apresentação, no mesmo arquivo.
-- Nada da lógica de coleta, classificação ou blacklist é alterado.
+- **Passo 1**: `JOBS_PER_TICK` de 3 → 6 em `src/routes/api/public/hooks/refresh-worker.ts` (o `claim_refresh_jobs` já recebe o limite por parâmetro; nada muda no banco).
+- **Passo 2**:
+  - Nova função de banco (SECURITY DEFINER, só admin) que devolve, por `run_id`: total/concluídas/pendentes por `kind`, e os agregados de encontrados/aprovados/descartados a partir de `mining_logs`. Necessária porque `meta_refresh_jobs` não é legível pelo cliente.
+  - `src/routes/admin.mineracao.tsx`: novo bloco de progresso (`Progress` do shadcn), fases derivadas de `meta_refresh_runs.phase` + fila, ETA calculado no cliente, `refetchInterval` de 5s só enquanto `status = running`.
+  - Garantir que o worker grave o breakdown de descarte por execução (já existe `discard_breakdown` nos logs de job) para os contadores somarem corretamente.
+  - `src/routes/admin.index.tsx`: cards de resumo lendo a mesma função.
+- **Passo 3**:
+  - `mining_create_run`/fluxo do enfileirador passa a aceitar um filtro opcional de categoria; `buildSearchPlan` em `src/lib/mining-config.server.ts` ganha o parâmetro e `loadActiveKeywords` filtra por `category`.
+  - `POST /api/public/hooks/refresh-offers` aceita `{ "category": "..." }` no corpo (opcional); o cron continua chamando sem categoria = todas.
+  - Categoria selecionada salva em `meta_refresh_runs.details` e exibida no histórico.
+- Nenhuma regra de classificação, blacklist ou qualidade é alterada.
