@@ -22,7 +22,7 @@ import {
 // Worker de jobs — chamado pelo pg_cron a cada minuto. A fila e as RPCs
 // internas são acessadas pelo cliente privilegiado exclusivamente no servidor.
 
-const JOBS_PER_TICK = 3;
+const JOBS_PER_TICK = 6;
 
 interface MetaRefreshJob {
   id: string;
