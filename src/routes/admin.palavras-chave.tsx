@@ -595,6 +595,108 @@ function KeywordsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={importOpen}
+        onOpenChange={(o) => {
+          if (importMut.isPending) return;
+          setImportOpen(o);
+          if (!o) {
+            setParsed(null);
+            setImportFileName("");
+            setImportProgress(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Importar palavras-chave</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Envie um arquivo <strong>.csv</strong> ou <strong>.txt</strong> com uma
+              linha por palavra no formato:
+            </p>
+            <pre className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
+              categoria,palavra{"\n"}Emagrecimento,secar barriga{"\n"}Renda Extra,ganhar dinheiro online
+            </pre>
+            <Input
+              type="file"
+              accept=".csv,.txt,text/csv,text/plain"
+              disabled={importMut.isPending}
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setImportFileName(file.name);
+                const text = await file.text();
+                setParsed(parseKeywordFile(text));
+              }}
+            />
+
+            {importSummary && (
+              <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+                <div className="rounded-lg border border-border p-3">
+                  <div className="text-xs text-muted-foreground">Linhas</div>
+                  <div className="font-bold">{importSummary.total}</div>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <div className="text-xs text-muted-foreground">A criar</div>
+                  <div className="font-bold text-success">
+                    {importSummary.toCreate.length}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <div className="text-xs text-muted-foreground">Duplicadas</div>
+                  <div className="font-bold">{importSummary.duplicates}</div>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <div className="text-xs text-muted-foreground">Inválidas</div>
+                  <div className="font-bold text-destructive">
+                    {importSummary.invalid}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {importProgress !== null && (
+              <div className="space-y-1">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className="h-full bg-gradient-brand transition-all"
+                    style={{ width: `${importProgress}%` }}
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Importando… {importProgress}%
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              disabled={importMut.isPending}
+              onClick={() => setImportOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="bg-gradient-brand"
+              disabled={
+                !importSummary ||
+                importSummary.toCreate.length === 0 ||
+                importMut.isPending
+              }
+              onClick={() =>
+                importSummary && importMut.mutate(importSummary.toCreate)
+              }
+            >
+              Importar {importSummary?.toCreate.length ?? 0} palavras
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
