@@ -211,22 +211,194 @@ function KeywordsPage() {
       qc.invalidateQueries({ queryKey: ["admin", "search_keywords"] }),
   });
 
+  const all = kwQuery.data ?? [];
+
+  const stats = useMemo(() => {
+    const byCategory = new Map<string, number>();
+    let active = 0;
+    let lastUpdate = "";
+    for (const k of all) {
+      const c = k.category ?? "Sem categoria";
+      byCategory.set(c, (byCategory.get(c) ?? 0) + 1);
+      if (k.is_active) active++;
+      if (k.updated_at > lastUpdate) lastUpdate = k.updated_at;
+    }
+    return {
+      total: all.length,
+      active,
+      lastUpdate,
+      byCategory: [...byCategory.entries()].sort((a, b) => b[1] - a[1]),
+    };
+  }, [all]);
+
+  const existingKeys = useMemo(
+    () =>
+      new Set(
+        all.map((k) => `${(k.category ?? "").toLowerCase()}|${k.word.toLowerCase()}`),
+      ),
+    [all],
+  );
+
+  const importSummary = useMemo(() => {
+    if (!parsed) return null;
+    const seen = new Set<string>();
+    const toCreate: ParsedRow[] = [];
+    let duplicates = 0;
+    for (const r of parsed.rows) {
+      const key = `${r.category.toLowerCase()}|${r.word.toLowerCase()}`;
+      if (existingKeys.has(key) || seen.has(key)) {
+        duplicates++;
+        continue;
+      }
+      seen.add(key);
+      toCreate.push(r);
+    }
+    return { toCreate, duplicates, invalid: parsed.invalid, total: parsed.rows.length };
+  }, [parsed, existingKeys]);
+
+  const importMut = useMutation({
+    mutationFn: async (rows: ParsedRow[]) => {
+      const known = new Set((catQuery.data ?? []).map((c) => c.toLowerCase()));
+      const newCats = [
+        ...new Set(
+          rows
+            .map((r) => r.category)
+            .filter((c) => !known.has(c.toLowerCase())),
+        ),
+      ];
+      if (newCats.length) {
+        await supabase
+          .from("keyword_categories")
+          .insert(newCats.map((name) => ({ name, is_active: true })));
+      }
+
+      const size = 200;
+      let created = 0;
+      for (let i = 0; i < rows.length; i += size) {
+        const chunk = rows.slice(i, i + size);
+        const { error } = await supabase.from("search_keywords").insert(
+          chunk.map((r) => ({
+            word: r.word,
+            category: r.category,
+            weight: 1,
+            is_active: true,
+          })),
+        );
+        if (error) throw error;
+        created += chunk.length;
+        setImportProgress(Math.round((created / rows.length) * 100));
+      }
+      await logSystem({
+        action: "keyword.import",
+        metadata: { created, categories: newCats.length, file: importFileName },
+      });
+      return created;
+    },
+    onSuccess: (created) => {
+      qc.invalidateQueries({ queryKey: ["admin", "search_keywords"] });
+      qc.invalidateQueries({ queryKey: ["admin", "keyword_categories"] });
+      toast.success(
+        `${created} palavras criadas · ${importSummary?.duplicates ?? 0} ignoradas`,
+      );
+      setImportOpen(false);
+      setParsed(null);
+      setImportFileName("");
+      setImportProgress(null);
+    },
+    onError: (e) => {
+      setImportProgress(null);
+      toast.error((e as Error).message);
+    },
+  });
+
+  function handleExport() {
+    const list = category === "all" ? all : all.filter((k) => k.category === category);
+    if (!list.length) {
+      toast.error("Nada para exportar");
+      return;
+    }
+    const csv = [
+      "categoria,palavra",
+      ...list.map(
+        (k) => `${(k.category ?? "Sem categoria").replace(/,/g, " ")},${k.word.replace(/,/g, " ")}`,
+      ),
+    ].join("\n");
+    const slug = category === "all" ? "todas" : category.toLowerCase().replace(/\s+/g, "-");
+    downloadCsv(
+      `palavras-chave-${slug}-${new Date().toISOString().slice(0, 10)}.csv`,
+      csv,
+    );
+    void logSystem({
+      action: "keyword.export",
+      metadata: { category, total: list.length },
+    });
+  }
+
   return (
     <div>
       <AdminPageHeader
         title="Palavras-chave"
         description="Gerencie termos usados na mineração."
         actions={
-          <Button
-            className="gap-2"
-            onClick={() =>
-              setEditing({ word: "", category: catQuery.data?.[0] ?? "", weight: 1, is_active: true })
-            }
-          >
-            <Plus className="h-4 w-4" /> Adicionar palavra
-          </Button>
+          <>
+            <Button
+              className="gap-2 bg-gradient-brand"
+              onClick={() =>
+                setEditing({ word: "", category: catQuery.data?.[0] ?? "", weight: 1, is_active: true })
+              }
+            >
+              <Plus className="h-4 w-4" /> Adicionar palavra-chave
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={() => setImportOpen(true)}>
+              <Upload className="h-4 w-4" /> Importar CSV/TXT
+            </Button>
+            <Button variant="outline" className="gap-2" onClick={handleExport}>
+              <Download className="h-4 w-4" /> Exportar CSV
+            </Button>
+          </>
         }
       />
+
+      <div className="mb-5 grid gap-4 md:grid-cols-3">
+        <Card className="p-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <CheckCircle2 className="h-3.5 w-3.5 text-success" /> Palavras ativas
+          </div>
+          <div className="mt-2 font-display text-3xl font-bold text-success">
+            {stats.active}
+          </div>
+          <p className="text-xs text-muted-foreground">de {stats.total} no total</p>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Clock className="h-3.5 w-3.5" /> Última atualização
+          </div>
+          <div className="mt-2 font-display text-lg font-bold">
+            {stats.lastUpdate
+              ? new Date(stats.lastUpdate).toLocaleString("pt-BR")
+              : "—"}
+          </div>
+        </Card>
+
+        <Card className="p-4">
+          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Layers className="h-3.5 w-3.5" /> Por categoria
+          </div>
+          <div className="mt-2 flex max-h-24 flex-wrap gap-1.5 overflow-y-auto">
+            {stats.byCategory.length === 0 && (
+              <span className="text-sm text-muted-foreground">—</span>
+            )}
+            {stats.byCategory.map(([name, count]) => (
+              <Badge key={name} variant="secondary" className="gap-1">
+                {name}
+                <span className="font-bold text-brand">{count}</span>
+              </Badge>
+            ))}
+          </div>
+        </Card>
+      </div>
+
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <div className="relative">
