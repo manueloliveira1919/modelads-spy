@@ -28,7 +28,7 @@ function AdminDashboard() {
         supabase.from("meta_offers").select("id", { count: "exact", head: true }).eq("is_active", true),
         supabase
           .from("meta_refresh_runs")
-          .select("started_at, status, offers_upserted")
+          .select("id, started_at, status, offers_upserted")
           .order("started_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
