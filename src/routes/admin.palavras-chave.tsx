@@ -46,7 +46,49 @@ import {
   Power,
   Search,
   Copy,
+  Upload,
+  Download,
+  Layers,
+  CheckCircle2,
+  Clock,
 } from "lucide-react";
+
+type ParsedRow = { category: string; word: string };
+
+function parseKeywordFile(text: string): { rows: ParsedRow[]; invalid: number } {
+  const lines = text.split(/\r?\n/);
+  const rows: ParsedRow[] = [];
+  let invalid = 0;
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    const parts = line.split(/[,;\t]/).map((p) => p.trim().replace(/^"|"$/g, ""));
+    if (parts.length < 2 || !parts[0] || !parts[1]) {
+      invalid++;
+      continue;
+    }
+    const [category, word] = parts;
+    if (
+      category.toLowerCase() === "categoria" &&
+      word.toLowerCase() === "palavra"
+    ) {
+      continue;
+    }
+    rows.push({ category, word });
+  }
+  return { rows, invalid };
+}
+
+function downloadCsv(filename: string, content: string) {
+  const blob = new Blob(["\uFEFF" + content], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 
 export const Route = createFileRoute("/admin/palavras-chave")({
   component: KeywordsPage,
