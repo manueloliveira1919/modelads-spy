@@ -62,6 +62,10 @@ function AdminDashboard() {
   });
 
   const s = statsQuery.data;
+  const runningNow = s?.lastRun?.status === "running";
+  const progressQuery = useMiningProgress(s?.lastRun?.id, !!runningNow);
+  const progress = progressQuery.data ?? null;
+  const summary = progress ? summarizeProgress(progress) : null;
   const STATS = [
     { label: "Clientes cadastrados", value: s?.users ?? "—", icon: Users, hint: "Total geral" },
     { label: "Plano Starter", value: s?.roleCounts.starter ?? "—", icon: Sparkles, hint: "Ativos" },
