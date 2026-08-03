@@ -112,7 +112,7 @@ function PlanCard({
       className={cn(
         "relative flex flex-col rounded-2xl border p-6 sm:p-8",
         featured
-          ? "border-[#FFB800]/40 bg-gradient-to-b from-[#FFB800]/10 to-card shadow-2xl"
+          ? "border-gold/40 bg-gradient-to-b from-gold/10 to-card pro-shine"
           : "border-border bg-card",
       )}
     >
