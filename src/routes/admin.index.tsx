@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { AdminPageHeader } from "@/components/admin-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { summarizeProgress, useMiningProgress } from "@/components/mining-progress";
 import {
   Users,
   Sparkles,
