@@ -117,7 +117,8 @@ export function pickCategory(input: RelevanceInput): CategoryScore {
     }
   }
 
-  const isInfo = normalizeCategoryKey(best.category) === "info";
+  const bestName: string = best.category ?? "";
+  const isInfo = normalizeCategoryKey(bestName) === "info";
   const support = !!input.hasPrice || !!input.hasLanding || (input.activeDays ?? 0) >= 4;
 
   // "Info" é a categoria mais ruidosa: exige 3 correspondências específicas.
