@@ -128,6 +128,6 @@ export function pickCategory(input: RelevanceInput): CategoryScore {
   }
 
   if (best.strongMatches >= 2) return best;
-  if (best.strongMatches === 1 && best.score >= 1.5 && support) return best;
+  if (best.strongMatches === 1 && support) return best;
   return { ...best, category: null };
 }
