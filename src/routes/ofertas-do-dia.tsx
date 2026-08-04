@@ -91,7 +91,7 @@ function Page() {
         return false;
       return true;
     });
-    const rank = { escaladissima: 0, crescendo: 1, testando: 2 } as const;
+    const rank = { escaladissima: 0, escalando: 1, crescendo: 2, testando: 3 } as const;
     return [...list].sort(
       (a, b) => rank[a.status] - rank[b.status] || b.activeAds - a.activeAds,
     );
