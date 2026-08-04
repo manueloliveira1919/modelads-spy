@@ -138,7 +138,7 @@ export const searchOffersLive = createServerFn({ method: "POST" })
           description: body || desc,
           activeDays: computeActiveDays(ad.ad_delivery_start_time),
           activeAds,
-          status: classifyStatus(activeAds),
+          status: classifyStatus(computeActiveDays(ad.ad_delivery_start_time), activeAds),
           structure: inferStructure(`${title} ${body}`),
           productType: inferProductType(`${title} ${body} ${desc}`),
           isWhatsapp: isWhatsappFunnel(`${title} ${body} ${desc}`),

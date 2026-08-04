@@ -165,16 +165,17 @@ async function processSnapshotJob(supabase: any, job: MetaRefreshJob) {
 
 // ---------- Processa 1 job de classificação + upsert final ----------
 async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
-  const { loadActiveBlacklist, loadActiveCategories, loadMiningSettings, buildBlacklistMatcher } =
+  const { loadActiveBlacklist, loadCategoryVocabulary, loadMiningSettings, buildBlacklistMatcher } =
     await import("@/lib/mining-config.server");
+  const { pickCategory } = await import("@/lib/category-scoring");
 
   const adIds = job.payload.ad_archive_ids as string[];
 
-  const [rawRes, snapRes, blacklist, activeCategories, settings, pageCountsRes] = await Promise.all([
+  const [rawRes, snapRes, blacklist, vocabulary, settings, pageCountsRes] = await Promise.all([
     supabase.rpc("mining_get_raw_rows", { p_run_id: job.run_id, p_ids: adIds }),
     supabase.rpc("mining_get_snapshot_rows", { p_run_id: job.run_id, p_ids: adIds }),
     loadActiveBlacklist(),
-    loadActiveCategories(),
+    loadCategoryVocabulary(),
     loadMiningSettings(),
     supabase.rpc("mining_get_page_counts", { p_run_id: job.run_id }),
   ]);
@@ -192,7 +193,7 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
 
   const compositeSeen = new Set<string>();
   const rowsToUpsert: Record<string, unknown>[] = [];
-  const skipped = { blacklist: 0, language: 0, category: 0, duplicate: 0, noLanding: 0 };
+  const skipped = { blacklist: 0, language: 0, category: 0, duplicate: 0, noLanding: 0, lowRelevance: 0 };
 
   for (const raw of rawRes.data ?? []) {
     try {
@@ -231,12 +232,6 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
         }
       }
 
-      const finalCategory = raw.category && activeCategories.has(raw.category) ? raw.category : null;
-      if (!finalCategory) {
-        skipped.category++;
-        continue;
-      }
-
       const headline = title || bodyText.slice(0, 120);
       const compositeKey = `${raw.page_id}|${headline.slice(0, 100)}|${media.linkUrl ?? ""}`;
       if (compositeSeen.has(compositeKey)) {
@@ -260,6 +255,22 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
         skipped.noLanding++;
         continue;
       }
+
+      // Categoria por relevância no texto completo (inclui link de destino),
+      // não pelo termo pesquisado.
+      const relevance = pickCategory({
+        text: `${raw.page_name} ${title} ${bodyText} ${desc} ${media.linkUrl ?? ""}`,
+        searchCategory: raw.category ?? null,
+        vocabulary,
+        hasPrice,
+        hasLanding,
+        activeDays,
+      });
+      if (!relevance.category) {
+        skipped.lowRelevance++;
+        continue;
+      }
+      const finalCategory = relevance.category;
 
       const qualityScore = computeQualityScore({
         languageOk:
@@ -290,7 +301,7 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
         is_active: true,
         active_days: activeDays,
         active_ads_count: activeAdsCount,
-        status: classifyStatus(activeAdsCount),
+        status: classifyStatus(activeDays, activeAdsCount),
         structure,
         product_type: inferProductType(`${title} ${bodyText} ${desc}`),
         search_term: raw.term,

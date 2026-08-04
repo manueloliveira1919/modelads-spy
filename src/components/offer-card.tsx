@@ -262,6 +262,14 @@ export function StatusBadge({ status }: { status: Offer["status"] }) {
       </span>
     );
   }
+  if (status === "escalando") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-md bg-warm px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-warm-foreground">
+        <Flame className="h-3 w-3" />
+        Escalando
+      </span>
+    );
+  }
   if (status === "crescendo") {
     return (
       <span className="inline-flex items-center gap-1 rounded-md bg-warm px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-warm-foreground">

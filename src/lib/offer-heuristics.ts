@@ -29,10 +29,22 @@ export function stripSnapshotSecrets(url: string | null | undefined): string | n
   }
 }
 
-export function classifyStatus(activeAds: number): "testando" | "crescendo" | "escaladissima" {
-  if (activeAds >= 10) return "escaladissima";
-  if (activeAds >= 4) return "crescendo";
-  return "testando";
+export type OfferStatusValue = "testando" | "crescendo" | "escalando" | "escaladissima";
+
+// Status baseado principalmente em LONGEVIDADE da campanha (dias ativos).
+// Volume de criativos é fator secundário: só promove um nível quando a
+// campanha já passou de 8 dias. Abaixo de 4 dias nunca vira escalando/escaladíssima.
+export function classifyStatus(activeDays: number, activeAds = 1): OfferStatusValue {
+  const days = Number.isFinite(activeDays) ? Math.max(0, Math.floor(activeDays)) : 0;
+  let status: OfferStatusValue;
+  if (days >= 16) status = "escaladissima";
+  else if (days >= 8) status = "escalando";
+  else if (days >= 4) status = "crescendo";
+  else status = "testando";
+
+  // Fator secundário: página com muitos criativos ativos e campanha madura.
+  if (status === "escalando" && activeAds >= 10) status = "escaladissima";
+  return status;
 }
 
 // Detecta se o anúncio é um funil de WhatsApp — por texto ou pelo link de destino.
@@ -80,14 +92,23 @@ export const PRODUCT_TYPES: ProductType[] = [
 // "Mentoria" foi removido daqui — segue disponível como Categoria.
 export function inferProductType(text: string): ProductType {
   const t = (text || "").toLowerCase();
-  if (/\b(curso|aula|aulas|m[óo]dulo|m[óo]dulos|treinamento|forma[çc][ãa]o|masterclass|workshop|mentoria|acompanhamento individual|imers[ãa]o)\b/.test(t)) {
-    return "Curso Online";
+  // Físico primeiro: "suplemento com acompanhamento" é produto, não curso.
+  if (
+    /\b(frete|entrega|envio|kit|unidade|frasco|garrafas?|produto f[íi]sico|receba em casa|encapsulados?|c[áa]psulas?|suplementos?|ch[áa]|chas|f[óo]rmula natural|gotas|extrato|comprimidos?)\b/.test(
+      t,
+    )
+  ) {
+    return "Produto Físico";
   }
-  if (/\b(e[- ]?book|ebook|pdf|apostila|guia (em )?pdf|livro digital)\b/.test(t)) {
+  if (
+    /\b(e[- ]?book|ebook|pdf|apostila|guia (em )?pdf|livro digital|receitas?|card[áa]pio|protocolo|plano alimentar)\b/.test(
+      t,
+    )
+  ) {
     return "Ebook/PDF";
   }
-  if (/\b(frete|entrega|envio|kit|unidade|frasco|c[áa]psulas?|garrafas?|produto f[íi]sico|receba em casa)\b/.test(t)) {
-    return "Produto Físico";
+  if (/\b(curso|aula|aulas|m[óo]dulo|m[óo]dulos|treinamento|forma[çc][ãa]o|masterclass|workshop|mentoria|acompanhamento individual|imers[ãa]o)\b/.test(t)) {
+    return "Curso Online";
   }
   return "Low Ticket";
 }

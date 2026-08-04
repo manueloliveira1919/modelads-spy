@@ -3,7 +3,7 @@ import { inferProductType, isWhatsappFunnel, type ProductType } from "./offer-he
 export type { ProductType } from "./offer-heuristics";
 export { PRODUCT_TYPES } from "./offer-heuristics";
 
-export type OfferStatus = "escaladissima" | "crescendo" | "testando";
+export type OfferStatus = "escaladissima" | "escalando" | "crescendo" | "testando";
 export type OfferCategory =
   | "Info"
   | "Nutra"

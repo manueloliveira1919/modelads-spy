@@ -19,6 +19,7 @@ export interface MiningProgressData {
     category: number;
     duplicate: number;
     no_text: number;
+    low_relevance: number;
   };
 }
 
@@ -75,9 +76,15 @@ export function summarizeProgress(p: MiningProgressData) {
     category: 0,
     duplicate: 0,
     no_text: 0,
+    low_relevance: 0,
   };
   const discardedTotal =
-    discarded.blacklist + discarded.language + discarded.category + discarded.duplicate + discarded.no_text;
+    discarded.blacklist +
+    discarded.language +
+    discarded.category +
+    discarded.duplicate +
+    discarded.no_text +
+    (discarded.low_relevance ?? 0);
 
   return {
     total,
@@ -131,6 +138,7 @@ export function MiningProgressPanel({ progress }: { progress: MiningProgressData
         <span>Categoria: {s.discarded.category}</span>
         <span>Duplicados: {s.discarded.duplicate}</span>
         <span>Sem texto: {s.discarded.no_text}</span>
+        <span>Baixa relevância: {s.discarded.low_relevance ?? 0}</span>
       </div>
 
       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">

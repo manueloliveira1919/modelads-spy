@@ -1,6 +1,7 @@
 // Camada de configuração da mineração — carregada do banco.
 // Usada apenas em código server-side (server functions, server routes).
 import { serverSupabaseAnon } from "@/lib/meta-mining.server";
+import { normalizeCategoryKey, type CategoryVocabulary } from "@/lib/category-scoring";
 // Config de mineração é lida com a chave pública (só leitura, liberada
 // por policy) — não depende mais do service role.
 
@@ -52,13 +53,41 @@ export async function loadActiveBlacklist(): Promise<BlacklistRow[]> {
   return (data ?? []) as BlacklistRow[];
 }
 
-export async function loadActiveCategories(): Promise<Set<string>> {
+// Mapa: nome normalizado (sem acento/caixa/pontuação) -> nome canônico.
+// Necessário porque as categorias cadastradas usam acento ("Saúde") enquanto
+// as palavras-chave usam a versão sem acento ("Saude").
+export async function loadActiveCategories(): Promise<Map<string, string>> {
   const supabaseAdmin = await serverSupabaseAnon();
   const { data } = await supabaseAdmin
     .from("keyword_categories")
     .select("name")
     .eq("is_active", true);
-  return new Set(((data ?? []) as { name: string }[]).map((r) => r.name));
+  const map = new Map<string, string>();
+  for (const r of (data ?? []) as { name: string }[]) {
+    if (r.name) map.set(normalizeCategoryKey(r.name), r.name);
+  }
+  return map;
+}
+
+// Vocabulário por categoria a partir das palavras-chave ativas do admin.
+export async function loadCategoryVocabulary(): Promise<CategoryVocabulary> {
+  const [keywords, categories] = await Promise.all([
+    loadActiveKeywords(),
+    loadActiveCategories(),
+  ]);
+  const vocab: CategoryVocabulary = new Map();
+  for (const k of keywords) {
+    const raw = (k.category ?? "").trim();
+    if (!raw) continue;
+    const key = normalizeCategoryKey(raw);
+    if (!key) continue;
+    const canonical = categories.get(key) ?? raw;
+    const entry = vocab.get(key) ?? { canonical, words: [] };
+    entry.words.push(k.word);
+    if (k.niche) entry.words.push(k.niche);
+    vocab.set(key, entry);
+  }
+  return vocab;
 }
 
 export async function loadMiningSettings(): Promise<MiningSettings> {

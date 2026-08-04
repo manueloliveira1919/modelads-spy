@@ -85,7 +85,7 @@ function Dashboard() {
   const crescendo = offers.filter((o) => o.status === "crescendo").length;
 
   // Destaques: escaladíssima primeiro, depois crescendo, mais anúncios ativos primeiro.
-  const rank = { escaladissima: 0, crescendo: 1, testando: 2 } as const;
+  const rank = { escaladissima: 0, escalando: 1, crescendo: 2, testando: 3 } as const;
   const destaques = [...offers]
     .filter((o) => o.status !== "testando")
     .sort((a, b) => rank[a.status] - rank[b.status] || b.activeAds - a.activeAds)
