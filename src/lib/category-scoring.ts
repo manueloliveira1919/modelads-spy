@@ -119,7 +119,6 @@ export function pickCategory(input: RelevanceInput): CategoryScore {
 
   const bestName: string = best.category ?? "";
   const isInfo = normalizeCategoryKey(bestName) === "info";
-  const support = !!input.hasPrice || !!input.hasLanding || (input.activeDays ?? 0) >= 4;
 
   // "Info" é a categoria mais ruidosa: exige 3 correspondências específicas.
   if (isInfo) {
@@ -128,6 +127,8 @@ export function pickCategory(input: RelevanceInput): CategoryScore {
   }
 
   if (best.strongMatches >= 2) return best;
-  if (best.strongMatches === 1 && support) return best;
+  // Fronteira: 1 correspondência só passa com sinal comercial forte
+  // (preço no criativo) e campanha já rodando há dias.
+  if (best.strongMatches === 1 && !!input.hasPrice && (input.activeDays ?? 0) >= 4) return best;
   return { ...best, category: null };
 }
