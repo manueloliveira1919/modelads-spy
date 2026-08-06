@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -115,6 +116,8 @@ function KeywordsPage() {
   const [importFileName, setImportFileName] = useState("");
   const [parsed, setParsed] = useState<{ rows: ParsedRow[]; invalid: number } | null>(null);
   const [importProgress, setImportProgress] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteProgress, setDeleteProgress] = useState<number | null>(null);
 
 
   const kwQuery = useQuery({
@@ -194,6 +197,50 @@ function KeywordsPage() {
       toast.success("Removida");
     },
   });
+
+  // Exclusão em massa: apaga em lotes de 200 ids para não estourar a URL.
+  const bulkDeleteMut = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const size = 200;
+      let done = 0;
+      for (let i = 0; i < ids.length; i += size) {
+        const chunk = ids.slice(i, i + size);
+        const { error } = await supabase.from("search_keywords").delete().in("id", chunk);
+        if (error) throw error;
+        done += chunk.length;
+        if (ids.length > size) setDeleteProgress(Math.round((done / ids.length) * 100));
+      }
+      await logSystem({ action: "keyword.bulk_delete", metadata: { total: done } });
+      return done;
+    },
+    onSuccess: (total) => {
+      qc.invalidateQueries({ queryKey: ["admin", "search_keywords"] });
+      qc.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+      setSelectedIds(new Set());
+      setDeleteProgress(null);
+      toast.success(`${total} palavras-chave excluídas`);
+    },
+    onError: (e) => {
+      setDeleteProgress(null);
+      toast.error((e as Error).message);
+    },
+  });
+
+  function confirmDelete(ids: string[]) {
+    if (!ids.length) {
+      toast.error("Nenhuma palavra selecionada");
+      return;
+    }
+    if (
+      confirm(
+        `Excluir ${ids.length} palavra${ids.length > 1 ? "s" : ""}-chave? Esta ação não pode ser desfeita.`,
+      )
+    ) {
+      bulkDeleteMut.mutate(ids);
+    }
+  }
+
+
 
   const toggleMut = useMutation({
     mutationFn: async (kw: Keyword) => {
@@ -351,6 +398,15 @@ function KeywordsPage() {
             <Button variant="outline" className="gap-2" onClick={handleExport}>
               <Download className="h-4 w-4" /> Exportar CSV
             </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              disabled={rows.length === 0 || bulkDeleteMut.isPending}
+              onClick={() => confirmDelete(rows.map((k) => k.id))}
+            >
+              <Trash2 className="h-4 w-4" />
+              Excluir todas{rows.length !== all.length ? " (filtro)" : ""}
+            </Button>
           </>
         }
       />
@@ -444,10 +500,45 @@ function KeywordsPage() {
         </div>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selecionada{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <Button
+            size="sm"
+            variant="destructive"
+            className="gap-2"
+            disabled={bulkDeleteMut.isPending}
+            onClick={() => confirmDelete([...selectedIds])}
+          >
+            <Trash2 className="h-4 w-4" /> Excluir selecionadas
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+            Limpar seleção
+          </Button>
+          {deleteProgress !== null && (
+            <span className="text-xs text-muted-foreground">
+              Excluindo… {deleteProgress}%
+            </span>
+          )}
+        </div>
+      )}
+
       <Card className="overflow-hidden border-border/60">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  aria-label="Selecionar todas"
+                  checked={rows.length > 0 && rows.every((k) => selectedIds.has(k.id))}
+                  onCheckedChange={(v) => {
+                    if (v) setSelectedIds(new Set(rows.map((k) => k.id)));
+                    else setSelectedIds(new Set());
+                  }}
+                />
+              </TableHead>
               <TableHead>Palavra</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Peso</TableHead>
@@ -459,20 +550,34 @@ function KeywordsPage() {
           <TableBody>
             {kwQuery.isLoading && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             )}
             {!kwQuery.isLoading && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   Nenhuma palavra cadastrada.
                 </TableCell>
               </TableRow>
             )}
             {rows.map((k) => (
-              <TableRow key={k.id}>
+              <TableRow key={k.id} data-state={selectedIds.has(k.id) ? "selected" : undefined}>
+                <TableCell>
+                  <Checkbox
+                    aria-label={`Selecionar ${k.word}`}
+                    checked={selectedIds.has(k.id)}
+                    onCheckedChange={(v) =>
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (v) next.add(k.id);
+                        else next.delete(k.id);
+                        return next;
+                      })
+                    }
+                  />
+                </TableCell>
                 <TableCell className="font-medium">{k.word}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{k.category ?? "—"}</Badge>
