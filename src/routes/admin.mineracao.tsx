@@ -77,17 +77,10 @@ function MineracaoPage() {
   });
 
   const categoriesQuery = useQuery({
-    queryKey: ["admin", "categories", "active"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("keyword_categories")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name");
-      if (error) throw error;
-      return (data ?? []) as { id: string; name: string }[];
-    },
+    ...categoriesQueryOptions,
+    select: (rows) => rows.filter((c) => c.is_active).map((c) => ({ id: c.id, name: c.name })),
   });
+
 
   const last = runsQuery.data?.[0];
   const running = last?.status === "running";

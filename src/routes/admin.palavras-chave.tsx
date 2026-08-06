@@ -292,7 +292,7 @@ function KeywordsPage() {
     },
     onSuccess: (created) => {
       qc.invalidateQueries({ queryKey: ["admin", "search_keywords"] });
-      qc.invalidateQueries({ queryKey: ["admin", "keyword_categories"] });
+      qc.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
       toast.success(
         `${created} palavras criadas · ${importSummary?.duplicates ?? 0} ignoradas`,
       );
