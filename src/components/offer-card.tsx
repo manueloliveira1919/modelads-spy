@@ -130,14 +130,8 @@ export function OfferCard({ offer }: { offer: Offer }) {
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            <span
-              className={cn(
-                "inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-semibold",
-                CATEGORY_STYLES[offer.category],
-              )}
-            >
-              {offer.category}
-            </span>
+            <CategoryBadge category={offer.category} />
+
             {offer.structure && (
               <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
                 <Layers className="h-3 w-3" />
