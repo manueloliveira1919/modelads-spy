@@ -398,6 +398,15 @@ function KeywordsPage() {
             <Button variant="outline" className="gap-2" onClick={handleExport}>
               <Download className="h-4 w-4" /> Exportar CSV
             </Button>
+            <Button
+              variant="outline"
+              className="gap-2 border-destructive/40 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              disabled={rows.length === 0 || bulkDeleteMut.isPending}
+              onClick={() => confirmDelete(rows.map((k) => k.id))}
+            >
+              <Trash2 className="h-4 w-4" />
+              Excluir todas{rows.length !== all.length ? " (filtro)" : ""}
+            </Button>
           </>
         }
       />
