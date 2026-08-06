@@ -98,7 +98,7 @@ export function rowToOffer(row: OfferRow): Offer {
     id: row.id,
     page: row.page_name,
     pageId: row.page_id,
-    category: (row.category as OfferCategory) ?? "Info",
+    category: row.category || "Sem categoria",
     structure: (row.structure as OfferStructure | null) ?? null,
     language: LANG_MAP[row.language] ?? "Português",
     status: (row.status as OfferStatus) ?? "testando",

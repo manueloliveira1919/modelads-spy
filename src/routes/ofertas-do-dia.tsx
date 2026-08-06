@@ -6,8 +6,8 @@ import { Search, ListFilter, ChevronDown, Flame } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
+import { useActiveCategoryNames } from "@/hooks/use-categories";
 import {
-  CATEGORIES,
   LANGUAGES,
   PRODUCT_TYPES,
   STRUCTURES,
