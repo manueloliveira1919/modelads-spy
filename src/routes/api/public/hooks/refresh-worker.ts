@@ -474,6 +474,12 @@ async function authorize(
   const cronSecret = process.env.CRON_SECRET;
   const headerCron = request.headers.get("x-cron-secret");
   if (cronSecret && headerCron && headerCron === cronSecret) return { ok: true };
+
+  // Canonical pg_cron authentication: apikey header with the Supabase anon key.
+  const apikey = request.headers.get("apikey");
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (apikey && publishableKey && apikey === publishableKey) return { ok: true };
+
   const auth = request.headers.get("authorization") ?? "";
   const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : null;
   if (bearer) {
