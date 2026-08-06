@@ -175,7 +175,7 @@ function Page() {
               <FilterChip active={category === "todas"} onClick={() => setCategory("todas")}>
                 Todas
               </FilterChip>
-              {CATEGORIES.map((c) => (
+              {categoryNames.map((c) => (
                 <FilterChip key={c} active={category === c} onClick={() => setCategory(c)}>
                   {c}
                 </FilterChip>
