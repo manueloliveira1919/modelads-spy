@@ -408,6 +408,7 @@ export type Database = {
           keywords_per_run: number
           languages: string[]
           max_pages: number
+          meta_api_delay_ms: number
           page_size: number
           per_keyword_limit: number
           singleton: boolean
@@ -422,6 +423,7 @@ export type Database = {
           keywords_per_run?: number
           languages?: string[]
           max_pages?: number
+          meta_api_delay_ms?: number
           page_size?: number
           per_keyword_limit?: number
           singleton?: boolean
@@ -436,6 +438,7 @@ export type Database = {
           keywords_per_run?: number
           languages?: string[]
           max_pages?: number
+          meta_api_delay_ms?: number
           page_size?: number
           per_keyword_limit?: number
           singleton?: boolean
@@ -909,6 +912,10 @@ export type Database = {
           search_errors: number
           upserts: number
         }[]
+      }
+      mining_timeout_run: {
+        Args: { p_age_minutes?: number }
+        Returns: undefined
       }
       mining_update_run: {
         Args: {
