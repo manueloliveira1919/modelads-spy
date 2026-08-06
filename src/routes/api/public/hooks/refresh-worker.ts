@@ -28,10 +28,10 @@ import {
 // progresso, mas a taxa real é controlada por available_at (backoff de rate limit)
 // e por delay entre chamadas à Meta.
 const JOBS_PER_TICK = 2;
-// Delay entre requisições à Meta dentro de um job de busca (ms).
-const META_REQUEST_DELAY_MS = 1000;
 // Backoff aplicado quando a Meta retorna (#613) rate limit.
-const RATE_LIMIT_BACKOFF_MS = 15 * 60 * 1000;
+// A Meta geralmente reseta a janela a cada hora, então esperamos 60 min.
+const RATE_LIMIT_BACKOFF_MS = 60 * 60 * 1000;
+
 
 interface MetaRefreshJob {
   id: string;
