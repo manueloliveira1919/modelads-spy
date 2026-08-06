@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { CATEGORIES_QUERY_KEY, categoriesQueryOptions } from "@/hooks/use-categories";
 import { logSystem } from "@/lib/admin-log";
 import { AdminPageHeader } from "@/components/admin-shell";
 import { Card, CardContent } from "@/components/ui/card";
@@ -35,17 +36,7 @@ function CategoriasPage() {
   const qc = useQueryClient();
   const [editing, setEditing] = useState<Partial<Category> | null>(null);
 
-  const catsQuery = useQuery({
-    queryKey: ["admin", "categories"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("keyword_categories")
-        .select("*")
-        .order("name");
-      if (error) throw error;
-      return (data ?? []) as Category[];
-    },
-  });
+  const catsQuery = useQuery(categoriesQueryOptions);
 
   const countsQuery = useQuery({
     queryKey: ["admin", "keyword_counts"],
@@ -60,28 +51,50 @@ function CategoriasPage() {
     },
   });
 
+  // Após qualquer alteração, tudo que consome categorias é revalidado.
+  const invalidateAll = () => {
+    qc.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+    qc.invalidateQueries({ queryKey: ["admin", "keyword_counts"] });
+    qc.invalidateQueries({ queryKey: ["admin", "search_keywords"] });
+    qc.invalidateQueries({ queryKey: ["offers"] });
+  };
+
   const saveMut = useMutation({
     mutationFn: async (c: Partial<Category>) => {
+      const name = (c.name ?? "").trim();
+      if (!name) throw new Error("Informe um nome para a categoria");
       if (c.id) {
+        const previous = (catsQuery.data ?? []).find((x) => x.id === c.id);
         const { error } = await supabase
           .from("keyword_categories")
-          .update({ name: c.name, color: c.color, icon: c.icon, is_active: c.is_active ?? true })
+          .update({ name, color: c.color, icon: c.icon, is_active: c.is_active ?? true })
           .eq("id", c.id);
         if (error) throw error;
-        await logSystem({ action: "category.update", metadata: { name: c.name } });
+        // Renomeou? Leva junto palavras-chave e ofertas para não sobrar órfão.
+        if (previous && previous.name !== name) {
+          await supabase
+            .from("search_keywords")
+            .update({ category: name })
+            .eq("category", previous.name);
+          await supabase
+            .from("meta_offers")
+            .update({ category: name })
+            .eq("category", previous.name);
+        }
+        await logSystem({ action: "category.update", metadata: { name } });
       } else {
         const { error } = await supabase.from("keyword_categories").insert({
-          name: c.name!,
+          name,
           color: c.color ?? "#60a5fa",
           icon: c.icon ?? "Tag",
           is_active: c.is_active ?? true,
         });
         if (error) throw error;
-        await logSystem({ action: "category.create", metadata: { name: c.name } });
+        await logSystem({ action: "category.create", metadata: { name } });
       }
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin", "categories"] });
+      invalidateAll();
       setEditing(null);
       toast.success("Categoria salva");
     },
@@ -96,7 +109,8 @@ function CategoriasPage() {
         .eq("id", c.id);
       if (error) throw error;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin", "categories"] }),
+    onSuccess: invalidateAll,
+    onError: (e) => toast.error((e as Error).message),
   });
 
   const deleteMut = useMutation({
@@ -105,10 +119,12 @@ function CategoriasPage() {
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["admin", "categories"] });
+      invalidateAll();
       toast.success("Removida");
     },
+    onError: (e) => toast.error((e as Error).message),
   });
+
 
   const rows = catsQuery.data ?? [];
 
