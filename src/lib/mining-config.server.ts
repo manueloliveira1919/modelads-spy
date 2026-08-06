@@ -31,7 +31,9 @@ export interface MiningSettings {
   auto_refresh: boolean;
   max_pages: number;
   keywords_per_run: number;
+  meta_api_delay_ms: number;
 }
+
 
 export async function loadActiveKeywords(): Promise<KeywordRow[]> {
   const supabaseAdmin = await serverSupabaseAnon();
