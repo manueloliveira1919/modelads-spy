@@ -79,7 +79,9 @@ function Page() {
   const filtered = useMemo(() => {
     const list = offers.filter((o) => {
       if (category === "todas" && o.category === "Sem categoria") return false;
-      if (category !== "todas" && o.category !== category) return false;
+      // Comparação sem acento/caixa: ofertas antigas podem ter "Saude" vs "Saúde".
+      if (category !== "todas" && normalizeCategoryKey(o.category) !== normalizeCategoryKey(category))
+        return false;
       if (language !== "todos" && o.language !== language) return false;
       if (structure !== "todas" && o.structure !== structure) return false;
       if (productType !== "todos" && o.productType !== productType) return false;
