@@ -52,6 +52,7 @@ export const Route = createFileRoute("/ofertas-do-dia")({
 type ScaleFilter = "escalando" | "todos" | "escaladissima";
 
 function Page() {
+  const categoryNames = useActiveCategoryNames();
   const [category, setCategory] = useState<OfferCategory | "todas">("todas");
   const [language, setLanguage] = useState<OfferLanguage | "todos">("todos");
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
