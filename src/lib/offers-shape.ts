@@ -37,16 +37,8 @@ export interface Offer {
 
 
 
-export const CATEGORIES: OfferCategory[] = [
-  "Info",
-  "Nutra",
-  "Relacionamento",
-  "Finanças",
-  "Saúde",
-  "Mentoria",
-  "Aplicativo/App",
-  "Sem categoria",
-];
+// A lista de categorias vem do banco (hook useActiveCategoryNames).
+
 
 export const STRUCTURES: OfferStructure[] = ["VSL", "Página de Vendas", "Quiz"];
 export const LANGUAGES: OfferLanguage[] = ["Português", "Espanhol", "Inglês"];
