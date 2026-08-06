@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
 import { useActiveCategoryNames } from "@/hooks/use-categories";
+import { normalizeCategoryKey } from "@/lib/category-scoring";
 import {
   LANGUAGES,
   PRODUCT_TYPES,
