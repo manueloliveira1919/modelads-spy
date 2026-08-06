@@ -255,15 +255,12 @@ function OfferDetail() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <span
-                    className={cn(
-                      "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold",
-                      CATEGORY_STYLES[offer.category],
-                    )}
-                  >
-                    <Tag className="h-3 w-3" />
-                    {offer.category}
-                  </span>
+                  <CategoryBadge
+                    category={offer.category}
+                    withIcon
+                    className="rounded-lg px-2.5 py-1 text-xs"
+                  />
+
                   <span className="inline-flex items-center gap-1 rounded-lg bg-vsl/15 px-2.5 py-1 text-xs font-semibold text-vsl ring-1 ring-inset ring-vsl/30">
                     <Layers className="h-3 w-3" />
                     {offer.structure ?? "Formato n/d"}
