@@ -371,9 +371,25 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
 // ---------- Finaliza a run: deactivate + métricas + fecha o registro ----------
 async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   const { data: startedAt } = await supabase.rpc("mining_get_run_started_at", { p_run_id: job.run_id });
-  const { data: deactivated } = await supabase.rpc("mining_deactivate_stale", {
-    p_started_at: startedAt ?? new Date().toISOString(),
-  });
+
+  // Só uma run de cobertura COMPLETA pode desativar ofertas que não apareceram.
+  // Runs parciais (fatia de palavras por rotação ou categoria específica)
+  // desativariam indevidamente todo o acervo.
+  const { data: runRow } = await supabase
+    .from("meta_refresh_runs")
+    .select("details")
+    .eq("id", job.run_id)
+    .maybeSingle();
+  const runDetails = (runRow?.details ?? {}) as Record<string, unknown>;
+  const coverage = runDetails["coverage"] === "full" ? "full" : "partial";
+
+  let deactivated = 0;
+  if (coverage === "full") {
+    const { data } = await supabase.rpc("mining_deactivate_stale", {
+      p_started_at: startedAt ?? new Date().toISOString(),
+    });
+    deactivated = Number(data ?? 0);
+  }
   const { data: pagesSeen } = await supabase.rpc("mining_count_pages_seen", { p_run_id: job.run_id });
   const { data: sums } = await supabase.rpc("mining_sum_job_logs", { p_run_id: job.run_id });
   const upserts = Number(sums?.[0]?.upserts ?? 0);
@@ -390,20 +406,21 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
     p_offers_upserted: upserts,
     p_pages_seen: pagesSeen ?? 0,
     p_error: searchErrors > 0 ? `${searchErrors} erro(s) durante a coleta — ver mining_logs` : null,
-    p_details: { deactivated: deactivated ?? 0, search_errors: searchErrors },
+    p_details: { deactivated, search_errors: searchErrors, coverage },
   });
 
   await supabase.rpc("mining_log", {
     p_kind: "run",
     p_status: status,
-    p_summary: `run finalizada: ${upserts} ofertas, ${pagesSeen ?? 0} páginas, ${deactivated ?? 0} desativadas`,
+    p_summary: `run finalizada: ${upserts} ofertas, ${pagesSeen ?? 0} páginas, ${deactivated} desativadas (cobertura ${coverage})`,
     p_details: {
       run_id: job.run_id,
       started_at: startedAt,
       finished_at: finishedAt,
       upserts,
       pages_seen: pagesSeen ?? 0,
-      deactivated: deactivated ?? 0,
+      deactivated,
+      coverage,
       search_errors: searchErrors,
     },
   });
