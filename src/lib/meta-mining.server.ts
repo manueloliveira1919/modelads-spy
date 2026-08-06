@@ -81,24 +81,7 @@ export function buildSearchUrl(opts: {
   return `${META_API}?${params.toString()}`;
 }
 
-export async function searchTermPaginated(opts: {
-  token: string;
-  term: string;
-  country: string;
-  limit: number;
-  maxPages: number;
-}): Promise<MetaAdItem[]> {
-  const all: MetaAdItem[] = [];
-  let url = buildSearchUrl(opts);
-  for (let page = 0; page < Math.max(1, opts.maxPages); page++) {
-    const json = await fetchMeta(url);
-    all.push(...(json.data ?? []));
-    const next = json.paging?.next;
-    if (!next) break;
-    url = next;
-  }
-  return all;
-}
+export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export function computeActiveDays(start?: string): number {
   if (!start) return 0;
@@ -139,8 +122,6 @@ function firstMatch(html: string, patterns: RegExp[]): string | null {
   return null;
 }
 
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
 async function fetchSnapshotOnce(snapshotUrl: string): Promise<SnapshotMedia> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), SNAPSHOT_TIMEOUT_MS);
@@ -166,7 +147,7 @@ async function fetchSnapshotOnce(snapshotUrl: string): Promise<SnapshotMedia> {
     ]);
     const linkUrl = firstMatch(html, [
       /"link_url":"([^"]+)"/,
-      /"snapshot_url":"([^"]+)".*?"link_url":"([^"]+)"/,
+      /"snapshot_url":"([^"]+)".*"link_url":"([^"]+)"/,
     ]);
     return { imageUrl, videoUrl, linkUrl };
   } finally {
@@ -202,6 +183,28 @@ export async function extractSnapshotMedia(
     attempts: SNAPSHOT_MAX_ATTEMPTS,
     error: (lastErr as Error)?.message ?? "snapshot failed",
   };
+}
+
+export async function searchTermPaginated(opts: {
+  token: string;
+  term: string;
+  country: string;
+  limit: number;
+  maxPages: number;
+  delayMs?: number;
+}): Promise<MetaAdItem[]> {
+  const all: MetaAdItem[] = [];
+  let url = buildSearchUrl(opts);
+  const delayMs = opts.delayMs ?? 350;
+  for (let page = 0; page < Math.max(1, opts.maxPages); page++) {
+    const json = await fetchMeta(url);
+    all.push(...(json.data ?? []));
+    const next = json.paging?.next;
+    if (!next) break;
+    url = next;
+    await sleep(delayMs);
+  }
+  return all;
 }
 
 // Executa `fn` em lotes paralelos de `size`. Erros individuais viram resultados nulos.
