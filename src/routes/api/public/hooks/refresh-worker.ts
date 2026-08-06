@@ -87,7 +87,12 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
   const token = process.env.META_ACCESS_TOKEN;
   if (!token) throw new Error("META_ACCESS_TOKEN não configurado");
 
-  const settings = job.payload.settings as { per_keyword_limit: number; max_pages: number };
+  const settings = job.payload.settings as {
+    per_keyword_limit: number;
+    max_pages: number;
+    meta_api_delay_ms?: number;
+  };
+  const delayMs = settings.meta_api_delay_ms ?? 2000;
   const steps = job.payload.steps as {
     term: string;
     category: string | null;
@@ -106,8 +111,9 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
         country: step.country,
         limit: settings.per_keyword_limit,
         maxPages: settings.max_pages,
-        delayMs: META_REQUEST_DELAY_MS,
+        delayMs,
       });
+
       for (const ad of items as MetaAdItem[]) {
         if (!ad.id || !ad.page_id) continue;
         rows.push({
