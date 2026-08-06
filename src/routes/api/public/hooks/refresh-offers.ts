@@ -153,7 +153,7 @@ export const Route = createFileRoute("/api/public/hooks/refresh-offers")({
         Response.json({
           ok: true,
           endpoint: "refresh-offers",
-          hint: "POST autenticado (admin bearer ou x-cron-secret). Enfileira uma run — quem processa é /api/public/hooks/refresh-worker.",
+          hint: "POST autenticado (admin bearer, x-cron-secret ou apikey). Enfileira uma run — quem processa é /api/public/hooks/refresh-worker.",
         }),
       POST: async ({ request }) => {
         const auth = await authorize(request);
