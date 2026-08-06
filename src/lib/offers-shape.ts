@@ -4,15 +4,9 @@ export type { ProductType } from "./offer-heuristics";
 export { PRODUCT_TYPES } from "./offer-heuristics";
 
 export type OfferStatus = "escaladissima" | "escalando" | "crescendo" | "testando";
-export type OfferCategory =
-  | "Info"
-  | "Nutra"
-  | "Relacionamento"
-  | "Finanças"
-  | "Saúde"
-  | "Mentoria"
-  | "Aplicativo/App"
-  | "Sem categoria";
+// As categorias são cadastradas no painel admin (tabela keyword_categories),
+// por isso aqui é apenas texto livre — nada fixo no código.
+export type OfferCategory = string;
 export type OfferStructure = "VSL" | "Página de Vendas" | "Quiz";
 export type OfferLanguage = "Português" | "Espanhol" | "Inglês";
 

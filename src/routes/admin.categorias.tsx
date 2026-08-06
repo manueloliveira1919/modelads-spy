@@ -196,7 +196,11 @@ function CategoriasPage() {
                   size="sm"
                   className="gap-1.5 text-muted-foreground"
                   onClick={() => {
-                    if (confirm(`Excluir "${c.name}"?`)) deleteMut.mutate(c.id);
+                    const n = countsQuery.data?.[c.name] ?? 0;
+                    const msg = n
+                      ? `Excluir "${c.name}"? ${n} palavra(s)-chave estão nesta categoria e ficarão sem categoria válida.`
+                      : `Excluir "${c.name}"?`;
+                    if (confirm(msg)) deleteMut.mutate(c.id);
                   }}
                 >
                   <Trash2 className="h-3.5 w-3.5" /> Excluir
