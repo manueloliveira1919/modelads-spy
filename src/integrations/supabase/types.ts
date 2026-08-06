@@ -244,6 +244,7 @@ export type Database = {
       meta_refresh_jobs: {
         Row: {
           attempts: number
+          available_at: string
           created_at: string
           error: string | null
           finished_at: string | null
@@ -256,6 +257,7 @@ export type Database = {
         }
         Insert: {
           attempts?: number
+          available_at?: string
           created_at?: string
           error?: string | null
           finished_at?: string | null
@@ -268,6 +270,7 @@ export type Database = {
         }
         Update: {
           attempts?: number
+          available_at?: string
           created_at?: string
           error?: string | null
           finished_at?: string | null
@@ -402,6 +405,7 @@ export type Database = {
           countries: string[]
           created_at: string
           id: string
+          keywords_per_run: number
           languages: string[]
           max_pages: number
           page_size: number
@@ -415,6 +419,7 @@ export type Database = {
           countries?: string[]
           created_at?: string
           id?: string
+          keywords_per_run?: number
           languages?: string[]
           max_pages?: number
           page_size?: number
@@ -428,6 +433,7 @@ export type Database = {
           countries?: string[]
           created_at?: string
           id?: string
+          keywords_per_run?: number
           languages?: string[]
           max_pages?: number
           page_size?: number
@@ -556,6 +562,7 @@ export type Database = {
           id: string
           is_active: boolean
           language: string
+          last_mined_at: string | null
           niche: string | null
           priority: number
           updated_at: string
@@ -569,6 +576,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           language?: string
+          last_mined_at?: string | null
           niche?: string | null
           priority?: number
           updated_at?: string
@@ -582,6 +590,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           language?: string
+          last_mined_at?: string | null
           niche?: string | null
           priority?: number
           updated_at?: string
@@ -730,6 +739,7 @@ export type Database = {
         Args: { p_limit?: number }
         Returns: {
           attempts: number
+          available_at: string
           created_at: string
           error: string | null
           finished_at: string | null
@@ -800,6 +810,10 @@ export type Database = {
         Returns: number
       }
       mining_enqueue_jobs: { Args: { p_jobs: Json }; Returns: undefined }
+      mining_ensure_classify_jobs: {
+        Args: { p_run_id: string }
+        Returns: undefined
+      }
       mining_get_page_counts: {
         Args: { p_run_id: string }
         Returns: {
@@ -876,9 +890,17 @@ export type Database = {
         }
         Returns: undefined
       }
+      mining_partial_finalize: {
+        Args: { p_run_id: string }
+        Returns: undefined
+      }
       mining_remaining_count: {
         Args: { p_kind: string; p_run_id: string }
         Returns: number
+      }
+      mining_requeue_job: {
+        Args: { p_available_at?: string; p_job_id: string }
+        Returns: undefined
       }
       mining_run_progress: { Args: { p_run_id: string }; Returns: Json }
       mining_sum_job_logs: {
