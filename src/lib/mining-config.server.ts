@@ -224,3 +224,23 @@ export function buildSearchPlan(
   const limit = Math.max(8, settings.keywords_per_run ?? 60);
   return plan.slice(0, limit);
 }
+
+// Quantas palavras seriam elegíveis sem o corte de rotação. Usado para saber
+// se uma run cobre TODAS as palavras (cobertura completa) ou só uma fatia.
+export function countEligibleKeywords(
+  keywords: KeywordRow[],
+  settings: MiningSettings,
+  category?: string | null,
+): number {
+  const allowedCountries = new Set(settings.countries);
+  const allowedLangs = new Set(settings.languages);
+  const wanted = category?.trim().toLowerCase() || null;
+  let n = 0;
+  for (const k of keywords) {
+    if (allowedCountries.size && !allowedCountries.has(k.country)) continue;
+    if (allowedLangs.size && !allowedLangs.has(k.language)) continue;
+    if (wanted && (k.category ?? "").trim().toLowerCase() !== wanted) continue;
+    n++;
+  }
+  return n;
+}
