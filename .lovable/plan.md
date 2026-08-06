@@ -7,6 +7,7 @@ Da última run (57 min, encerrada pelo watchdog, 0 ofertas gravadas):
 - 72 blocos de busca criados, apenas **12 concluídos**; **60 falharam**.
 - Motivo das falhas: **`Meta API 400: (#613) Calls to this api have exceeded the rate limit`** — não é lentidão nem tamanho de bloco.
 - Cada bloco gasta suas 3 tentativas em poucos minutos e morre; a run fica sem nada para entregar.
+- O watchdog (cron a cada 5 min) só marcou a run como `blocked` e não executou finalização; por isso `offers_upserted = 0` mesmo com dados coletados no `meta_refresh_ads_raw`.
 
 Ou seja: aumentar palavras por bloco **piora** (mais chamadas na mesma janela) e diminuir palavras-chave só esconde o problema (você perde cobertura e continua batendo no limite quando crescer de novo).
 
