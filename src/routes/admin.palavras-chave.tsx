@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { CATEGORIES_QUERY_KEY, categoriesQueryOptions } from "@/hooks/use-categories";
 import { logSystem } from "@/lib/admin-log";
 import { AdminPageHeader } from "@/components/admin-shell";
 import { Card } from "@/components/ui/card";
@@ -129,15 +130,10 @@ function KeywordsPage() {
   });
 
   const catQuery = useQuery({
-    queryKey: ["admin", "keyword_categories"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("keyword_categories")
-        .select("name")
-        .order("name");
-      return (data ?? []).map((c) => c.name as string);
-    },
+    ...categoriesQueryOptions,
+    select: (rows) => rows.filter((c) => c.is_active).map((c) => c.name),
   });
+
 
   const rows = useMemo(() => {
     let list = kwQuery.data ?? [];
@@ -296,7 +292,7 @@ function KeywordsPage() {
     },
     onSuccess: (created) => {
       qc.invalidateQueries({ queryKey: ["admin", "search_keywords"] });
-      qc.invalidateQueries({ queryKey: ["admin", "keyword_categories"] });
+      qc.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
       toast.success(
         `${created} palavras criadas · ${importSummary?.duplicates ?? 0} ignoradas`,
       );

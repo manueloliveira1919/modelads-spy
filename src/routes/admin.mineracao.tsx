@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { categoriesQueryOptions } from "@/hooks/use-categories";
 import { logSystem } from "@/lib/admin-log";
 import { AdminPageHeader } from "@/components/admin-shell";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,17 +78,10 @@ function MineracaoPage() {
   });
 
   const categoriesQuery = useQuery({
-    queryKey: ["admin", "categories", "active"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("keyword_categories")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name");
-      if (error) throw error;
-      return (data ?? []) as { id: string; name: string }[];
-    },
+    ...categoriesQueryOptions,
+    select: (rows) => rows.filter((c) => c.is_active).map((c) => ({ id: c.id, name: c.name })),
   });
+
 
   const last = runsQuery.data?.[0];
   const running = last?.status === "running";

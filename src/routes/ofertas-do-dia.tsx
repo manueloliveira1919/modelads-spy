@@ -6,8 +6,9 @@ import { Search, ListFilter, ChevronDown, Flame } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
+import { useActiveCategoryNames } from "@/hooks/use-categories";
+import { normalizeCategoryKey } from "@/lib/category-scoring";
 import {
-  CATEGORIES,
   LANGUAGES,
   PRODUCT_TYPES,
   STRUCTURES,
@@ -52,6 +53,7 @@ export const Route = createFileRoute("/ofertas-do-dia")({
 type ScaleFilter = "escalando" | "todos" | "escaladissima";
 
 function Page() {
+  const categoryNames = useActiveCategoryNames();
   const [category, setCategory] = useState<OfferCategory | "todas">("todas");
   const [language, setLanguage] = useState<OfferLanguage | "todos">("todos");
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
@@ -78,7 +80,9 @@ function Page() {
   const filtered = useMemo(() => {
     const list = offers.filter((o) => {
       if (category === "todas" && o.category === "Sem categoria") return false;
-      if (category !== "todas" && o.category !== category) return false;
+      // Comparação sem acento/caixa: ofertas antigas podem ter "Saude" vs "Saúde".
+      if (category !== "todas" && normalizeCategoryKey(o.category) !== normalizeCategoryKey(category))
+        return false;
       if (language !== "todos" && o.language !== language) return false;
       if (structure !== "todas" && o.structure !== structure) return false;
       if (productType !== "todos" && o.productType !== productType) return false;
@@ -174,7 +178,7 @@ function Page() {
               <FilterChip active={category === "todas"} onClick={() => setCategory("todas")}>
                 Todas
               </FilterChip>
-              {CATEGORIES.map((c) => (
+              {categoryNames.map((c) => (
                 <FilterChip key={c} active={category === c} onClick={() => setCategory(c)}>
                   {c}
                 </FilterChip>

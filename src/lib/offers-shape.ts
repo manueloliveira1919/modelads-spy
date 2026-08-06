@@ -4,15 +4,9 @@ export type { ProductType } from "./offer-heuristics";
 export { PRODUCT_TYPES } from "./offer-heuristics";
 
 export type OfferStatus = "escaladissima" | "escalando" | "crescendo" | "testando";
-export type OfferCategory =
-  | "Info"
-  | "Nutra"
-  | "Relacionamento"
-  | "Finanças"
-  | "Saúde"
-  | "Mentoria"
-  | "Aplicativo/App"
-  | "Sem categoria";
+// As categorias são cadastradas no painel admin (tabela keyword_categories),
+// por isso aqui é apenas texto livre — nada fixo no código.
+export type OfferCategory = string;
 export type OfferStructure = "VSL" | "Página de Vendas" | "Quiz";
 export type OfferLanguage = "Português" | "Espanhol" | "Inglês";
 
@@ -43,16 +37,8 @@ export interface Offer {
 
 
 
-export const CATEGORIES: OfferCategory[] = [
-  "Info",
-  "Nutra",
-  "Relacionamento",
-  "Finanças",
-  "Saúde",
-  "Mentoria",
-  "Aplicativo/App",
-  "Sem categoria",
-];
+// A lista de categorias vem do banco (hook useActiveCategoryNames).
+
 
 export const STRUCTURES: OfferStructure[] = ["VSL", "Página de Vendas", "Quiz"];
 export const LANGUAGES: OfferLanguage[] = ["Português", "Espanhol", "Inglês"];
@@ -112,7 +98,7 @@ export function rowToOffer(row: OfferRow): Offer {
     id: row.id,
     page: row.page_name,
     pageId: row.page_id,
-    category: (row.category as OfferCategory) ?? "Info",
+    category: row.category || "Sem categoria",
     structure: (row.structure as OfferStructure | null) ?? null,
     language: LANG_MAP[row.language] ?? "Português",
     status: (row.status as OfferStatus) ?? "testando",
