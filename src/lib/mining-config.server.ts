@@ -6,12 +6,14 @@ import { normalizeCategoryKey, type CategoryVocabulary } from "@/lib/category-sc
 // por policy) — não depende mais do service role.
 
 export interface KeywordRow {
+  id: string;
   word: string;
   category: string | null;
   niche: string | null;
   language: string;
   country: string;
   priority: number;
+  last_mined_at: string | null;
 }
 
 export interface BlacklistRow {
@@ -28,6 +30,8 @@ export interface MiningSettings {
   per_keyword_limit: number;
   auto_refresh: boolean;
   max_pages: number;
+  keywords_per_run: number;
+  meta_api_delay_ms: number;
 }
 
 
@@ -35,12 +39,19 @@ export async function loadActiveKeywords(): Promise<KeywordRow[]> {
   const supabaseAdmin = await serverSupabaseAnon();
   const { data, error } = await supabaseAdmin
     .from("search_keywords")
-    .select("word, category, niche, language, country, priority")
+    .select("id, word, category, niche, language, country, priority, last_mined_at")
     .eq("is_active", true);
   if (error) throw new Error(`load search_keywords: ${error.message}`);
-  return ((data ?? []) as KeywordRow[]).sort(
-    (a, b) => (b.priority ?? 1) - (a.priority ?? 1),
-  );
+  return ((data ?? []) as KeywordRow[]).sort((a, b) => {
+    // Palavras nunca mineradas primeiro; depois as mais antigas.
+    const aNull = a.last_mined_at ? 1 : 0;
+    const bNull = b.last_mined_at ? 1 : 0;
+    if (aNull !== bNull) return aNull - bNull;
+    if (a.last_mined_at && b.last_mined_at) {
+      return new Date(a.last_mined_at).getTime() - new Date(b.last_mined_at).getTime();
+    }
+    return (b.priority ?? 1) - (a.priority ?? 1);
+  });
 }
 
 export async function loadActiveBlacklist(): Promise<BlacklistRow[]> {
@@ -106,9 +117,24 @@ export async function loadMiningSettings(): Promise<MiningSettings> {
     per_keyword_limit: row.per_keyword_limit ?? 50,
     auto_refresh: row.auto_refresh ?? true,
     max_pages: row.max_pages ?? 2,
+    keywords_per_run: row.keywords_per_run ?? 30,
+    meta_api_delay_ms: row.meta_api_delay_ms ?? 2000,
   };
 }
 
+export async function markKeywordsMined(
+  supabase: Awaited<ReturnType<typeof serverSupabaseAnon>>,
+  keywordIds: string[],
+) {
+  if (!keywordIds.length) return;
+  const { error } = await supabase
+    .from("search_keywords")
+    .update({ last_mined_at: new Date().toISOString() })
+    .in("id", keywordIds);
+  if (error) {
+    console.error("markKeywordsMined error", error.message);
+  }
+}
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -161,6 +187,7 @@ export function buildBlacklistMatcher(list: BlacklistRow[]): BlacklistMatcher {
 }
 
 export interface SearchPlanStep {
+  id: string;
   term: string;
   category: string | null;
   language: string;
@@ -171,6 +198,7 @@ export interface SearchPlanStep {
 // Monta o plano de busca a partir das palavras ativas + configurações globais.
 // Cada palavra roda no seu próprio país; se `settings.countries` restringir,
 // filtramos para respeitar a preferência do admin.
+// Aplica rotação: limita a fatia de palavras por run (`keywords_per_run`).
 export function buildSearchPlan(
   keywords: KeywordRow[],
   settings: MiningSettings,
@@ -185,6 +213,7 @@ export function buildSearchPlan(
     if (allowedLangs.size && !allowedLangs.has(k.language)) continue;
     if (wanted && (k.category ?? "").trim().toLowerCase() !== wanted) continue;
     plan.push({
+      id: k.id,
       term: k.word,
       category: k.category,
       language: k.language,
@@ -192,5 +221,6 @@ export function buildSearchPlan(
       priority: k.priority ?? 1,
     });
   }
-  return plan;
+  const limit = Math.max(8, settings.keywords_per_run ?? 60);
+  return plan.slice(0, limit);
 }

@@ -12,17 +12,26 @@ import {
   computeActiveDays,
   computeQualityScore,
   extractSnapshotMedia,
+  MetaApiError,
   normalizeAdLanguage,
   runInBatches,
   searchTermPaginated,
   serverSupabaseAnon,
+  sleep,
   type MetaAdItem,
 } from "@/lib/meta-mining.server";
 
 // Worker de jobs — chamado pelo pg_cron a cada minuto. A fila e as RPCs
 // internas são acessadas pelo cliente privilegiado exclusivamente no servidor.
 
-const JOBS_PER_TICK = 6;
+// Número de jobs processados por tick. Mantemos 2 em paralelo para dar
+// progresso, mas a taxa real é controlada por available_at (backoff de rate limit)
+// e por delay entre chamadas à Meta.
+const JOBS_PER_TICK = 2;
+// Backoff aplicado quando a Meta retorna (#613) rate limit.
+// A Meta geralmente reseta a janela a cada hora, então esperamos 60 min.
+const RATE_LIMIT_BACKOFF_MS = 60 * 60 * 1000;
+
 
 interface MetaRefreshJob {
   id: string;
@@ -60,6 +69,14 @@ async function markJobDone(supabase: any, jobId: string, error: string | null) {
   });
 }
 
+async function requeueJob(supabase: any, jobId: string, delayMs: number) {
+  const availableAt = new Date(Date.now() + delayMs).toISOString();
+  await supabase.rpc("mining_requeue_job", {
+    p_job_id: jobId,
+    p_available_at: availableAt,
+  });
+}
+
 async function remainingCount(supabase: any, runId: string, kind: string): Promise<number> {
   const { data } = await supabase.rpc("mining_remaining_count", { p_run_id: runId, p_kind: kind });
   return data ?? 0;
@@ -70,7 +87,12 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
   const token = process.env.META_ACCESS_TOKEN;
   if (!token) throw new Error("META_ACCESS_TOKEN não configurado");
 
-  const settings = job.payload.settings as { per_keyword_limit: number; max_pages: number };
+  const settings = job.payload.settings as {
+    per_keyword_limit: number;
+    max_pages: number;
+    meta_api_delay_ms?: number;
+  };
+  const delayMs = settings.meta_api_delay_ms ?? 2000;
   const steps = job.payload.steps as {
     term: string;
     category: string | null;
@@ -89,7 +111,9 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
         country: step.country,
         limit: settings.per_keyword_limit,
         maxPages: settings.max_pages,
+        delayMs,
       });
+
       for (const ad of items as MetaAdItem[]) {
         if (!ad.id || !ad.page_id) continue;
         rows.push({
@@ -108,7 +132,12 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
         });
       }
     } catch (err) {
-      errors.push(`${step.category ?? "—"}/${step.term}: ${(err as Error).message}`);
+      const message = (err as Error).message;
+      errors.push(`${step.category ?? "—"}/${step.term}: ${message}`);
+      if (err instanceof MetaApiError && err.isRateLimit) {
+        // Propaga sinal especial para o loop principal re-enfileirar com backoff.
+        throw new RateLimitError(message, rows.length);
+      }
     }
   }
 
@@ -124,6 +153,15 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
   });
 
   return errors.length ? errors.join(" | ") : null;
+}
+
+class RateLimitError extends Error {
+  collectedAds: number;
+  constructor(message: string, collectedAds: number) {
+    super(message);
+    this.collectedAds = collectedAds;
+    this.name = "RateLimitError";
+  }
 }
 
 // ---------- Processa 1 job de extração de snapshot ----------
@@ -442,6 +480,12 @@ async function authorize(
   const cronSecret = process.env.CRON_SECRET;
   const headerCron = request.headers.get("x-cron-secret");
   if (cronSecret && headerCron && headerCron === cronSecret) return { ok: true };
+
+  // Canonical pg_cron authentication: apikey header with the Supabase anon key.
+  const apikey = request.headers.get("apikey");
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (apikey && publishableKey && apikey === publishableKey) return { ok: true };
+
   const auth = request.headers.get("authorization") ?? "";
   const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : null;
   if (bearer) {
@@ -505,29 +549,81 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
           return Response.json({ ok: true, processed: 0, note: "nenhum job pendente" });
         }
 
-        const results = [];
-        for (const job of claimed) {
-          let error: string | null = null;
-          try {
-            if (job.kind === "meta.search") error = await processSearchJob(supabase, job);
-            else if (job.kind === "snapshot.extract") error = await processSnapshotJob(supabase, job);
-            else if (job.kind === "classify.upsert") error = await processClassifyJob(supabase, job);
-            else if (job.kind === "run.finalize") error = await processFinalizeJob(supabase, job);
-            else error = `kind desconhecido: ${job.kind}`;
-          } catch (err) {
-            error = (err as Error).message;
-          }
-          await markJobDone(supabase, job.id, error);
-          if (!error) {
+        // Processa os jobs em paralelo, respeitando o rate limit da Meta.
+        const settled = await Promise.allSettled(
+          claimed.map(async (job) => {
             try {
-              await maybeAdvancePhase(supabase, job);
+              if (job.kind === "meta.search") {
+                const error = await processSearchJob(supabase, job);
+                return { job, error };
+              }
+              if (job.kind === "snapshot.extract") {
+                const error = await processSnapshotJob(supabase, job);
+                return { job, error };
+              }
+              if (job.kind === "classify.upsert") {
+                const error = await processClassifyJob(supabase, job);
+                return { job, error };
+              }
+              if (job.kind === "run.finalize") {
+                const error = await processFinalizeJob(supabase, job);
+                return { job, error };
+              }
+              return { job, error: `kind desconhecido: ${job.kind}` };
             } catch (err) {
-              await jobLog(supabase, job.run_id, job.kind, "erro ao avançar fase", {
-                error: (err as Error).message,
+              return { job, error: err as Error };
+            }
+          }),
+        );
+
+        const results = [];
+        for (const outcome of settled) {
+          if (outcome.status === "rejected") {
+            // Não deveria acontecer — errors já são capturados dentro do map.
+            continue;
+          }
+          const { job, error } = outcome.value;
+          let errorMessage: string | null = null;
+          let rateLimited = false;
+          let collectedAds = 0;
+
+          if (error instanceof RateLimitError) {
+            rateLimited = true;
+            collectedAds = error.collectedAds;
+            errorMessage = error.message;
+          } else if (error instanceof Error) {
+            errorMessage = error.message;
+          } else if (typeof error === "string") {
+            errorMessage = error;
+          }
+
+          if (rateLimited) {
+            // Salva o que já conseguiu coletar e re-enfileira o restante para depois.
+            if (collectedAds > 0) {
+              await jobLog(supabase, job.run_id, "meta.search", `rate limit após ${collectedAds} anúncios coletados`, {
+                collected_ads: collectedAds,
+                backoff_minutes: RATE_LIMIT_BACKOFF_MS / 60000,
               });
             }
+            await requeueJob(supabase, job.id, RATE_LIMIT_BACKOFF_MS);
+          } else {
+            await markJobDone(supabase, job.id, errorMessage);
+            if (!errorMessage) {
+              try {
+                await maybeAdvancePhase(supabase, job);
+              } catch (err) {
+                await jobLog(supabase, job.run_id, job.kind, "erro ao avançar fase", {
+                  error: (err as Error).message,
+                });
+              }
+            }
           }
-          results.push({ id: job.id, kind: job.kind, error });
+          results.push({
+            id: job.id,
+            kind: job.kind,
+            error: errorMessage,
+            rate_limited: rateLimited,
+          });
         }
 
         return Response.json({ ok: true, processed: results.length, results });

@@ -18,6 +18,7 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     loadActiveKeywords,
     loadMiningSettings,
     buildSearchPlan,
+    markKeywordsMined,
   } = await import("@/lib/mining-config.server");
 
   const startedAt = new Date().toISOString();
@@ -82,6 +83,10 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     throw new Error(`enfileirar jobs: ${jobsErr.message}`);
   }
 
+  // Marca palavras usadas como mineradas agora para rotação nas próximas runs.
+  const keywordIds = plan.map((s) => s.id).filter(Boolean);
+  await markKeywordsMined(supabase, keywordIds);
+
   await supabase.rpc("mining_log", {
     p_kind: "run",
     p_status: "queued",
@@ -118,6 +123,13 @@ async function authorize(
     return { ok: true, source: "cron" };
   }
 
+  // Canonical pg_cron authentication: apikey header with the Supabase anon key.
+  const apikey = request.headers.get("apikey");
+  const publishableKey = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (apikey && publishableKey && apikey === publishableKey) {
+    return { ok: true, source: "cron" };
+  }
+
   const auth = request.headers.get("authorization") ?? "";
   const bearer = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7) : null;
   if (bearer) {
@@ -141,7 +153,7 @@ export const Route = createFileRoute("/api/public/hooks/refresh-offers")({
         Response.json({
           ok: true,
           endpoint: "refresh-offers",
-          hint: "POST autenticado (admin bearer ou x-cron-secret). Enfileira uma run — quem processa é /api/public/hooks/refresh-worker.",
+          hint: "POST autenticado (admin bearer, x-cron-secret ou apikey). Enfileira uma run — quem processa é /api/public/hooks/refresh-worker.",
         }),
       POST: async ({ request }) => {
         const auth = await authorize(request);
