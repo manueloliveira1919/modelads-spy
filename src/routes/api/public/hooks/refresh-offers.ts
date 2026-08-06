@@ -18,6 +18,7 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     loadActiveKeywords,
     loadMiningSettings,
     buildSearchPlan,
+    markKeywordsMined,
   } = await import("@/lib/mining-config.server");
 
   const startedAt = new Date().toISOString();
@@ -81,6 +82,10 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     });
     throw new Error(`enfileirar jobs: ${jobsErr.message}`);
   }
+
+  // Marca palavras usadas como mineradas agora para rotação nas próximas runs.
+  const keywordIds = plan.map((s) => s.id).filter(Boolean);
+  await markKeywordsMined(supabase, keywordIds);
 
   await supabase.rpc("mining_log", {
     p_kind: "run",
