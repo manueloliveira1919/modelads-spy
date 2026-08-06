@@ -30,11 +30,21 @@ export const SNAPSHOT_BATCH_SIZE = 8;
 export const SNAPSHOT_TIMEOUT_MS = 8000;
 export const SNAPSHOT_MAX_ATTEMPTS = 3;
 
+export class MetaApiError extends Error {
+  isRateLimit: boolean;
+  constructor(message: string, isRateLimit = false) {
+    super(message);
+    this.isRateLimit = isRateLimit;
+  }
+}
+
 export async function fetchMeta(url: string): Promise<MetaResponse> {
   const res = await fetch(url);
   const json = (await res.json()) as MetaResponse;
   if (!res.ok || json.error) {
-    throw new Error(`Meta API ${res.status}: ${json.error?.message ?? "unknown"}`);
+    const msg = json.error?.message ?? "unknown";
+    const isRateLimit = res.status === 400 && msg.includes("(#613)");
+    throw new MetaApiError(`Meta API ${res.status}: ${msg}`, isRateLimit);
   }
   return json;
 }
