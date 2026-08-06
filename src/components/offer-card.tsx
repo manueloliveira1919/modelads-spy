@@ -14,7 +14,8 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { extractPrice } from "@/lib/offer-heuristics";
-import type { Offer, OfferCategory } from "@/lib/offers-shape";
+import { categoryBadgeStyle, useCategoryColor } from "@/hooks/use-categories";
+import type { Offer } from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
 
 const FAV_KEY = "modelads:favorites";
@@ -49,17 +50,31 @@ function useFavorite(id: string) {
   return { fav, toggle };
 }
 
-// Paleta por categoria — cores sutis com boa legibilidade no dark mode.
-export const CATEGORY_STYLES: Record<OfferCategory, string> = {
-  Info: "bg-[#3B82F6]/15 text-[#93BBFF] ring-1 ring-inset ring-[#3B82F6]/30",
-  Nutra: "bg-[#3B82F6]/15 text-[#93BBFF] ring-1 ring-inset ring-[#3B82F6]/30",
-  Relacionamento: "bg-[#EC4899]/15 text-[#F9A8D4] ring-1 ring-inset ring-[#EC4899]/30",
-  "Finanças": "bg-[#FBBF24]/15 text-[#FCD34D] ring-1 ring-inset ring-[#FBBF24]/30",
-  "Saúde": "bg-[#22C55E]/15 text-[#86EFAC] ring-1 ring-inset ring-[#22C55E]/30",
-  Mentoria: "bg-[#8B5CF6]/15 text-[#C4B5FD] ring-1 ring-inset ring-[#8B5CF6]/30",
-  "Aplicativo/App": "bg-[#1DB8FF]/15 text-[#7DD8FF] ring-1 ring-inset ring-[#1DB8FF]/30",
-  "Sem categoria": "bg-secondary text-secondary-foreground",
-};
+// Badge de categoria — cor vem do cadastro no painel admin.
+export function CategoryBadge({
+  category,
+  className,
+  withIcon = false,
+}: {
+  category: string;
+  className?: string;
+  withIcon?: boolean;
+}) {
+  const color = useCategoryColor(category);
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[11px] font-semibold",
+        className,
+      )}
+      style={categoryBadgeStyle(color)}
+    >
+      {withIcon && <Tag className="h-3 w-3" />}
+      {category}
+    </span>
+  );
+}
+
 
 
 export function OfferCard({ offer }: { offer: Offer }) {
