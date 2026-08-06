@@ -117,7 +117,8 @@ export async function loadMiningSettings(): Promise<MiningSettings> {
     per_keyword_limit: row.per_keyword_limit ?? 50,
     auto_refresh: row.auto_refresh ?? true,
     max_pages: row.max_pages ?? 2,
-    keywords_per_run: row.keywords_per_run ?? 60,
+    keywords_per_run: row.keywords_per_run ?? 30,
+    meta_api_delay_ms: row.meta_api_delay_ms ?? 2000,
   };
 }
 
