@@ -18,6 +18,7 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     loadActiveKeywords,
     loadMiningSettings,
     buildSearchPlan,
+    countEligibleKeywords,
     markKeywordsMined,
   } = await import("@/lib/mining-config.server");
 
@@ -49,6 +50,12 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     };
   }
 
+  // Cobertura: só é "full" quando a run roda TODAS as palavras elegíveis,
+  // sem filtro de categoria e sem corte de rotação. Runs parciais nunca podem
+  // desativar ofertas globalmente na finalização.
+  const eligible = countEligibleKeywords(keywords, settings, category);
+  const coverage: "full" | "partial" = !category && plan.length >= eligible ? "full" : "partial";
+
   const { data: runId, error: runErr } = await supabase.rpc("mining_create_run", {
     p_started_at: startedAt,
   });
@@ -59,7 +66,13 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
   await supabase.rpc("mining_update_run", {
     p_run_id: runId,
     p_status: "running",
-    p_details: { category, triggered_by: opts.triggeredBy },
+    p_details: {
+      category,
+      triggered_by: opts.triggeredBy,
+      coverage,
+      plan_size: plan.length,
+      eligible_keywords: eligible,
+    },
   });
 
   const jobs: Record<string, unknown>[] = [];
@@ -98,6 +111,8 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
       plan_size: plan.length,
       jobs_enqueued: jobs.length,
       category,
+      coverage,
+      eligible_keywords: eligible,
     },
   });
 
@@ -107,6 +122,7 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     category,
     plan_size: plan.length,
     jobs_enqueued: jobs.length,
+    coverage,
     note: "Mineração enfileirada. O worker (a cada minuto) processa os lotes aos poucos.",
   };
 }
