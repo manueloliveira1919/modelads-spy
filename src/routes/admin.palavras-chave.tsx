@@ -198,6 +198,50 @@ function KeywordsPage() {
     },
   });
 
+  // Exclusão em massa: apaga em lotes de 200 ids para não estourar a URL.
+  const bulkDeleteMut = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const size = 200;
+      let done = 0;
+      for (let i = 0; i < ids.length; i += size) {
+        const chunk = ids.slice(i, i + size);
+        const { error } = await supabase.from("search_keywords").delete().in("id", chunk);
+        if (error) throw error;
+        done += chunk.length;
+        if (ids.length > size) setDeleteProgress(Math.round((done / ids.length) * 100));
+      }
+      await logSystem({ action: "keyword.bulk_delete", metadata: { total: done } });
+      return done;
+    },
+    onSuccess: (total) => {
+      qc.invalidateQueries({ queryKey: ["admin", "search_keywords"] });
+      qc.invalidateQueries({ queryKey: CATEGORIES_QUERY_KEY });
+      setSelectedIds(new Set());
+      setDeleteProgress(null);
+      toast.success(`${total} palavras-chave excluídas`);
+    },
+    onError: (e) => {
+      setDeleteProgress(null);
+      toast.error((e as Error).message);
+    },
+  });
+
+  function confirmDelete(ids: string[]) {
+    if (!ids.length) {
+      toast.error("Nenhuma palavra selecionada");
+      return;
+    }
+    if (
+      confirm(
+        `Excluir ${ids.length} palavra${ids.length > 1 ? "s" : ""}-chave? Esta ação não pode ser desfeita.`,
+      )
+    ) {
+      bulkDeleteMut.mutate(ids);
+    }
+  }
+
+
+
   const toggleMut = useMutation({
     mutationFn: async (kw: Keyword) => {
       const { error } = await supabase
