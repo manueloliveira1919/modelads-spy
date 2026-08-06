@@ -500,10 +500,45 @@ function KeywordsPage() {
         </div>
       </div>
 
+      {selectedIds.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3">
+          <span className="text-sm font-medium">
+            {selectedIds.size} selecionada{selectedIds.size > 1 ? "s" : ""}
+          </span>
+          <Button
+            size="sm"
+            variant="destructive"
+            className="gap-2"
+            disabled={bulkDeleteMut.isPending}
+            onClick={() => confirmDelete([...selectedIds])}
+          >
+            <Trash2 className="h-4 w-4" /> Excluir selecionadas
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+            Limpar seleção
+          </Button>
+          {deleteProgress !== null && (
+            <span className="text-xs text-muted-foreground">
+              Excluindo… {deleteProgress}%
+            </span>
+          )}
+        </div>
+      )}
+
       <Card className="overflow-hidden border-border/60">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  aria-label="Selecionar todas"
+                  checked={rows.length > 0 && rows.every((k) => selectedIds.has(k.id))}
+                  onCheckedChange={(v) => {
+                    if (v) setSelectedIds(new Set(rows.map((k) => k.id)));
+                    else setSelectedIds(new Set());
+                  }}
+                />
+              </TableHead>
               <TableHead>Palavra</TableHead>
               <TableHead>Categoria</TableHead>
               <TableHead>Peso</TableHead>
@@ -515,20 +550,34 @@ function KeywordsPage() {
           <TableBody>
             {kwQuery.isLoading && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             )}
             {!kwQuery.isLoading && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground">
+                <TableCell colSpan={7} className="text-center text-muted-foreground">
                   Nenhuma palavra cadastrada.
                 </TableCell>
               </TableRow>
             )}
             {rows.map((k) => (
-              <TableRow key={k.id}>
+              <TableRow key={k.id} data-state={selectedIds.has(k.id) ? "selected" : undefined}>
+                <TableCell>
+                  <Checkbox
+                    aria-label={`Selecionar ${k.word}`}
+                    checked={selectedIds.has(k.id)}
+                    onCheckedChange={(v) =>
+                      setSelectedIds((prev) => {
+                        const next = new Set(prev);
+                        if (v) next.add(k.id);
+                        else next.delete(k.id);
+                        return next;
+                      })
+                    }
+                  />
+                </TableCell>
                 <TableCell className="font-medium">{k.word}</TableCell>
                 <TableCell>
                   <Badge variant="secondary">{k.category ?? "—"}</Badge>
