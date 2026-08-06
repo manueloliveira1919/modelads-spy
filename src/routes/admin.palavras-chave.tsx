@@ -116,6 +116,8 @@ function KeywordsPage() {
   const [importFileName, setImportFileName] = useState("");
   const [parsed, setParsed] = useState<{ rows: ParsedRow[]; invalid: number } | null>(null);
   const [importProgress, setImportProgress] = useState<number | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteProgress, setDeleteProgress] = useState<number | null>(null);
 
 
   const kwQuery = useQuery({
