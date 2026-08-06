@@ -129,15 +129,10 @@ function KeywordsPage() {
   });
 
   const catQuery = useQuery({
-    queryKey: ["admin", "keyword_categories"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("keyword_categories")
-        .select("name")
-        .order("name");
-      return (data ?? []).map((c) => c.name as string);
-    },
+    ...categoriesQueryOptions,
+    select: (rows) => rows.filter((c) => c.is_active).map((c) => c.name),
   });
+
 
   const rows = useMemo(() => {
     let list = kwQuery.data ?? [];
