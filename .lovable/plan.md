@@ -48,6 +48,9 @@ Com o cron desligado, a run manual fica eternamente em `running` com todos os jo
 - **Pausar/Cancelar**: cancelar usa uma RPC nova (`mining_cancel_run`) que marca jobs pendentes como falhos e fecha a run; pausar é apenas do lado do painel (para o ciclo de ticks).
 - Modal de detalhes lê `mining_logs` da run para montar erros e tempo por etapa.
 - Nenhuma regra de coleta, classificação, blacklist ou categoria é alterada.
+- **Fonte das métricas por categoria e por palavra-chave**: a tabela interna `meta_refresh_ads_raw` já grava `term`, `category` e `page_id` por anúncio da run — crio uma RPC de leitura agregada (somente `SELECT`, restrita a admin) para alimentar o ranking e os totais por categoria em tempo real. As palavras com zero anúncios saem do cruzamento entre os termos enviados nos jobs e os termos presentes no raw. Observação: o raw é apagado ao final da run (`mining_cleanup_run`), então para runs já concluídas guardo esse resumo em `meta_refresh_runs.details` no momento da finalização — sem alterar nenhuma regra de classificação.
+- **Exportação**: CSV gerado no navegador a partir dos dados já carregados; PDF via impressão de um layout dedicado do relatório (sem nova dependência pesada).
+
 
 ## Fora do escopo
 
