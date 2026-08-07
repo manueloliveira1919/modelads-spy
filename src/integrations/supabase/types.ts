@@ -805,6 +805,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      mining_cancel_run: { Args: { p_run_id: string }; Returns: undefined }
       mining_cleanup_run: { Args: { p_run_id: string }; Returns: undefined }
       mining_count_pages_seen: { Args: { p_run_id: string }; Returns: number }
       mining_create_run: { Args: { p_started_at?: string }; Returns: string }
@@ -905,6 +906,7 @@ export type Database = {
         Args: { p_available_at?: string; p_job_id: string }
         Returns: undefined
       }
+      mining_run_breakdown: { Args: { p_run_id: string }; Returns: Json }
       mining_run_progress: { Args: { p_run_id: string }; Returns: Json }
       mining_sum_job_logs: {
         Args: { p_run_id: string }
