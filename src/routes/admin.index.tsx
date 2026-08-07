@@ -65,7 +65,7 @@ function AdminDashboard() {
 
   const s = statsQuery.data;
   const runningNow = s?.lastRun?.status === "running";
-  const progressQuery = useMiningProgress(s?.lastRun?.id, !!runningNow);
+  const progressQuery = useMiningProgress(s?.lastRun?.id, runningNow ? 8_000 : false);
   const progress = progressQuery.data ?? null;
   const summary = progress ? summarizeProgress(progress) : null;
   const STATS = [
