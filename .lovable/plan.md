@@ -1,40 +1,43 @@
-# Execução manual de mineração sem depender do cron
+# Execução manual de mineração sem cron + painel de progresso completo
 
 ## Diagnóstico confirmado
 
-Verifiquei agora no banco e no código:
+Verifiquei no banco e no código:
 
-- Os três agendamentos (`modelads-refresh-worker-tick`, `modelads-refresh-offers-daily`, `modelads-refresh-watchdog`) estão com `active = false` — foram pausados de propósito na Fase 1 e ainda não foram religados.
-- O botão "Executar Mineração" chama apenas `/api/public/hooks/refresh-offers`, que cria a run e enfileira os jobs. A própria resposta diz: "o worker (a cada minuto) processa os lotes aos poucos".
-- Quem processa a fila é `/api/public/hooks/refresh-worker`, e hoje ele só é chamado pelo cron.
+- Os três agendamentos (`modelads-refresh-worker-tick`, `modelads-refresh-offers-daily`, `modelads-refresh-watchdog`) estão com `active = false` — pausados na Fase 1 e ainda não religados.
+- O botão "Executar Mineração" chama só `/api/public/hooks/refresh-offers`, que cria a run e enfileira os jobs; quem processa a fila é `/api/public/hooks/refresh-worker`, hoje acionado apenas pelo cron.
 
-Conclusão: com o cron desligado, a run manual fica em `running` com todos os jobs `pending`. É exatamente o comportamento descrito.
+Com o cron desligado, a run manual fica eternamente em `running` com todos os jobs `pending`. É exatamente o comportamento descrito.
 
-## O que vou mudar
+## Parte A — Execução manual independente do cron
 
-1. **Disparo imediato do worker na execução manual**
-   Ao clicar em "Executar Mineração", depois de criar a run e os jobs, o painel passa a acionar o worker diretamente, sem esperar cron.
+1. **Disparo imediato do worker**: ao clicar em "Executar Mineração", depois de criar a run e os jobs, o painel aciona o worker na hora.
+2. **Ciclo contínuo**: enquanto a run estiver ativa e a tela aberta, o painel continua acionando o worker a cada ~4s (um por vez, sem sobreposição) até a run finalizar sozinha.
+3. **Botão "Processar fila agora"**: destrava runs antigas presas, sem cron.
+4. **Botões "Pausar" e "Cancelar"**: pausar interrompe o ciclo de ticks (jobs ficam na fila); cancelar encerra a run e marca os jobs pendentes como cancelados.
+5. **Selo de cron desligado**: aviso visível quando os agendamentos automáticos estão pausados.
 
-2. **Ciclo contínuo enquanto a run estiver ativa**
-   Enquanto a run estiver em andamento e a tela de Mineração estiver aberta, o painel continua acionando o worker em intervalos curtos (a cada poucos segundos), até a run terminar. Assim a barra de progresso avança em tempo real e a run finaliza sozinha.
-   Trava de segurança: um acionamento por vez (sem sobreposição) e parada automática quando a run sai de `running`.
+## Parte B — Barra de progresso e observabilidade
 
-3. **Botão "Processar fila agora"**
-   Um botão manual na tela de Mineração para destravar qualquer run antiga que ficou parada, sem precisar do cron.
-
-4. **Aviso de "aguardando worker"**
-   Se a run estiver em `running` com todos os jobs pendentes por mais de 5 minutos e nenhum progresso, a tela mostra um alerta claro ("aguardando processamento — clique em Processar fila agora"), em vez de aparentar que está minerando.
-
-5. **Aviso quando o cron estiver desligado**
-   Um selo na tela de Mineração indicando que os agendamentos automáticos estão pausados, para não haver mais confusão entre "não minerou" e "não foi agendado".
+6. **Barra principal**: percentual = jobs concluídos ÷ jobs totais, com "56 de 72 jobs concluídos", atualizando a cada 4s.
+7. **Timeline de fases**: Criando jobs → Buscando anúncios → Classificando → Aplicando blacklist → Salvando ofertas → Finalizando, com a fase atual destacada em azul e as concluídas marcadas.
+8. **Cards em tempo real**: páginas analisadas, anúncios encontrados, ofertas aprovadas, descartadas, e jobs concluídos / em execução / pendentes / falhos.
+9. **Tempos**: horário de início, tempo decorrido, estimativa de tempo restante e velocidade (jobs/minuto).
+10. **Descartes por motivo**: blacklist, idioma, baixa relevância, sem categoria, sem link, sem texto e duplicadas.
+11. **Estado "aguardando worker"**: se a run está `running` com todos os jobs pendentes há mais de 5 minutos, mostra alerta claro com o botão "Processar fila agora" em vez de aparentar que está minerando.
+12. **Rótulos de status detalhados**: aguardando worker, buscando, classificando, salvando, finalizando, concluída, bloqueada, falhou.
+13. **Persistência ao recarregar**: o progresso é reconstruído sempre de `meta_refresh_runs`, `meta_refresh_jobs` e `mining_run_progress` — nada fica só na memória da página. Ao abrir a tela com uma run em andamento, a barra reaparece e os ticks recomeçam.
+14. **Histórico melhorado**: colunas Início, Tempo, Jobs (concluídos/total), Páginas, Ofertas e Status; clique na linha abre um modal com categorias processadas, quantidade de palavras-chave, anúncios encontrados, descartes por motivo, erros e tempo por etapa.
 
 ## Detalhes técnicos
 
-- `src/routes/admin.mineracao.tsx`: após a mutação de enqueue, iniciar um loop de ticks (`setInterval` controlado por `useEffect`, ~4s, com guarda de execução concorrente) que faz `POST /api/public/hooks/refresh-worker` com o bearer do admin. O loop para quando `runsQuery`/`mining_run_progress` indicar status diferente de `running`, ao desmontar o componente, ou após um teto de tentativas.
-- `refresh-worker` já aceita bearer de admin (`authorize` → `mining_is_admin`), então nenhuma mudança de segurança é necessária no endpoint.
-- O detector de "aguardando worker" é derivado no cliente a partir de `mining_run_progress` (jobs `pending` > 0, `done` = 0) e de `started_at`; não altero o enum de status no banco para evitar quebrar os checks de `meta_refresh_runs.status`. Se você preferir mesmo um status persistido `waiting_worker`, faço em uma etapa separada com migração dos constraints.
-- Nada da lógica de coleta, classificação ou blacklist é alterado nesta etapa.
+- `src/routes/admin.mineracao.tsx`: loop de ticks via `useEffect` + `setInterval` (~4s) chamando `POST /api/public/hooks/refresh-worker` com bearer de admin; guarda contra chamadas concorrentes, parada automática quando a run sai de `running`, no unmount, ou quando pausado pelo usuário. O `refresh-worker` já autoriza bearer de admin (`authorize` → `mining_is_admin`), então nenhuma mudança de segurança é necessária.
+- `src/components/mining-progress.tsx`: ampliar `MiningProgressPanel` com timeline de fases, cards de contadores, velocidade/ETA e detalhamento de descartes. O RPC `mining_run_progress` já devolve jobs por tipo (total/done/failed/pending), `ads_found`, `upserts` e os descartes; onde faltar granularidade (ex.: "sem link" separado de "sem texto", páginas analisadas em tempo real), ajusto o RPC para expor os campos, sem tocar na lógica de classificação.
+- **Status detalhados**: os nomes (`waiting_worker`, `searching`, `classifying`, …) serão apresentados na interface, derivados de `phase` + estado da fila, sem alterar os valores gravados em `meta_refresh_runs.status` — trocar o enum exigiria migrar constraints e reescrever o worker, o que sai do escopo de "só observabilidade". Se quiser os estados persistidos no banco, faço em etapa separada.
+- **Pausar/Cancelar**: cancelar usa uma RPC nova (`mining_cancel_run`) que marca jobs pendentes como falhos e fecha a run; pausar é apenas do lado do painel (para o ciclo de ticks).
+- Modal de detalhes lê `mining_logs` da run para montar erros e tempo por etapa.
+- Nenhuma regra de coleta, classificação, blacklist ou categoria é alterada.
 
-## Fora do escopo (confirmar depois)
+## Fora do escopo
 
-Religar os cron jobs continua pausado até sua confirmação visual, conforme combinado.
+Religar os cron jobs — continuam pausados até sua confirmação visual.
