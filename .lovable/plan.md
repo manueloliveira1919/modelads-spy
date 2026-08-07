@@ -29,6 +29,17 @@ Com o cron desligado, a run manual fica eternamente em `running` com todos os jo
 13. **Persistência ao recarregar**: o progresso é reconstruído sempre de `meta_refresh_runs`, `meta_refresh_jobs` e `mining_run_progress` — nada fica só na memória da página. Ao abrir a tela com uma run em andamento, a barra reaparece e os ticks recomeçam.
 14. **Histórico melhorado**: colunas Início, Tempo, Jobs (concluídos/total), Páginas, Ofertas e Status; clique na linha abre um modal com categorias processadas, quantidade de palavras-chave, anúncios encontrados, descartes por motivo, erros e tempo por etapa.
 
+## Parte C — Auditoria completa da execução
+
+15. **Faixa de resumo no topo**: ID da run, categoria minerada (ou "Todas"), quantidade de palavras-chave usadas, início, tempo decorrido, estimativa restante e velocidade (jobs/minuto).
+16. **Indicador de saúde**: 🟢 Saudável (<15 min sem progresso), 🟡 Lenta (15–30 min), 🔴 Travada (>30 min sem progresso), calculado pelo tempo desde o último job concluído.
+17. **Métricas por categoria em tempo real**: anúncios encontrados por categoria durante a run.
+18. **Ranking de palavras-chave**: aba com as palavras que mais trouxeram anúncios e também a lista das que retornaram zero.
+19. **Painel de logs em tempo real**: linha do tempo com horário e evento (criando jobs, buscando, blacklist, classificando, salvando, finalizando), lida de `mining_logs`.
+20. **Resumo final da execução**: palavras processadas, anúncios encontrados, páginas encontradas, ofertas aprovadas, descartadas, taxa de aprovação e tempo total.
+21. **Exportar relatório**: botão com CSV e PDF contendo métricas, erros, descartes, categorias, palavras-chave, tempos e status final.
+
+
 ## Detalhes técnicos
 
 - `src/routes/admin.mineracao.tsx`: loop de ticks via `useEffect` + `setInterval` (~4s) chamando `POST /api/public/hooks/refresh-worker` com bearer de admin; guarda contra chamadas concorrentes, parada automática quando a run sai de `running`, no unmount, ou quando pausado pelo usuário. O `refresh-worker` já autoriza bearer de admin (`authorize` → `mining_is_admin`), então nenhuma mudança de segurança é necessária.
@@ -37,6 +48,9 @@ Com o cron desligado, a run manual fica eternamente em `running` com todos os jo
 - **Pausar/Cancelar**: cancelar usa uma RPC nova (`mining_cancel_run`) que marca jobs pendentes como falhos e fecha a run; pausar é apenas do lado do painel (para o ciclo de ticks).
 - Modal de detalhes lê `mining_logs` da run para montar erros e tempo por etapa.
 - Nenhuma regra de coleta, classificação, blacklist ou categoria é alterada.
+- **Fonte das métricas por categoria e por palavra-chave**: a tabela interna `meta_refresh_ads_raw` já grava `term`, `category` e `page_id` por anúncio da run — crio uma RPC de leitura agregada (somente `SELECT`, restrita a admin) para alimentar o ranking e os totais por categoria em tempo real. As palavras com zero anúncios saem do cruzamento entre os termos enviados nos jobs e os termos presentes no raw. Observação: o raw é apagado ao final da run (`mining_cleanup_run`), então para runs já concluídas guardo esse resumo em `meta_refresh_runs.details` no momento da finalização — sem alterar nenhuma regra de classificação.
+- **Exportação**: CSV gerado no navegador a partir dos dados já carregados; PDF via impressão de um layout dedicado do relatório (sem nova dependência pesada).
+
 
 ## Fora do escopo
 
