@@ -106,8 +106,8 @@ function buildReportRows(
     ["Execução", "Início", new Date(run.started_at).toLocaleString("pt-BR")],
     ["Execução", "Tempo total", formatDuration(run.started_at, run.finished_at)],
     ["Métricas", "Palavras processadas", String(s?.planSize ?? breakdown?.planned_terms?.length ?? 0)],
-    ["Métricas", "Anúncios encontrados", String(progress?.ads_found ?? 0)],
-    ["Métricas", "Páginas encontradas", String(breakdown?.pages_found ?? run.pages_seen)],
+    ["Métricas", "Anúncios encontrados", String(s?.adsFound ?? 0)],
+    ["Métricas", "Páginas encontradas", String(s?.pagesFound || run.pages_seen)],
     ["Métricas", "Ofertas aprovadas", String(progress?.upserts ?? run.offers_upserted)],
     ["Métricas", "Ofertas descartadas", String(s?.discardedTotal ?? 0)],
     ["Métricas", "Taxa de aprovação", `${(s?.approvalRate ?? 0).toFixed(2)}%`],
@@ -432,8 +432,9 @@ function MineracaoPage() {
             <span>
               Jobs: {summary.done}/{summary.total}
             </span>
-            <span>Anúncios: {progress?.ads_found ?? 0}</span>
-            <span>Aprovadas: {progress?.upserts ?? 0}</span>
+            <span>Anúncios: {summary.adsFound}</span>
+            <span>Páginas: {summary.pagesFound || last.pages_seen}</span>
+            <span>Aprovadas: {progress?.upserts || last.offers_upserted}</span>
             <span>Início: {new Date(last.started_at).toLocaleString("pt-BR")}</span>
             <span>Tempo: {summary.elapsed}</span>
             <span>ETA: {summary.eta}</span>
@@ -607,9 +608,9 @@ function RunDetailDialog({ run, onClose }: { run: RefreshRun | null; onClose: ()
               <div>Tempo total: {formatDuration(run.started_at, run.finished_at)}</div>
               <div>Categoria: {s?.category ?? "Todas"}</div>
               <div>Palavras processadas: {s?.planSize ?? breakdown?.planned_terms?.length ?? "—"}</div>
-              <div>Anúncios encontrados: {progress?.ads_found ?? 0}</div>
-              <div>Páginas encontradas: {breakdown?.pages_found ?? run.pages_seen}</div>
-              <div>Ofertas aprovadas: {progress?.upserts ?? run.offers_upserted}</div>
+              <div>Anúncios encontrados: {s?.adsFound || 0}</div>
+              <div>Páginas encontradas: {s?.pagesFound || run.pages_seen}</div>
+              <div>Ofertas aprovadas: {progress?.upserts || run.offers_upserted}</div>
               <div>Descartadas: {s?.discardedTotal ?? 0}</div>
               <div>Taxa de aprovação: {(s?.approvalRate ?? 0).toFixed(2)}%</div>
             </div>

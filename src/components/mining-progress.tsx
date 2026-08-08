@@ -11,6 +11,7 @@ export interface MiningProgressData {
   started_at: string;
   finished_at: string | null;
   details: Record<string, unknown> | null;
+  pages_seen?: number;
   jobs: Record<string, { total: number; done: number; failed: number; pending: number }>;
   ads_found: number;
   upserts: number;
@@ -193,9 +194,18 @@ export function summarizeProgress(p: MiningProgressData, b?: MiningBreakdown | n
     category?: string | null;
     plan_size?: number;
     coverage?: string;
+    summary?: { ads_found?: number; pages_found?: number };
   };
 
-  const approvalRate = p.ads_found > 0 ? (p.upserts / p.ads_found) * 100 : 0;
+  // Anúncios: progresso ao vivo → resumo congelado da run → 0.
+  const adsFound = p.ads_found > 0 ? p.ads_found : (details.summary?.ads_found ?? 0);
+  // Páginas: raw ao vivo → resumo congelado → coluna pages_seen da run.
+  const pagesFound =
+    (b?.pages_found ?? 0) > 0
+      ? (b?.pages_found ?? 0)
+      : (details.summary?.pages_found ?? p.pages_seen ?? 0);
+
+  const approvalRate = adsFound > 0 ? (p.upserts / adsFound) * 100 : 0;
 
   return {
     total,
@@ -215,9 +225,10 @@ export function summarizeProgress(p: MiningProgressData, b?: MiningBreakdown | n
     discarded: d,
     discardedTotal,
     approvalRate,
+    adsFound,
     category: details.category ?? "Todas",
     planSize: details.plan_size ?? null,
-    pagesFound: b?.pages_found ?? 0,
+    pagesFound,
   };
 }
 
@@ -329,7 +340,7 @@ export function MiningProgressPanel({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Páginas analisadas" value={s.pagesFound} />
-        <Stat label="Anúncios encontrados" value={progress.ads_found} />
+        <Stat label="Anúncios encontrados" value={s.adsFound} />
         <Stat label="Ofertas aprovadas" value={progress.upserts} />
         <Stat label="Ofertas descartadas" value={s.discardedTotal} />
         <Stat label="Jobs concluídos" value={s.done} />
