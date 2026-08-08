@@ -340,7 +340,7 @@ export function MiningProgressPanel({
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Páginas analisadas" value={s.pagesFound} />
-        <Stat label="Anúncios encontrados" value={progress.ads_found} />
+        <Stat label="Anúncios encontrados" value={s.adsFound} />
         <Stat label="Ofertas aprovadas" value={progress.upserts} />
         <Stat label="Ofertas descartadas" value={s.discardedTotal} />
         <Stat label="Jobs concluídos" value={s.done} />
