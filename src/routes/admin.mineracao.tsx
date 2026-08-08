@@ -608,9 +608,9 @@ function RunDetailDialog({ run, onClose }: { run: RefreshRun | null; onClose: ()
               <div>Tempo total: {formatDuration(run.started_at, run.finished_at)}</div>
               <div>Categoria: {s?.category ?? "Todas"}</div>
               <div>Palavras processadas: {s?.planSize ?? breakdown?.planned_terms?.length ?? "—"}</div>
-              <div>Anúncios encontrados: {progress?.ads_found ?? 0}</div>
-              <div>Páginas encontradas: {breakdown?.pages_found ?? run.pages_seen}</div>
-              <div>Ofertas aprovadas: {progress?.upserts ?? run.offers_upserted}</div>
+              <div>Anúncios encontrados: {s?.adsFound || 0}</div>
+              <div>Páginas encontradas: {s?.pagesFound || run.pages_seen}</div>
+              <div>Ofertas aprovadas: {progress?.upserts || run.offers_upserted}</div>
               <div>Descartadas: {s?.discardedTotal ?? 0}</div>
               <div>Taxa de aprovação: {(s?.approvalRate ?? 0).toFixed(2)}%</div>
             </div>
