@@ -80,7 +80,33 @@ export async function loadActiveCategories(): Promise<Map<string, string>> {
   return map;
 }
 
+// Palavras pequenas/conectivas que não ajudam a identificar o nicho —
+// não viram entrada própria no vocabulário de pontuação.
+const STOPWORDS = new Set([
+  "de", "da", "do", "das", "dos", "para", "pra", "com", "em", "e", "a", "o",
+  "as", "os", "um", "uma", "no", "na", "nos", "nas", "por", "que", "se",
+]);
+
+function tokenizeKeywordPhrase(phrase: string): string[] {
+  return phrase
+    .toLowerCase()
+    .split(/\s+/)
+    .map((w) => w.trim())
+    .filter((w) => w.length >= 3 && !STOPWORDS.has(w));
+}
+
 // Vocabulário por categoria a partir das palavras-chave ativas do admin.
+//
+// Antes: cada palavra-chave (geralmente uma frase, ex: "curso de manicure
+// profissional") entrava INTEIRA como 1 item do vocabulário — a pontuação
+// exigia essa frase aparecer idêntica no anúncio pra contar como
+// correspondência, o que quase nunca acontece com copy real. Resultado:
+// praticamente 100% das ofertas eram descartadas por "baixa relevância".
+//
+// Agora: cada frase é quebrada em palavras individuais significativas
+// (sem preposições/conectivos). Um anúncio que mencione "manicure" e
+// "profissional" em qualquer lugar do texto já conta 2 correspondências,
+// mesmo sem repetir a frase de busca inteira.
 export async function loadCategoryVocabulary(): Promise<CategoryVocabulary> {
   const [keywords, categories] = await Promise.all([
     loadActiveKeywords(),
@@ -94,8 +120,8 @@ export async function loadCategoryVocabulary(): Promise<CategoryVocabulary> {
     if (!key) continue;
     const canonical = categories.get(key) ?? raw;
     const entry = vocab.get(key) ?? { canonical, words: [] };
-    entry.words.push(k.word);
-    if (k.niche) entry.words.push(k.niche);
+    for (const token of tokenizeKeywordPhrase(k.word)) entry.words.push(token);
+    if (k.niche) for (const token of tokenizeKeywordPhrase(k.niche)) entry.words.push(token);
     vocab.set(key, entry);
   }
   return vocab;
