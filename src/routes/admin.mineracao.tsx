@@ -432,8 +432,9 @@ function MineracaoPage() {
             <span>
               Jobs: {summary.done}/{summary.total}
             </span>
-            <span>Anúncios: {progress?.ads_found ?? 0}</span>
-            <span>Aprovadas: {progress?.upserts ?? 0}</span>
+            <span>Anúncios: {summary.adsFound}</span>
+            <span>Páginas: {summary.pagesFound || last.pages_seen}</span>
+            <span>Aprovadas: {progress?.upserts || last.offers_upserted}</span>
             <span>Início: {new Date(last.started_at).toLocaleString("pt-BR")}</span>
             <span>Tempo: {summary.elapsed}</span>
             <span>ETA: {summary.eta}</span>
