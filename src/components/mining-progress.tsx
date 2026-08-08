@@ -11,6 +11,7 @@ export interface MiningProgressData {
   started_at: string;
   finished_at: string | null;
   details: Record<string, unknown> | null;
+  pages_seen?: number;
   jobs: Record<string, { total: number; done: number; failed: number; pending: number }>;
   ads_found: number;
   upserts: number;
