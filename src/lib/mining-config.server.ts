@@ -1,9 +1,12 @@
 // Camada de configuração da mineração — carregada do banco.
 // Usada apenas em código server-side (server functions, server routes).
-import { serverSupabaseAnon } from "@/lib/meta-mining.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { normalizeCategoryKey, type CategoryVocabulary } from "@/lib/category-scoring";
-// Config de mineração é lida com a chave pública (só leitura, liberada
-// por policy) — não depende mais do service role.
+// Config de mineração é lida com a chave de serviço (service role) —
+// agora que o app roda só no Lovable Cloud (onde essa chave é injetada
+// sozinha), não precisamos mais da chave pública aqui. Isso fecha o aviso
+// do Security Advisor sobre config/keywords/blacklist expostas a anônimos:
+// as 4 tabelas voltam a ser só de leitura via admin logado ou backend.
 
 export interface KeywordRow {
   id: string;
@@ -36,7 +39,6 @@ export interface MiningSettings {
 
 
 export async function loadActiveKeywords(): Promise<KeywordRow[]> {
-  const supabaseAdmin = await serverSupabaseAnon();
   const { data, error } = await supabaseAdmin
     .from("search_keywords")
     .select("id, word, category, niche, language, country, priority, last_mined_at")
@@ -55,7 +57,6 @@ export async function loadActiveKeywords(): Promise<KeywordRow[]> {
 }
 
 export async function loadActiveBlacklist(): Promise<BlacklistRow[]> {
-  const supabaseAdmin = await serverSupabaseAnon();
   const { data, error } = await supabaseAdmin
     .from("blacklist_words")
     .select("word, kind, category")
@@ -68,7 +69,6 @@ export async function loadActiveBlacklist(): Promise<BlacklistRow[]> {
 // Necessário porque as categorias cadastradas usam acento ("Saúde") enquanto
 // as palavras-chave usam a versão sem acento ("Saude").
 export async function loadActiveCategories(): Promise<Map<string, string>> {
-  const supabaseAdmin = await serverSupabaseAnon();
   const { data } = await supabaseAdmin
     .from("keyword_categories")
     .select("name")
@@ -128,7 +128,6 @@ export async function loadCategoryVocabulary(): Promise<CategoryVocabulary> {
 }
 
 export async function loadMiningSettings(): Promise<MiningSettings> {
-  const supabaseAdmin = await serverSupabaseAnon();
   const { data } = await supabaseAdmin
     .from("mining_settings")
     .select("*")
@@ -149,7 +148,7 @@ export async function loadMiningSettings(): Promise<MiningSettings> {
 }
 
 export async function markKeywordsMined(
-  supabase: Awaited<ReturnType<typeof serverSupabaseAnon>>,
+  supabase: any,
   keywordIds: string[],
 ) {
   if (!keywordIds.length) return;
