@@ -3,7 +3,21 @@ import { inferProductType, isWhatsappFunnel, type ProductType } from "./offer-he
 export type { ProductType } from "./offer-heuristics";
 export { PRODUCT_TYPES } from "./offer-heuristics";
 
-export type OfferStatus = "escaladissima" | "escalando" | "crescendo" | "testando";
+export type OfferStatus = "escaladissimo" | "escalado" | "testando";
+
+// Valores legados gravados no banco continuam sendo lidos sem quebrar.
+const LEGACY_STATUS: Record<string, OfferStatus> = {
+  escaladissima: "escaladissimo",
+  escaladissimo: "escaladissimo",
+  escalando: "escalado",
+  escalado: "escalado",
+  crescendo: "testando",
+  testando: "testando",
+};
+
+export function normalizeStatus(value: string | null | undefined): OfferStatus {
+  return LEGACY_STATUS[(value ?? "").toLowerCase()] ?? "testando";
+}
 // As categorias são cadastradas no painel admin (tabela keyword_categories),
 // por isso aqui é apenas texto livre — nada fixo no código.
 export type OfferCategory = string;
@@ -101,7 +115,7 @@ export function rowToOffer(row: OfferRow): Offer {
     category: row.category || "Sem categoria",
     structure: (row.structure as OfferStructure | null) ?? null,
     language: LANG_MAP[row.language] ?? "Português",
-    status: (row.status as OfferStatus) ?? "testando",
+    status: normalizeStatus(row.status),
     productType,
     isWhatsapp: isWhatsappFunnel(`${headline} ${description}`, row.link_url ?? null),
 

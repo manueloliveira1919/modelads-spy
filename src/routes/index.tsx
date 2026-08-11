@@ -81,11 +81,11 @@ function Dashboard() {
     (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0];
   const planLabel = isAdmin ? "Admin" : isPro ? "Pro" : "Starter";
 
-  const escaladas = offers.filter((o) => o.status === "escaladissima").length;
-  const crescendo = offers.filter((o) => o.status === "crescendo").length;
+  const escaladas = offers.filter((o) => o.status === "escaladissimo").length;
+  const crescendo = offers.filter((o) => o.status === "escalado").length;
 
   // Destaques: escaladíssima primeiro, depois crescendo, mais anúncios ativos primeiro.
-  const rank = { escaladissima: 0, escalando: 1, crescendo: 2, testando: 3 } as const;
+  const rank = { escaladissimo: 0, escalado: 1, testando: 2 } as const;
   const destaques = [...offers]
     .filter((o) => o.status !== "testando")
     .sort((a, b) => rank[a.status] - rank[b.status] || b.activeAds - a.activeAds)
@@ -99,8 +99,8 @@ function Dashboard() {
             👋 Bom garimpo{displayName ? `, ${displayName}` : ""}.
           </h2>
           <p className="mt-1.5 font-mono text-sm text-muted-foreground">
-            O banco tem <span className="font-semibold text-hot">{escaladas} escaladíssimas</span> e{" "}
-            <span className="font-semibold text-warm">{crescendo} crescendo</span> agora mesmo.
+            O banco tem <span className="font-semibold text-hot">{escaladas} escaladíssimos</span> e{" "}
+            <span className="font-semibold text-warm">{crescendo} escalados</span> agora mesmo.
           </p>
         </div>
 
@@ -136,7 +136,7 @@ function Dashboard() {
                   className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 hover:opacity-80"
                 >
                   <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-muted">
-                    {o.status === "escaladissima" ? (
+                    {o.status === "escaladissimo" ? (
                       <Flame className="h-4 w-4 text-hot" />
                     ) : (
                       <TrendingUp className="h-4 w-4 text-warm" />
@@ -151,12 +151,12 @@ function Dashboard() {
                   <span
                     className={cn(
                       "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase",
-                      o.status === "escaladissima"
+                      o.status === "escaladissimo"
                         ? "bg-hot/15 text-hot"
                         : "bg-warm/15 text-warm",
                     )}
                   >
-                    {o.status === "escaladissima" ? "Escaladíssima" : "Crescendo"}
+                    {o.status === "escaladissimo" ? "Escaladíssimo" : "Escalado"}
                   </span>
                 </Link>
               ))}

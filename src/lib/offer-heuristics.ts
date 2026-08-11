@@ -29,22 +29,26 @@ export function stripSnapshotSecrets(url: string | null | undefined): string | n
   }
 }
 
-export type OfferStatusValue = "testando" | "crescendo" | "escalando" | "escaladissima";
+export type OfferStatusValue = "testando" | "escalado" | "escaladissimo";
 
-// Status baseado principalmente em LONGEVIDADE da campanha (dias ativos).
-// Volume de criativos é fator secundário: só promove um nível quando a
-// campanha já passou de 8 dias. Abaixo de 4 dias nunca vira escalando/escaladíssima.
+// Critérios com os dois requisitos ao mesmo tempo (AND):
+//   Escaladíssimo: 30+ dias E 30+ anúncios ativos
+//   Escalado:      20+ dias E 20+ anúncios
+//   Testando:      5+ dias  E 10+ anúncios
+// Abaixo do mínimo a oferta continua salva, mas entra como inativa.
 export function classifyStatus(activeDays: number, activeAds = 1): OfferStatusValue {
   const days = Number.isFinite(activeDays) ? Math.max(0, Math.floor(activeDays)) : 0;
-  let status: OfferStatusValue;
-  if (days >= 16) status = "escaladissima";
-  else if (days >= 8) status = "escalando";
-  else if (days >= 4) status = "crescendo";
-  else status = "testando";
+  const ads = Number.isFinite(activeAds) ? Math.max(0, Math.floor(activeAds)) : 0;
+  if (days >= 30 && ads >= 30) return "escaladissimo";
+  if (days >= 20 && ads >= 20) return "escalado";
+  return "testando";
+}
 
-  // Fator secundário: página com muitos criativos ativos e campanha madura.
-  if (status === "escalando" && activeAds >= 10) status = "escaladissima";
-  return status;
+// Corte de visibilidade: abaixo disso a oferta não aparece no dashboard.
+export function meetsMinimumScale(activeDays: number, activeAds = 1): boolean {
+  const days = Number.isFinite(activeDays) ? Math.max(0, Math.floor(activeDays)) : 0;
+  const ads = Number.isFinite(activeAds) ? Math.max(0, Math.floor(activeAds)) : 0;
+  return days >= 5 && ads >= 10;
 }
 
 // Detecta se o anúncio é um funil de WhatsApp — por texto ou pelo link de destino.

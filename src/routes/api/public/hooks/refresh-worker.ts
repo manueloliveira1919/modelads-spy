@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   classifyStatus,
+  meetsMinimumScale,
   extractPrice,
   inferProductType,
   inferStructure,
@@ -205,7 +206,7 @@ async function processSnapshotJob(supabase: any, job: MetaRefreshJob) {
 async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
   const { loadActiveBlacklist, loadCategoryVocabulary, loadMiningSettings, buildBlacklistMatcher } =
     await import("@/lib/mining-config.server");
-  const { pickCategory } = await import("@/lib/category-scoring");
+  const { pickCategory, isEntertainmentNoise } = await import("@/lib/category-scoring");
 
   const adIds = job.payload.ad_archive_ids as string[];
 
@@ -231,7 +232,7 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
 
   const compositeSeen = new Set<string>();
   const rowsToUpsert: Record<string, unknown>[] = [];
-  const skipped = { blacklist: 0, language: 0, category: 0, duplicate: 0, noLanding: 0, lowRelevance: 0 };
+  const skipped = { blacklist: 0, language: 0, category: 0, duplicate: 0, noLanding: 0, lowRelevance: 0, entertainment: 0 };
 
   for (const raw of rawRes.data ?? []) {
     try {
@@ -308,6 +309,19 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
         skipped.lowRelevance++;
         continue;
       }
+
+      // Incompatibilidade temática: entretenimento/dorama/novela/streaming
+      // reprova mesmo quando pontua em alguma categoria.
+      if (
+        isEntertainmentNoise({
+          headline: title || bodyText,
+          pageName: raw.page_name,
+          text: `${title} ${bodyText} ${desc} ${media.linkUrl ?? ""}`,
+        })
+      ) {
+        skipped.entertainment++;
+        continue;
+      }
       const finalCategory = relevance.category;
 
       const qualityScore = computeQualityScore({
@@ -336,7 +350,7 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
         page_url: `https://www.facebook.com/${raw.page_id}`,
         link_url: media.linkUrl,
         ad_start_date: ad.ad_delivery_start_time ?? null,
-        is_active: true,
+        is_active: meetsMinimumScale(activeDays, activeAdsCount),
         active_days: activeDays,
         active_ads_count: activeAdsCount,
         status: classifyStatus(activeDays, activeAdsCount),

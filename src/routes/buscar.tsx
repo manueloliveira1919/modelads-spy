@@ -39,13 +39,13 @@ export const Route = createFileRoute("/buscar")({
   component: BuscarPage,
 });
 
-type ScaleFilter = "escalando" | "todos" | "escaladissima";
+type ScaleFilter = "escalados" | "todos" | "escaladissimo";
 
 function BuscarPage() {
   const [term, setTerm] = useState("");
   const [productType, setProductType] = useState<ProductType | "todos">("todos");
   const [funnel, setFunnel] = useState<"todos" | "whatsapp">("todos");
-  const [scale, setScale] = useState<ScaleFilter>("escalando");
+  const [scale, setScale] = useState<ScaleFilter>("escalados");
   const searchFn = useServerFn(searchOffersLive);
   const mutation = useMutation({
     mutationFn: (t: string) => searchFn({ data: { term: t } }),
@@ -63,11 +63,11 @@ function BuscarPage() {
     const filtered = rawResults.filter((r) => {
       if (productType !== "todos" && r.productType !== productType) return false;
       if (funnel === "whatsapp" && !r.isWhatsapp) return false;
-      if (scale === "escalando" && r.status === "testando") return false;
-      if (scale === "escaladissima" && r.status !== "escaladissima") return false;
+      if (scale === "escalados" && r.status === "testando") return false;
+      if (scale === "escaladissimo" && r.status !== "escaladissimo") return false;
       return true;
     });
-    const rank = { escaladissima: 0, escalando: 1, crescendo: 2, testando: 3 } as const;
+    const rank = { escaladissimo: 0, escalado: 1, testando: 2 } as const;
     return [...filtered].sort(
       (a, b) => rank[a.status] - rank[b.status] || b.activeAds - a.activeAds,
     );
@@ -161,14 +161,14 @@ function BuscarPage() {
           <span className="mr-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
             Status de Escala
           </span>
-          <FilterChip active={scale === "escalando"} onClick={() => setScale("escalando")}>
-            Crescendo + Escaladíssima
+          <FilterChip active={scale === "escalados"} onClick={() => setScale("escalados")}>
+            Escalado + Escaladíssimo
           </FilterChip>
           <FilterChip
-            active={scale === "escaladissima"}
-            onClick={() => setScale("escaladissima")}
+            active={scale === "escaladissimo"}
+            onClick={() => setScale("escaladissimo")}
           >
-            Apenas Escaladíssima
+            Apenas Escaladíssimo
           </FilterChip>
           <FilterChip active={scale === "todos"} onClick={() => setScale("todos")}>
             Todos (inclui testando)
@@ -310,9 +310,9 @@ function LiveResultCard({ result }: { result: LiveSearchResult }) {
           />
           <MiniStat
             icon={
-              result.status === "escaladissima" ? (
+              result.status === "escaladissimo" ? (
                 <Flame className="h-3 w-3 text-hot" />
-              ) : result.status === "crescendo" ? (
+              ) : result.status === "escalado" ? (
                 <TrendingUp className="h-3 w-3 text-warm" />
               ) : (
                 <Sparkles className="h-3 w-3" />

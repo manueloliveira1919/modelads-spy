@@ -155,9 +155,9 @@ export function OfferCard({ offer }: { offer: Offer }) {
             />
             <MiniStatBox
               icon={
-                offer.status === "escaladissima" ? (
+                offer.status === "escaladissimo" ? (
                   <Flame className="h-3 w-3 text-hot" />
-                ) : offer.status === "crescendo" ? (
+                ) : offer.status === "escalado" ? (
                   <TrendingUp className="h-3 w-3 text-warm" />
                 ) : (
                   <Sparkles className="h-3 w-3" />
@@ -263,27 +263,19 @@ function LangBadge({ lang }: { lang: string }) {
 }
 
 export function StatusBadge({ status }: { status: Offer["status"] }) {
-  if (status === "escaladissima") {
+  if (status === "escaladissimo") {
     return (
       <span className="inline-flex items-center gap-1 rounded-md bg-hot px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-hot-foreground">
         <Flame className="h-3 w-3" />
-        Escaladíssima
+        Escaladíssimo
       </span>
     );
   }
-  if (status === "escalando") {
-    return (
-      <span className="inline-flex items-center gap-1 rounded-md bg-warm px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-warm-foreground">
-        <Flame className="h-3 w-3" />
-        Escalando
-      </span>
-    );
-  }
-  if (status === "crescendo") {
+  if (status === "escalado") {
     return (
       <span className="inline-flex items-center gap-1 rounded-md bg-warm px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-warm-foreground">
         <TrendingUp className="h-3 w-3" />
-        Crescendo
+        Escalado
       </span>
     );
   }
