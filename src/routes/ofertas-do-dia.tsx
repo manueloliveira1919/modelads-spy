@@ -50,7 +50,7 @@ export const Route = createFileRoute("/ofertas-do-dia")({
   ),
 });
 
-type ScaleFilter = "escalando" | "todos" | "escaladissima";
+type ScaleFilter = "escalados" | "todos" | "escaladissimo";
 
 function Page() {
   const categoryNames = useActiveCategoryNames();
@@ -60,7 +60,7 @@ function Page() {
   const [productType, setProductType] = useState<ProductType | "todos">("todos");
   const [funnel, setFunnel] = useState<"todos" | "whatsapp">("todos");
   // Padrão exclui "testando" — aqui só aparecem ofertas já mineradas/validadas.
-  const [scale, setScale] = useState<ScaleFilter>("escalando");
+  const [scale, setScale] = useState<ScaleFilter>("escalados");
   const [query, setQuery] = useState("");
 
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -75,7 +75,7 @@ function Page() {
     (structure !== "todas" ? 1 : 0) +
     (productType !== "todos" ? 1 : 0) +
     (funnel !== "todos" ? 1 : 0) +
-    (scale !== "escalando" ? 1 : 0);
+    (scale !== "escalados" ? 1 : 0);
 
   const filtered = useMemo(() => {
     const list = offers.filter((o) => {
@@ -89,20 +89,20 @@ function Page() {
       if (funnel === "whatsapp" && !o.isWhatsapp) return false;
       // "Ofertas do Dia" = só mineradas/validadas por padrão; nunca mostra "testando"
       // a menos que o usuário explicitamente escolha "Todos" no filtro de escala.
-      if (scale === "escalando" && o.status === "testando") return false;
-      if (scale === "escaladissima" && o.status !== "escaladissima") return false;
+      if (scale === "escalados" && o.status === "testando") return false;
+      if (scale === "escaladissimo" && o.status !== "escaladissimo") return false;
       if (query && !`${o.page} ${o.headline}`.toLowerCase().includes(query.toLowerCase()))
         return false;
       return true;
     });
-    const rank = { escaladissima: 0, escalando: 1, crescendo: 2, testando: 3 } as const;
+    const rank = { escaladissimo: 0, escalado: 1, testando: 2 } as const;
     return [...list].sort(
       (a, b) => rank[a.status] - rank[b.status] || b.activeAds - a.activeAds,
     );
   }, [offers, category, language, structure, productType, funnel, scale, query]);
 
-  const escaladas = offers.filter((o) => o.status === "escaladissima").length;
-  const crescendo = offers.filter((o) => o.status === "crescendo").length;
+  const escaladas = offers.filter((o) => o.status === "escaladissimo").length;
+  const crescendo = offers.filter((o) => o.status === "escalado").length;
   const testando = offers.filter((o) => o.status === "testando").length;
 
   return (
@@ -118,7 +118,7 @@ function Page() {
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
               {offers.length} anúncios monitorados · {escaladas} escaladíssimas ·{" "}
-              {crescendo} crescendo · {testando} testando
+              {crescendo} escalado · {testando} testando
             </p>
           </div>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -161,14 +161,14 @@ function Page() {
         {filtersOpen && (
           <div className="space-y-3 rounded-2xl border border-border bg-card p-4">
             <FilterRow label="Status de Escala">
-              <FilterChip active={scale === "escalando"} onClick={() => setScale("escalando")}>
-                Crescendo + Escaladíssima
+              <FilterChip active={scale === "escalados"} onClick={() => setScale("escalados")}>
+                Escalado + Escaladíssimo
               </FilterChip>
               <FilterChip
-                active={scale === "escaladissima"}
-                onClick={() => setScale("escaladissima")}
+                active={scale === "escaladissimo"}
+                onClick={() => setScale("escaladissimo")}
               >
-                Apenas Escaladíssima
+                Apenas Escaladíssimo
               </FilterChip>
               <FilterChip active={scale === "todos"} onClick={() => setScale("todos")}>
                 Todos (inclui testando)

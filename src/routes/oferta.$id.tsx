@@ -124,10 +124,10 @@ function OfferDetail() {
 
   const price = extractPrice(`${offer.headline} ${offer.description}`);
   const statusLabel =
-    offer.status === "escaladissima"
-      ? "Escaladíssima"
-      : offer.status === "crescendo"
-        ? "Crescendo"
+    offer.status === "escaladissimo"
+      ? "Escaladíssimo"
+      : offer.status === "escalado"
+        ? "Escalado"
         : "Testando";
 
   const publishedAt = new Date(Date.now() - offer.activeDays * 86_400_000);
@@ -271,8 +271,8 @@ function OfferDetail() {
                   <span
                     className={cn(
                       "inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-semibold",
-                      offer.status === "escaladissima" && "bg-hot/15 text-hot ring-1 ring-inset ring-hot/30",
-                      offer.status === "crescendo" && "bg-warm/15 text-warm ring-1 ring-inset ring-warm/30",
+                      offer.status === "escaladissimo" && "bg-hot/15 text-hot ring-1 ring-inset ring-hot/30",
+                      offer.status === "escalado" && "bg-warm/15 text-warm ring-1 ring-inset ring-warm/30",
                       offer.status === "testando" && "bg-secondary text-secondary-foreground",
                     )}
                   >
