@@ -22,6 +22,7 @@ export interface MiningProgressData {
     duplicate: number;
     no_text: number;
     low_relevance: number;
+    entertainment?: number;
   };
 }
 
@@ -181,6 +182,7 @@ export function summarizeProgress(p: MiningProgressData, b?: MiningBreakdown | n
     duplicate: 0,
     no_text: 0,
     low_relevance: 0,
+    entertainment: 0,
   };
   const discardedTotal =
     (d.blacklist ?? 0) +
@@ -188,7 +190,8 @@ export function summarizeProgress(p: MiningProgressData, b?: MiningBreakdown | n
     (d.category ?? 0) +
     (d.duplicate ?? 0) +
     (d.no_text ?? 0) +
-    (d.low_relevance ?? 0);
+    (d.low_relevance ?? 0) +
+    (d.entertainment ?? 0);
 
   const details = (p.details ?? {}) as {
     category?: string | null;
@@ -353,6 +356,7 @@ export function MiningProgressPanel({
         <span>🚫 Blacklist: {s.discarded.blacklist}</span>
         <span>🌎 Idioma: {s.discarded.language}</span>
         <span>📉 Baixa relevância: {s.discarded.low_relevance ?? 0}</span>
+        <span>🎬 Entretenimento: {s.discarded.entertainment ?? 0}</span>
         <span>❌ Sem categoria: {s.discarded.category}</span>
         <span>🔗 Sem link/texto: {s.discarded.no_text}</span>
         <span>🔁 Duplicadas: {s.discarded.duplicate}</span>

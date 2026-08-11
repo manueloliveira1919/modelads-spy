@@ -115,7 +115,7 @@ export function rowToOffer(row: OfferRow): Offer {
     category: row.category || "Sem categoria",
     structure: (row.structure as OfferStructure | null) ?? null,
     language: LANG_MAP[row.language] ?? "Português",
-    status: (row.status as OfferStatus) ?? "testando",
+    status: normalizeStatus(row.status),
     productType,
     isWhatsapp: isWhatsappFunnel(`${headline} ${description}`, row.link_url ?? null),
 
