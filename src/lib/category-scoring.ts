@@ -32,8 +32,48 @@ export const GENERIC_WORDS = new Set(
     "passo",
     "curso",
     "aula",
+    // Chamadas de venda / urgência — não dizem nada sobre o nicho.
+    "vaga",
+    "vagas",
+    "disponivel",
+    "disponiveis",
+    "clique",
+    "saiba",
+    "saiba mais",
+    "veja",
+    "acesse",
+    "acesso",
+    "agora",
+    "aqui",
+    "link",
+    "oferta",
+    "promocao",
+    "desconto",
+    "gratis",
+    "gratuito",
+    "gratuita",
+    "exclusivo",
+    "exclusiva",
+    "limitado",
+    "limitada",
+    "ultimas",
+    "poucas",
+    "garanta",
+    "comece",
+    "aprenda",
+    "aprender",
+    "descubra",
+    "conheca",
+    "completo",
+    "completa",
+    "melhor",
+    "sobre",
+    "mais",
+    "vida",
+    "voce",
   ].map(normalizeText),
 );
+
 
 export type CategoryVocabulary = Map<string, { canonical: string; words: string[] }>;
 
@@ -220,6 +260,20 @@ export interface EntertainmentInput {
   text?: string | null;
 }
 
+
+// 4) Propaganda de APP que exibe conteúdo (não do conteúdo em si):
+//    "assistir a todos os dramas curtos populares gratuitamente".
+//    Verbo de assistir + grátis/gratuitamente + conteúdo seriado.
+const WATCH_VERB = /\b(assistir|assista|assiste|ver|veja|maratonar)\b/;
+const WATCH_FREE = /\b(gratis|gratuita|gratuitamente|gratuito|de graca|sem pagar|sem custo)\b/;
+const WATCH_CONTENT =
+  /\b(drama|dramas|dorama|doramas|novela|novelas|episodio|episodios|capitulo|capitulos|serie|series|filme|filmes|curta|curtas)\b/;
+
+function isWatchAppPromo(text: string): boolean {
+  const t = normalizeText(text);
+  return WATCH_VERB.test(t) && WATCH_FREE.test(t) && WATCH_CONTENT.test(t);
+}
+
 export function isEntertainmentNoise(input: EntertainmentInput | string): boolean {
   const norm: EntertainmentInput = typeof input === "string" ? { text: input } : input;
   const headline = norm.headline ?? "";
@@ -228,6 +282,10 @@ export function isEntertainmentNoise(input: EntertainmentInput | string): boolea
 
   // 1) Marcador entre parênteses — reprova sempre.
   if (BRACKET_MARKER.test(headline) || BRACKET_MARKER.test(norm.text ?? "")) return true;
+
+  // 1b) Propaganda de app de dramas/novelas — reprova sempre.
+  if (isWatchAppPromo(haystack)) return true;
+
 
   // Vocabulário clássico de entretenimento.
   let hits = 0;
