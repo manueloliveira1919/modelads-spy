@@ -93,8 +93,10 @@ Anunciante sozinho **não** agrupa: Fernando Cantarelli com 3 produtos vira 3 of
 - `ads_count` = número de **anúncios distintos daquela oferta**. Nunca a contagem de anúncios da página do anunciante — o `active_ads_count` por `page_id` de hoje deixa de alimentar a qualificação.
 - `dias ativo` = do anúncio mais antigo da oferta até hoje.
 - Qualificação **5+ dias E 10+ anúncios**, inalterada, calculada exclusivamente sobre esses dois números da oferta.
-- Objetivo declarado do agrupamento: **maximizar ofertas qualificadas e relevantes**. Nenhum critério novo de corte entra junto; o agrupamento não pode reduzir artificialmente boas ofertas, apenas parar de contar criativos como ofertas separadas.
-- Uma mesma página com produtos diferentes gera **várias ofertas** — nunca é fundida em uma só (regra 1 e 2 do agrupamento garantem isso; anunciante sozinho não agrupa).
+- Objetivo declarado do agrupamento: **maximizar ofertas qualificadas e relevantes**, sem sacrificar relevância. Nenhum critério novo de corte entra junto; o agrupamento não pode reduzir artificialmente boas ofertas, apenas parar de contar criativos como ofertas separadas.
+- **Sem teto de anúncios**: uma oferta pode ter 20, 50, 100, 200 ou 400+ anúncios; nenhum limite superior é aplicado em nenhuma etapa.
+- Uma mesma página com produtos diferentes gera **várias ofertas** — nunca é fundida em uma só (regra 1 e 2 do agrupamento garantem isso; anunciante sozinho não agrupa). Ex.: página com Produto A (20 anúncios/15d) + Produto B (18/12d) + Produto C (12/3d) = 2 ofertas qualificadas e 1 rejeitada, nunca 1 oferta nem 50 anúncios.
+
 
 ### Telas e contadores
 
