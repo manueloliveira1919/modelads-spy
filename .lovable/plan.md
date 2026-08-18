@@ -90,16 +90,31 @@ Anunciante sozinho **não** agrupa: Fernando Cantarelli com 3 produtos vira 3 of
 
 ### Métricas da oferta
 
-- `ads_count` = número de anúncios distintos dentro daquela oferta (não da página).
+- `ads_count` = número de **anúncios distintos daquela oferta**. Nunca a contagem de anúncios da página do anunciante — o `active_ads_count` por `page_id` de hoje deixa de alimentar a qualificação.
 - `dias ativo` = do anúncio mais antigo da oferta até hoje.
-- Qualificação 5 dias + 10 anúncios (critério **inalterado**, como você pediu) passa a ser avaliada sobre esses dois números da oferta.
-- Painel de mineração passa a reportar **ofertas qualificadas** como número principal, com anúncios encontrados como métrica secundária.
+- Qualificação **5+ dias E 10+ anúncios**, inalterada, calculada exclusivamente sobre esses dois números da oferta.
+- Objetivo declarado do agrupamento: **maximizar ofertas qualificadas e relevantes**. Nenhum critério novo de corte entra junto; o agrupamento não pode reduzir artificialmente boas ofertas, apenas parar de contar criativos como ofertas separadas.
+- Uma mesma página com produtos diferentes gera **várias ofertas** — nunca é fundida em uma só (regra 1 e 2 do agrupamento garantem isso; anunciante sozinho não agrupa).
 
-### Telas
+### Telas e contadores
 
-- **Dashboard / Ofertas**: 1 card por oferta, com "40 anúncios" como métrica, no lugar do `DISTINCT ON (page_id)` atual.
+- **Dashboard / Ofertas / filtros / favoritos**: unidade é a Oferta. 1 card por oferta, com "40 anúncios" como métrica interna, no lugar do `DISTINCT ON (page_id)` atual.
 - **Detalhe da oferta**: cabeçalho com produto, anunciante, dias, status e categoria + galeria de todos os anúncios daquela oferta (criativo, título, data de início, link para a Ad Library).
-- Filtros e favoritos passam a operar sobre ofertas.
+- **Painel de mineração** passa a exibir, separadamente: anúncios encontrados · anúncios classificados · ofertas formadas · ofertas qualificadas · ofertas rejeitadas (com motivo). "Anúncios encontrados" fica como métrica secundária; o número de destaque da run é **ofertas qualificadas**.
+
+### Relatório de simulação (somente leitura, antes de qualquer alteração)
+
+Executo o agrupamento sobre os dados atuais sem escrever nada e apresento:
+
+- total de ofertas formadas;
+- quantas qualificadas (5+ dias E 10+ anúncios) e quantas desqualificadas, com o motivo de cada corte;
+- distribuição de anúncios por oferta (1, 2–4, 5–9, 10–19, 20+);
+- exemplos de agrupamentos corretos (vários criativos → 1 oferta);
+- exemplos de páginas corretamente separadas em ofertas diferentes (ex.: Fernando Cantarelli, hoje 14 linhas com 3 títulos e 2 categorias);
+- comparação antes/depois: ofertas visíveis hoje × ofertas qualificadas no novo modelo.
+
+Nenhum `UPDATE`, `DELETE` ou migration destrutiva roda antes da sua aprovação desse relatório. A criação da tabela de ofertas e do vínculo é aditiva e só ocorre depois do aceite.
+
 
 ### Detalhes técnicos
 
