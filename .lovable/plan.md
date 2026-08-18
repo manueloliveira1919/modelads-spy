@@ -1,57 +1,115 @@
-# Reforço do filtro de entretenimento + resposta às três dúvidas
+# Auditoria da execução bc2440f8 + arquitetura orientada a Ofertas
 
-## 1. A correção anterior foi publicada?
+## Parte 1 — Auditoria (somente leitura, nada foi alterado)
 
-Verificado no banco antes de escrever este plano:
+Execução bc2440f8, 18/08 12:00 → 12:08, status success.
 
-- A alteração de `category-scoring.ts` (app de dorama + palavras genéricas) está no código desde 12/08 20:09 UTC.
-- Nenhuma oferta nova com a frase "assistir a todos os dramas curtos populares" foi gravada depois disso: as últimas entradas com essa frase são de **03 e 04/08**, todas já `is_active = false`.
-- Os exemplos novos que você viu ("Harper Reeves…", "Dra. Samia…", "Encontra o teu estilo") também são registros antigos, de **20/07 a 04/08** — alguns ainda ativos porque o recálculo em lote da última vez não os pegou.
+| Item | Valor |
+|---|---|
+| Anúncios encontrados (relatado pela run) | 1.594 |
+| Anúncios brutos gravados no estágio de coleta | 1.360 |
+| Páginas vistas na coleta | 445 |
+| Linhas gravadas em `meta_offers` ("ofertas aprovadas") | 294 |
+| `ad_archive_id` distintos nessas 294 linhas | 294 (1 linha = 1 anúncio) |
+| Páginas distintas nessas 294 linhas | 152 |
+| Combinações página + título distintas | 165 |
+| Linhas com 5+ dias | 128 |
+| Linhas com 5+ dias E 10+ anúncios da página | 32 |
+| Linhas que ficaram ativas | 32 |
+| Páginas com 10+ anúncios ativos | 11 |
 
-Ou seja: a correção está no código e vale para minerações novas, mas **as ofertas já salvas nunca foram reavaliadas com ela**. É por isso que continuam aparecendo em produção. Como parte desta etapa, confirmo também se o build publicado é posterior a 12/08 antes de qualquer nova mineração.
+### Como um anúncio é associado a uma "oferta" hoje
 
-## 2. Filtro de entretenimento antes da categorização
+Não existe agrupamento por oferta. O que existe é:
 
-Hoje o worker roda `pickCategory` primeiro e só depois `isEntertainmentNoise`. Vou inverter: **entretenimento é avaliado primeiro e bloqueia em qualquer categoria**, sem depender de pontuação de nicho.
+1. **Chave de gravação:** `ad_archive_id` — cada anúncio vira **uma linha própria** em `meta_offers`. Por isso "294 ofertas aprovadas" na verdade são 294 anúncios.
+2. **Contagem de anúncios:** `active_ads_count` é a contagem de anúncios **da mesma página (`page_id`)** dentro daquela run. Ela é copiada igual para todas as linhas daquela página — não é a contagem de anúncios daquela oferta.
+3. **Deduplicação:** existe uma chave composta `page_id + título(100) + link`, mas ela só vale **dentro de um mesmo lote de classificação**. Entre lotes ela não se aplica — por isso 57 combinações página+título aparecem repetidas na mesma run, e 59 páginas têm mais de uma linha.
+4. **Tela principal:** o dashboard usa `list_active_offer_pages`, que faz `DISTINCT ON (page_id)` — ou seja, esconde as repetições **na exibição**, escolhendo 1 anúncio por página e jogando os outros fora da vista, em vez de agrupá-los.
 
-Sinais novos, cobrindo o padrão que passou:
+Resumo: hoje o critério de "mesma oferta" é, na prática, **"mesma página"**, e só no momento de exibir. A qualificação 5 dias + 10 anúncios está sendo aplicada a **anúncios**, usando um contador de página — que é exatamente a distorção que você identificou.
 
-- **Vocabulário ampliado**: "dramas curtos", "drama curto", "short drama", "mini drama", "reels drama", nomes de apps de dorama (RomanceRush, ReelShort, DramaBox, ShortMax, GoodShort, FlexTV, MoboReels e similares por padrão de nome).
-- **Sinopse narrativa**: título/descrição que apresenta um personagem por nome próprio + situação de enredo ("Harper Reeves está apenas tentando terminar o seu último ano em Yale…", "A Dra. Samia usou o chefe como escudo…"). Detecção por estrutura: nome próprio como sujeito + verbo de enredo + elementos de romance/segredo/CEO/casamento/vingança, sem preço, sem oferta e sem chamada de compra.
-- **Título em inglês de romance** ("Kissing My Obsessive Enemy", "My Billionaire Ex…") em anúncio direcionado ao Brasil.
-- **Página com nome de pessoa genérica** (Grace Saige Law, Howle Goldfarb Francisco, Abu Toha Adnan, Nông Bảo) combinada com qualquer um dos sinais acima.
+### Duplicação observada
 
-Descarte continua contabilizado como "entretenimento" no painel de progresso.
+- 59 páginas com mais de uma linha (247 linhas ⇒ deveriam ser no máximo 152 unidades se o critério fosse página).
+- 57 casos de **mesmo título na mesma página** gravados como linhas diferentes — duplicata pura do mesmo anúncio/criativo.
+- Páginas com títulos distintos e produtos distintos aparecem sob a mesma página (ex.: Fernando Cantarelli, 14 linhas, 3 títulos, categorias Beleza e Low Ticket) — prova de que "página" também não é a unidade correta de oferta.
 
-## 3. Moda caindo em Finanças
+### Amostra de 20 (agrupada por anunciante)
 
-Os anúncios "Encontra o teu estilo 👗" (Dressly, Julie Fashion, Sophia Harper) estão gravados em Info e, em um caso, Finanças — nenhuma dessas é a categoria certa, e moda/roupa feminina não é uma categoria ativa da plataforma.
+| Anunciante | Linhas gravadas | Anúncios da página | Dias | Títulos distintos | Categoria |
+|---|---|---|---|---|---|
+| Fernando Cantarelli | 14 | 45 | 21 | 3 | Beleza / Low Ticket |
+| Paula Monteiro Personal | 6 | 35 | 12 | 1 | Fitness |
+| Military Training System | 6 | 26 | 3 | 1 | Saúde |
+| Stardusttv bingo drama | 6 | 19 | 0 | 1 | Finanças |
+| Hot Shorts Hub-HP-23 | 6 | 17 | 6 | 3 | Finanças |
+| Fantasy books | 6 | 15 | 8 | 1 | Finanças |
+| Fernanda Carbosa | 6 | 9 | 36 | 1 | Negócios / Relacionamento |
+| Leandro Ladeira | 6 | 9 | 21 | 2 | Finanças / Negócios |
+| Hot Shorts Hub-HP-21 | 5 | 13 | 7 | 1 | Finanças |
+| Diário do Coração | 5 | 10 | 0 | 1 | Finanças |
+| Military Coach Rachel | 5 | 9 | 3 | 1 | Saúde |
+| Jessica Dantas MKT | 5 | 7 | 4 | 2 | Finanças / Negócios |
+| Guadalupe Zemlak | 4 | 20 | 0 | 1 | Finanças |
+| Michael Kevin Neena | 4 | 12 | 21 | 1 | Saúde |
+| Izadora Tavares - Z Digital | 4 | 8 | 50 | 1 | Finanças |
+| LikeDrama6-XF | 4 | 8 | 7 | 1 | Relacionamento |
+| Xixi Drama YX | 4 | 7 | 6 | 1 | Relacionamento |
+| Elida Dias - Digital | 4 | 6 | 2 | 1 | Finanças |
+| Wyatt Dean Parker | 4 | 6 | 7 | 1 | Relacionamento |
+| Ruan Henrique | 4 | 6 | 27 | 1 | Finanças |
 
-Correção: anúncio cujo conteúdo é claramente moda/vestuário (estilo, roupa, vestido, look, guarda-roupa, moda feminina, loja de roupas) e que não pontua de verdade em nenhuma categoria oficial passa a ser **descartado por baixa relevância**, em vez de ser encaixado à força numa categoria vizinha. Junto disso, reviso o vocabulário de Finanças para tirar termos curtos/ambíguos que estejam permitindo esse encaixe.
+Observação lateral, sem ação nesta etapa: várias páginas de dorama (Stardusttv bingo drama, Hot Shorts Hub, LikeDrama6-XF, Xixi Drama YX) continuam entrando — é o mesmo problema do plano anterior, que segue não aprovado e fica parado até você decidir.
 
-## 4. Amostra antes de aplicar
+## Parte 2 — Correção da arquitetura: Oferta como unidade
 
-Igual à última vez: depois do código pronto, rodo a simulação sobre as ofertas já salvas e te mostro
+### Modelo
 
-- **10 a 15 exemplos** do grupo que passaria a ser reprovado (título, página, categoria atual, motivo);
-- contagem antes/depois por status e quantas seriam desativadas por entretenimento e por moda/baixa relevância.
+```text
+OFERTA  (unidade da plataforma, aparece no dashboard)
+  ├─ anunciante (page_id / page_name)
+  ├─ produto     (identidade da oferta)
+  ├─ métricas    ads_count, dias ativo, primeiro/último visto, status
+  └─ ANÚNCIOS    (evidência: criativos, títulos, links, ad_archive_id)
+```
 
-Só aplico o `UPDATE` depois da sua confirmação.
+- **Anúncio** = evidência/criativo. Continua sendo gravado individualmente, com todos os campos atuais.
+- **Oferta** = agrupamento de anúncios do mesmo produto do mesmo anunciante. É o que a tela principal lista e o que o filtro de qualificação avalia.
 
-## 5. O gap 22.909 aprovadas × 1.116 ativas
+### Como dois anúncios passam a pertencer à mesma oferta
 
-Conferido no banco: nos últimos 3 dias foram gravadas 1.502 ofertas e apenas 58 estão ativas — mesma proporção do gap que você notou. As causas são estas, e não há uma quarta escondida:
+Regra em cascata, do sinal mais forte para o mais fraco, sempre dentro do mesmo `page_id`:
 
-1. **Corte de escala mínima** (5+ dias E 10+ anúncios), aplicado no momento em que a oferta é gravada. É de longe o maior responsável: a maioria dos anúncios coletados é nova ou de página pequena.
-2. **Entretenimento/baixa relevância**, que descarta antes de gravar.
-3. **`mining_deactivate_stale`** — em runs de cobertura completa, desativa tudo que não reapareceu naquela run. Esse é o único mecanismo além dos dois que você já conhecia; ele só roda em cobertura `full` (runs parciais estão protegidas desde a correção anterior).
+1. **Mesmo destino** — domínio + caminho do `link_url` normalizado (sem UTM e parâmetros de tracking). É o sinal mais confiável de "mesmo produto".
+2. **Mesmo título normalizado** — título sem emoji/pontuação/variação de caixa, para criativos que variam só na arte.
+3. **Alta similaridade de título/corpo** — quando o link falta e o título varia levemente (números, "Parte 2", nome trocado), agrupa por similaridade acima de um limiar.
+4. Sem nenhum dos três, o anúncio forma uma oferta própria — nunca é forçado para dentro de outra.
 
-Ou seja, o gap é esperado com os critérios atuais e não é bug. Como o item 3 é o único que pode desativar oferta boa por ausência temporária, incluo na verificação um número explícito de "desativadas por stale" por run, para você acompanhar.
+Anunciante sozinho **não** agrupa: Fernando Cantarelli com 3 produtos vira 3 ofertas, não 1.
 
-## Detalhes técnicos
+### Métricas da oferta
 
-- `src/routes/api/public/hooks/refresh-worker.ts`: mover o bloco `isEntertainmentNoise` para antes de `pickCategory`, alimentado com `page_name + headline + body + description + link`; contador `entertainment` mantido.
-- `src/lib/category-scoring.ts`: ampliar `ENTERTAINMENT_WORDS`, novo detector de sinopse narrativa (nome próprio + enredo, sem sinal comercial), padrão de título de romance em inglês, lista/heurística de apps de drama curto, reforço de `isGenericPageName`; nova checagem de moda/vestuário sem categoria oficial → baixa relevância; limpeza de termos ambíguos no vocabulário de Finanças.
-- Simulação em script local sobre `meta_offers` (sem escrita), com amostra impressa para revisão.
-- Aplicação final: um único `UPDATE` de `is_active`/`status`, sem DELETE e sem migration de esquema, apenas após confirmação.
-- Sem alterações em coleta, fila, worker tick, cron, keywords, categorias ou Central de Mineração.
+- `ads_count` = número de anúncios distintos dentro daquela oferta (não da página).
+- `dias ativo` = do anúncio mais antigo da oferta até hoje.
+- Qualificação 5 dias + 10 anúncios (critério **inalterado**, como você pediu) passa a ser avaliada sobre esses dois números da oferta.
+- Painel de mineração passa a reportar **ofertas qualificadas** como número principal, com anúncios encontrados como métrica secundária.
+
+### Telas
+
+- **Dashboard / Ofertas**: 1 card por oferta, com "40 anúncios" como métrica, no lugar do `DISTINCT ON (page_id)` atual.
+- **Detalhe da oferta**: cabeçalho com produto, anunciante, dias, status e categoria + galeria de todos os anúncios daquela oferta (criativo, título, data de início, link para a Ad Library).
+- Filtros e favoritos passam a operar sobre ofertas.
+
+### Detalhes técnicos
+
+- Nova tabela `offers` (grupo) com `page_id`, `group_key`, `product_title`, `landing_domain`, `category`, `ads_count`, `first_ad_start`, `active_days`, `status`, `is_active`, timestamps; `meta_offers` permanece como tabela de **anúncios** e ganha `offer_id`. Nada é apagado.
+- Novo `src/lib/offer-grouping.ts` (puro, testável): normalização de link, normalização de título, similaridade e `buildGroupKey(ad)`.
+- `refresh-worker.ts`: após classificar os anúncios, agrupa por `group_key`, faz upsert da oferta, recalcula `ads_count`/`active_days`/`status`/`is_active` no nível da oferta e liga cada anúncio ao seu `offer_id`.
+- Nova RPC `list_active_offers` substituindo `list_active_offer_pages`; `listOffers`/`getOffer` passam a devolver oferta + anúncios.
+- Backfill único agrupando os anúncios já existentes com a mesma regra, sem apagar nada, com relatório antes/depois — apresentado para sua confirmação antes de rodar.
+- Coleta, fila, worker tick, cron, keywords e categorias permanecem intocados.
+
+### Verificação
+
+Rodar uma mineração pequena e conferir: anúncios encontrados × ofertas formadas × ofertas qualificadas; nenhuma oferta com anúncios de produtos diferentes na amostra; dashboard listando ofertas com contagem correta; detalhe abrindo todos os anúncios do grupo.
