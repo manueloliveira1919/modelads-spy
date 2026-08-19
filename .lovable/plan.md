@@ -104,18 +104,31 @@ Anunciante sozinho **não** agrupa: Fernando Cantarelli com 3 produtos vira 3 of
 - **Detalhe da oferta**: cabeçalho com produto, anunciante, dias, status e categoria + galeria de todos os anúncios daquela oferta (criativo, título, data de início, link para a Ad Library).
 - **Painel de mineração** passa a exibir, separadamente: anúncios encontrados · anúncios classificados · ofertas formadas · ofertas qualificadas · ofertas rejeitadas (com motivo). "Anúncios encontrados" fica como métrica secundária; o número de destaque da run é **ofertas qualificadas**.
 
-### Relatório de simulação (somente leitura, antes de qualquer alteração)
+### Confirmações explícitas (garantias desta implementação)
 
-Executo o agrupamento sobre os dados atuais sem escrever nada e apresento:
+- Não existe limite máximo de anúncios por oferta (20, 50, 100, 200, 400+ são aceitos).
+- `active_ads_count` da página **não** será mais usado para qualificar ofertas.
+- `page_id` sozinho **nunca** é identidade de oferta.
+- Produtos diferentes do mesmo anunciante ficam em ofertas separadas.
+- Vários criativos do mesmo produto são agrupados em uma única oferta.
+- Dashboard exibe **uma oferta por card**.
+- Os anúncios ficam dentro do detalhe da oferta.
+- O contador principal da mineração passa a ser **ofertas qualificadas**, não anúncios.
 
-- total de ofertas formadas;
-- quantas qualificadas (5+ dias E 10+ anúncios) e quantas desqualificadas, com o motivo de cada corte;
-- distribuição de anúncios por oferta (1, 2–4, 5–9, 10–19, 20+);
-- exemplos de agrupamentos corretos (vários criativos → 1 oferta);
-- exemplos de páginas corretamente separadas em ofertas diferentes (ex.: Fernando Cantarelli, hoje 14 linhas com 3 títulos e 2 categorias);
-- comparação antes/depois: ofertas visíveis hoje × ofertas qualificadas no novo modelo.
+### Primeira entrega (sem escrever nada nos dados)
 
-Nenhum `UPDATE`, `DELETE` ou migration destrutiva roda antes da sua aprovação desse relatório. A criação da tabela de ofertas e do vínculo é aditiva e só ocorre depois do aceite.
+1. Agrupamento implementado em código (`src/lib/offer-grouping.ts`), puro e testável.
+2. Simulação somente leitura sobre os dados existentes.
+3. Relatório antes/depois com:
+   - total de ofertas formadas;
+   - quantas qualificadas por **5+ dias E 10+ anúncios da mesma oferta**;
+   - quantas rejeitadas, com o motivo;
+   - distribuição de anúncios por oferta (1, 2–4, 5–9, 10–19, 20+);
+   - exemplos de uma página com vários produtos separados corretamente;
+   - exemplos de vários criativos agrupados corretamente em uma única oferta.
+
+Nenhum `UPDATE`, `DELETE`, migration ou backfill definitivo roda nesta entrega. Depois da simulação eu paro e aguardo sua aprovação.
+
 
 
 ### Detalhes técnicos
