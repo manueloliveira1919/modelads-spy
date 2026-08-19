@@ -397,7 +397,53 @@ function OfferDetail() {
                 </div>
               </div>
             </section>
+
+            {/* ANÚNCIOS DA OFERTA (evidências) */}
+            <section className="rounded-2xl border border-border bg-card p-5 sm:p-6">
+              <h2 className="font-display text-lg font-semibold">
+                Anúncios desta oferta{" "}
+                <span className="text-sm font-normal text-muted-foreground">({ads.length})</span>
+              </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Cada anúncio abaixo é uma evidência do mesmo produto deste anunciante.
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {ads.map((ad) => (
+                  <div key={ad.id} className="rounded-xl border border-border bg-background p-3">
+                    {ad.creativeUrl && ad.creativeType === "image" ? (
+                      <img
+                        src={ad.creativeUrl}
+                        alt={ad.headline || "Criativo do anúncio"}
+                        loading="lazy"
+                        className="mb-3 h-36 w-full rounded-lg object-cover"
+                      />
+                    ) : null}
+                    <p className="line-clamp-2 text-sm font-medium">{ad.headline || "Sem título"}</p>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      {ad.adStartDate
+                        ? `No ar desde ${new Date(ad.adStartDate).toLocaleDateString("pt-BR")}`
+                        : "Data de início não informada"}
+                    </p>
+                    {ad.adLibraryUrl && (
+                      <a
+                        href={ad.adLibraryUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-2 inline-flex items-center gap-1 text-xs text-brand hover:underline"
+                      >
+                        <ExternalLink className="h-3 w-3" />
+                        Ver na Biblioteca de Anúncios
+                      </a>
+                    )}
+                  </div>
+                ))}
+                {ads.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Nenhum anúncio vinculado.</p>
+                )}
+              </div>
+            </section>
           </div>
+
 
 
           {/* ---------------- COLUNA DIREITA ---------------- */}
