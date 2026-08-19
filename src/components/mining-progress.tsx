@@ -15,6 +15,10 @@ export interface MiningProgressData {
   jobs: Record<string, { total: number; done: number; failed: number; pending: number }>;
   ads_found: number;
   upserts: number;
+  offers_formed?: number;
+  offers_qualified?: number;
+  offers_rejected?: number;
+
   discarded: {
     blacklist: number;
     language: number;
