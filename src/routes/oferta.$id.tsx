@@ -119,6 +119,8 @@ function OfferDetail() {
   const { isPro } = useAuth();
   const { data } = useSuspenseQuery(offerQuery(params.id));
   const offer = data.offer!;
+  const ads = data.ads ?? [];
+
   const [expanded, setExpanded] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
 
