@@ -124,6 +124,7 @@ export type Database = {
           language: string
           last_seen: string
           link_url: string | null
+          offer_id: string | null
           page_id: string
           page_name: string
           page_url: string | null
@@ -153,6 +154,7 @@ export type Database = {
           language?: string
           last_seen?: string
           link_url?: string | null
+          offer_id?: string | null
           page_id: string
           page_name: string
           page_url?: string | null
@@ -182,6 +184,7 @@ export type Database = {
           language?: string
           last_seen?: string
           link_url?: string | null
+          offer_id?: string | null
           page_id?: string
           page_name?: string
           page_url?: string | null
@@ -192,7 +195,15 @@ export type Database = {
           structure?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "meta_offers_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: false
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meta_refresh_ads_raw: {
         Row: {
@@ -442,6 +453,75 @@ export type Database = {
           page_size?: number
           per_keyword_limit?: number
           singleton?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      offers: {
+        Row: {
+          active_days: number
+          ads_count: number
+          category: string | null
+          created_at: string
+          first_ad_start: string | null
+          first_seen: string
+          group_key: string
+          id: string
+          landing_key: string | null
+          language: string | null
+          last_seen: string
+          page_id: string
+          page_name: string | null
+          product_title: string | null
+          product_type: string | null
+          qualified: boolean
+          reject_reason: string | null
+          status: string
+          structure: string | null
+          updated_at: string
+        }
+        Insert: {
+          active_days?: number
+          ads_count?: number
+          category?: string | null
+          created_at?: string
+          first_ad_start?: string | null
+          first_seen?: string
+          group_key: string
+          id?: string
+          landing_key?: string | null
+          language?: string | null
+          last_seen?: string
+          page_id: string
+          page_name?: string | null
+          product_title?: string | null
+          product_type?: string | null
+          qualified?: boolean
+          reject_reason?: string | null
+          status?: string
+          structure?: string | null
+          updated_at?: string
+        }
+        Update: {
+          active_days?: number
+          ads_count?: number
+          category?: string | null
+          created_at?: string
+          first_ad_start?: string | null
+          first_seen?: string
+          group_key?: string
+          id?: string
+          landing_key?: string | null
+          language?: string | null
+          last_seen?: string
+          page_id?: string
+          page_name?: string | null
+          product_title?: string | null
+          product_type?: string | null
+          qualified?: boolean
+          reject_reason?: string | null
+          status?: string
+          structure?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -760,6 +840,30 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_offer_row: {
+        Args: { p_id: string }
+        Returns: {
+          active_ads_count: number
+          active_days: number
+          ad_archive_id: string
+          ad_snapshot_url: string
+          ad_start_date: string
+          category: string
+          creative_type: string
+          creative_url: string
+          description: string
+          headline: string
+          id: string
+          language: string
+          link_url: string
+          page_id: string
+          page_name: string
+          page_url: string
+          product_type: string
+          status: string
+          structure: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -788,6 +892,7 @@ export type Database = {
           language: string
           last_seen: string
           link_url: string | null
+          offer_id: string | null
           page_id: string
           page_name: string
           page_url: string | null
@@ -804,6 +909,44 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      list_active_offers: {
+        Args: never
+        Returns: {
+          active_ads_count: number
+          active_days: number
+          ad_archive_id: string
+          ad_snapshot_url: string
+          ad_start_date: string
+          category: string
+          creative_type: string
+          creative_url: string
+          description: string
+          headline: string
+          id: string
+          language: string
+          link_url: string
+          page_id: string
+          page_name: string
+          page_url: string
+          product_type: string
+          status: string
+          structure: string
+        }[]
+      }
+      list_offer_ads: {
+        Args: { p_id: string }
+        Returns: {
+          active_days: number
+          ad_archive_id: string
+          ad_start_date: string
+          creative_type: string
+          creative_url: string
+          description: string
+          headline: string
+          id: string
+          link_url: string
+        }[]
       }
       mining_cancel_run: { Args: { p_run_id: string }; Returns: undefined }
       mining_cleanup_run: { Args: { p_run_id: string }; Returns: undefined }
@@ -935,6 +1078,19 @@ export type Database = {
       mining_upsert_offers: { Args: { p_rows: Json }; Returns: number }
       mining_upsert_raw: { Args: { p_rows: Json }; Returns: undefined }
       mining_upsert_snapshots: { Args: { p_rows: Json }; Returns: undefined }
+      offer_group_key: {
+        Args: { p_link: string; p_page_id: string; p_title: string }
+        Returns: string
+      }
+      offer_norm_link: { Args: { p: string }; Returns: string }
+      offer_norm_title: { Args: { p: string }; Returns: string }
+      offer_title_similarity: {
+        Args: { a: string[]; b: string[] }
+        Returns: number
+      }
+      offer_title_tokens: { Args: { p: string }; Returns: string[] }
+      offers_attach_ads: { Args: { p_rows: Json }; Returns: Json }
+      offers_recompute: { Args: { p_ids?: string[] }; Returns: undefined }
       try_advance_run_phase: {
         Args: { p_from_phase: string; p_run_id: string; p_to_phase: string }
         Returns: boolean

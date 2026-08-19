@@ -15,6 +15,10 @@ export interface MiningProgressData {
   jobs: Record<string, { total: number; done: number; failed: number; pending: number }>;
   ads_found: number;
   upserts: number;
+  offers_formed?: number;
+  offers_qualified?: number;
+  offers_rejected?: number;
+
   discarded: {
     blacklist: number;
     language: number;
@@ -342,13 +346,17 @@ export function MiningProgressPanel({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Páginas analisadas" value={s.pagesFound} />
+        <Stat label="Ofertas qualificadas" value={progress.offers_qualified ?? 0} />
+        <Stat label="Ofertas formadas" value={progress.offers_formed ?? 0} />
+        <Stat label="Ofertas rejeitadas" value={progress.offers_rejected ?? 0} />
+        <Stat label="Anúncios classificados" value={progress.upserts} />
         <Stat label="Anúncios encontrados" value={s.adsFound} />
-        <Stat label="Ofertas aprovadas" value={progress.upserts} />
-        <Stat label="Ofertas descartadas" value={s.discardedTotal} />
+        <Stat label="Páginas analisadas" value={s.pagesFound} />
+        <Stat label="Anúncios descartados" value={s.discardedTotal} />
         <Stat label="Jobs concluídos" value={s.done} />
         <Stat label="Jobs em execução" value={s.running} />
         <Stat label="Jobs pendentes" value={s.pending} />
+
         <Stat label="Jobs falhos" value={s.failed} />
       </div>
 

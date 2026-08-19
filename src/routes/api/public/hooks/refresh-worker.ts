@@ -373,14 +373,44 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
     else upserts = data ?? rowsToUpsert.length;
   }
 
-  await jobLog(supabase, job.run_id, "classify.upsert", `classificados: ${upserts} gravados de ${adIds.length}`, {
-    processed: adIds.length,
-    upserts,
-    ...skipped,
-  });
+  // OFERTA é a unidade: cada anúncio gravado é ligado à sua oferta (mesmo
+  // produto do mesmo anunciante). Ofertas não qualificadas permanecem e são
+  // reavaliadas automaticamente a cada novo anúncio recebido.
+  let offerStats = { offers_touched: 0, offers_qualified: 0, offers_rejected: 0 };
+  if (!dbError && rowsToUpsert.length) {
+    const { data: attached, error: attachError } = await supabase.rpc("offers_attach_ads", {
+      p_rows: rowsToUpsert.map((r) => ({
+        ad_archive_id: r.ad_archive_id,
+        page_id: r.page_id,
+        page_name: r.page_name,
+        headline: r.headline,
+        link_url: r.link_url,
+        category: r.category,
+        language: r.language,
+        structure: r.structure,
+        product_type: r.product_type,
+      })),
+    });
+    if (attachError) dbError = `agrupar ofertas: ${attachError.message}`;
+    else if (attached) offerStats = attached as typeof offerStats;
+  }
+
+  await jobLog(
+    supabase,
+    job.run_id,
+    "classify.upsert",
+    `classificados: ${upserts} anúncios · ${offerStats.offers_qualified} ofertas qualificadas`,
+    {
+      processed: adIds.length,
+      upserts,
+      ...offerStats,
+      ...skipped,
+    },
+  );
 
   return dbError;
 }
+
 
 // ---------- Finaliza a run: deactivate + métricas + fecha o registro ----------
 async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
