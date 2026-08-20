@@ -171,23 +171,28 @@ export async function loadMiningSettings(): Promise<MiningSettings> {
     per_keyword_limit: row.per_keyword_limit ?? 50,
     auto_refresh: row.auto_refresh ?? true,
     max_pages: row.max_pages ?? 2,
-    keywords_per_run: row.keywords_per_run ?? 30,
+    keywords_per_run: row.keywords_per_run ?? 100,
     meta_api_delay_ms: row.meta_api_delay_ms ?? 2000,
   };
 }
 
+// Avança o ciclo das palavras usadas: cycle_no + 1 (não apaga nada).
 export async function markKeywordsMined(
   supabase: any,
   keywordIds: string[],
+  cycle?: number,
 ) {
   if (!keywordIds.length) return;
+  const payload: Record<string, unknown> = { last_mined_at: new Date().toISOString() };
+  if (typeof cycle === "number") payload.cycle_no = cycle + 1;
   const { error } = await supabase
     .from("search_keywords")
-    .update({ last_mined_at: new Date().toISOString() })
+    .update(payload)
     .in("id", keywordIds);
   if (error) {
     console.error("markKeywordsMined error", error.message);
   }
+
 }
 
 function escapeRegex(s: string): string {
