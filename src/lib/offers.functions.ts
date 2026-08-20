@@ -24,7 +24,8 @@ export const listOffers = createServerFn({ method: "GET" }).handler(async () => 
   const supabase = serverSupabase();
   // 1 card = 1 OFERTA (produto de um anunciante), nunca 1 anúncio e nunca
   // DISTINCT ON (page_id). Só ofertas qualificadas (5+ dias E 10+ anúncios
-  // da mesma oferta) entram no dashboard.
+  // da mesma oferta) e aprovadas nos filtros de qualidade (destino próprio,
+  // português, categoria oficial, sem ruído) entram no dashboard.
   const { data, error } = await supabase.rpc("list_active_offers");
 
   if (error) {
@@ -32,16 +33,13 @@ export const listOffers = createServerFn({ method: "GET" }).handler(async () => 
     return { offers: [] as Offer[], error: "Não foi possível carregar ofertas." };
   }
 
+  // A ordem já vem do banco por confiança (destino, preço, estrutura, escala e
+  // tempo no ar) — não reordenar por volume bruto de anúncios.
   const rows = (data ?? []) as Parameters<typeof rowToOffer>[0][];
-  // Ordena: mais anúncios da oferta primeiro, depois quem está no ar há mais tempo.
-  const sorted = [...rows].sort(
-    (a, b) =>
-      (b.active_ads_count ?? 0) - (a.active_ads_count ?? 0) ||
-      (b.active_days ?? 0) - (a.active_days ?? 0),
-  );
 
-  return { offers: sorted.map(rowToOffer), error: null as string | null };
+  return { offers: rows.map(rowToOffer), error: null as string | null };
 });
+
 
 export interface OfferAd {
   id: string;
