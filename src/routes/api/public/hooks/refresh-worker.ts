@@ -681,10 +681,12 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
           let errorMessage: string | null = null;
           let rateLimited = false;
           let collectedAds = 0;
+          let remainingSteps: unknown[] = [];
 
           if (error instanceof RateLimitError) {
             rateLimited = true;
             collectedAds = error.collectedAds;
+            remainingSteps = error.remainingSteps;
             errorMessage = error.message;
           } else if (error instanceof Error) {
             errorMessage = error.message;
@@ -693,13 +695,23 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
           }
 
           if (rateLimited) {
-            // Salva o que já conseguiu coletar e re-enfileira o restante para depois.
+            // Salva o que já conseguiu coletar e re-enfileira só os termos restantes.
+            if (remainingSteps.length) {
+              await supabase
+                .from("meta_refresh_jobs")
+                .update({ payload: { ...job.payload, steps: remainingSteps } })
+                .eq("id", job.id);
+            }
             if (collectedAds > 0) {
               await jobLog(supabase, job.run_id, "meta.search", `rate limit após ${collectedAds} anúncios coletados`, {
                 collected_ads: collectedAds,
+                remaining_terms: remainingSteps.length,
                 backoff_minutes: RATE_LIMIT_BACKOFF_MS / 60000,
               });
             }
+            await requeueJob(supabase, job.id, RATE_LIMIT_BACKOFF_MS);
+          }
+
             await requeueJob(supabase, job.id, RATE_LIMIT_BACKOFF_MS);
           } else {
             await markJobDone(supabase, job.id, errorMessage);
