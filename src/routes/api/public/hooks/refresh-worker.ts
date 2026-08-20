@@ -710,9 +710,6 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
               });
             }
             await requeueJob(supabase, job.id, RATE_LIMIT_BACKOFF_MS);
-          }
-
-            await requeueJob(supabase, job.id, RATE_LIMIT_BACKOFF_MS);
           } else {
             await markJobDone(supabase, job.id, errorMessage);
             if (!errorMessage) {
