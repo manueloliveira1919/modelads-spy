@@ -434,6 +434,16 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
     });
     deactivated = Number(data ?? 0);
   }
+  // Fim de ciclo de palavras-chave: reavalia TODO o acervo (visibilidade e
+  // confiança). Nada é apagado — ofertas fracas apenas saem da vitrine e
+  // voltam sozinhas se melhorarem em ciclos seguintes.
+  let visibleOffers: number | null = null;
+  if (runDetails["closes_cycle"] === true) {
+    const { data: vis, error: visErr } = await supabase.rpc("offers_refresh_visibility");
+    if (visErr) console.error("offers_refresh_visibility error", visErr.message);
+    else visibleOffers = Number(vis ?? 0);
+  }
+
   const { data: pagesSeen } = await supabase.rpc("mining_count_pages_seen", { p_run_id: job.run_id });
   const { data: sums } = await supabase.rpc("mining_sum_job_logs", { p_run_id: job.run_id });
   const upserts = Number(sums?.[0]?.upserts ?? 0);
@@ -450,8 +460,16 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
     p_offers_upserted: upserts,
     p_pages_seen: pagesSeen ?? 0,
     p_error: searchErrors > 0 ? `${searchErrors} erro(s) durante a coleta — ver mining_logs` : null,
-    p_details: { deactivated, search_errors: searchErrors, coverage },
+    p_details: {
+      deactivated,
+      search_errors: searchErrors,
+      coverage,
+      cycle: runDetails["cycle"] ?? null,
+      closes_cycle: runDetails["closes_cycle"] === true,
+      visible_offers: visibleOffers,
+    },
   });
+
 
   await supabase.rpc("mining_log", {
     p_kind: "run",
