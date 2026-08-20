@@ -699,7 +699,7 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
             if (remainingSteps.length) {
               await supabase
                 .from("meta_refresh_jobs")
-                .update({ payload: { ...job.payload, steps: remainingSteps } })
+                .update({ payload: { ...job.payload, steps: remainingSteps } as any })
                 .eq("id", job.id);
             }
             if (collectedAds > 0) {
