@@ -104,7 +104,14 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
   const errors: string[] = [];
   const rows: Record<string, unknown>[] = [];
 
-  for (const step of steps) {
+  const flushRows = async () => {
+    if (!rows.length) return;
+    const { error } = await supabase.rpc("mining_upsert_raw", { p_rows: rows });
+    if (error) errors.push(`upsert raw: ${error.message}`);
+  };
+
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
     try {
       const items = await searchTermPaginated({
         token,
@@ -136,16 +143,22 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
       const message = (err as Error).message;
       errors.push(`${step.category ?? "—"}/${step.term}: ${message}`);
       if (err instanceof MetaApiError && err.isRateLimit) {
-        // Propaga sinal especial para o loop principal re-enfileirar com backoff.
-        throw new RateLimitError(message, rows.length);
+        // Rate limit da Meta: salva o que já coletou e devolve à fila SÓ os
+        // termos que ainda não rodaram, para não perder cobertura do ciclo.
+        await flushRows();
+        await jobLog(
+          supabase,
+          job.run_id,
+          "meta.search",
+          `rate limit no termo "${step.term}" — ${rows.length} anúncios salvos, ${steps.length - i} termos re-enfileirados`,
+          { term: step.term, ads_saved: rows.length, remaining_terms: steps.length - i, errors },
+        );
+        throw new RateLimitError(message, rows.length, steps.slice(i));
       }
     }
   }
 
-  if (rows.length) {
-    const { error } = await supabase.rpc("mining_upsert_raw", { p_rows: rows });
-    if (error) errors.push(`upsert raw: ${error.message}`);
-  }
+  await flushRows();
 
   await jobLog(supabase, job.run_id, "meta.search", `busca: ${steps.length} termos, ${rows.length} anúncios`, {
     terms: steps.length,
@@ -158,12 +171,15 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
 
 class RateLimitError extends Error {
   collectedAds: number;
-  constructor(message: string, collectedAds: number) {
+  remainingSteps: unknown[];
+  constructor(message: string, collectedAds: number, remainingSteps: unknown[] = []) {
     super(message);
     this.collectedAds = collectedAds;
+    this.remainingSteps = remainingSteps;
     this.name = "RateLimitError";
   }
 }
+
 
 // ---------- Processa 1 job de extração de snapshot ----------
 async function processSnapshotJob(supabase: any, job: MetaRefreshJob) {
