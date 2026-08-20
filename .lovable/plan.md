@@ -59,7 +59,18 @@ Estimativa depois dos cortes: **~120 ofertas realmente válidas hoje**, e a base
 - **Validade de uma oferta na vitrine: 14 dias sem novos anúncios**. Passou disso sem sinal de vida, sai da vitrine (fica no acervo e volta se voltar a anunciar).
 - Ofertas com 30+ dias e 30+ anúncios ganham selo "Escaladíssima" e ficam fixas enquanto continuarem ativas.
 
-## 5. Criativos (decisão sua: seguir sem imagem por enquanto)
+## 5. Garantia: nada é apagado
+
+Confirmado — o plano inteiro só troca visibilidade, nunca remove dados:
+
+- Nenhum `DELETE` em `offers`, `meta_offers`, `search_keywords` ou `blacklist_words`.
+- As ofertas cortadas (sem destino, fora do PT, entretenimento, categoria legada) continuam no banco com todos os anúncios; apenas deixam de aparecer na vitrine.
+- Se uma oferta invisível melhorar depois (ganhar link de destino, mais anúncios, categoria válida), ela volta a aparecer sozinha na próxima reavaliação — é reversível.
+- Palavras-chave: nenhuma é apagada nem desativada; só ganham o carimbo de ciclo.
+- A expiração de 14 dias tira da vitrine, não do acervo — se a oferta voltar a anunciar, reaparece.
+- O único apagamento que já existe hoje e continua igual é a limpeza das tabelas temporárias de execução (`meta_refresh_ads_raw` / `snapshots`), que são rascunho de cada run e não guardam oferta.
+
+## 6. Criativos (decisão sua: seguir sem imagem por enquanto)
 
 Os cards vão trabalhar com título, descrição, preço detectado, domínio de destino, dias no ar, nº de anúncios e link direto para a Biblioteca de Anúncios. Fica registrado que a captura de imagem exige um serviço externo pago — dá para ligar depois sem refazer nada.
 
