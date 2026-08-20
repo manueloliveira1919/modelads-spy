@@ -17,6 +17,7 @@ export interface KeywordRow {
   country: string;
   priority: number;
   last_mined_at: string | null;
+  cycle_no: number;
 }
 
 export interface BlacklistRow {
@@ -38,13 +39,23 @@ export interface MiningSettings {
 }
 
 
+// Ciclo de palavras-chave: cada palavra carrega `cycle_no`. Só entram na run as
+// palavras do ciclo corrente (o menor `cycle_no` entre as ativas). Quando a
+// última palavra do ciclo é minerada, todas passam a ter o mesmo número maior e
+// um ciclo novo começa — assim nenhuma palavra repete antes das outras rodarem.
 export async function loadActiveKeywords(): Promise<KeywordRow[]> {
   const { data, error } = await supabaseAdmin
     .from("search_keywords")
-    .select("id, word, category, niche, language, country, priority, last_mined_at")
+    .select("id, word, category, niche, language, country, priority, last_mined_at, cycle_no")
     .eq("is_active", true);
   if (error) throw new Error(`load search_keywords: ${error.message}`);
-  return ((data ?? []) as KeywordRow[]).sort((a, b) => {
+  const all = (data ?? []) as KeywordRow[];
+  if (!all.length) return [];
+
+  const currentCycle = Math.min(...all.map((k) => k.cycle_no ?? 0));
+  const pending = all.filter((k) => (k.cycle_no ?? 0) === currentCycle);
+
+  return pending.sort((a, b) => {
     // Palavras nunca mineradas primeiro; depois as mais antigas.
     const aNull = a.last_mined_at ? 1 : 0;
     const bNull = b.last_mined_at ? 1 : 0;
@@ -55,6 +66,24 @@ export async function loadActiveKeywords(): Promise<KeywordRow[]> {
     return (b.priority ?? 1) - (a.priority ?? 1);
   });
 }
+
+// Estado do ciclo: usado para saber se a run atual fecha o ciclo completo
+// (e portanto dispara a reavaliação geral das ofertas).
+export async function getCycleState(): Promise<{ cycle: number; pending: number; total: number }> {
+  const { data } = await supabaseAdmin
+    .from("search_keywords")
+    .select("cycle_no")
+    .eq("is_active", true);
+  const rows = (data ?? []) as { cycle_no: number }[];
+  if (!rows.length) return { cycle: 0, pending: 0, total: 0 };
+  const cycle = Math.min(...rows.map((r) => r.cycle_no ?? 0));
+  return {
+    cycle,
+    pending: rows.filter((r) => (r.cycle_no ?? 0) === cycle).length,
+    total: rows.length,
+  };
+}
+
 
 export async function loadActiveBlacklist(): Promise<BlacklistRow[]> {
   const { data, error } = await supabaseAdmin
