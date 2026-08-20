@@ -28,7 +28,7 @@ import {
 // Número de jobs processados por tick. Mantemos 2 em paralelo para dar
 // progresso, mas a taxa real é controlada por available_at (backoff de rate limit)
 // e por delay entre chamadas à Meta.
-const JOBS_PER_TICK = 2;
+const JOBS_PER_TICK = 4;
 // Backoff aplicado quando a Meta retorna (#613) rate limit.
 // A Meta geralmente reseta a janela a cada hora, então esperamos 60 min.
 const RATE_LIMIT_BACKOFF_MS = 60 * 60 * 1000;
