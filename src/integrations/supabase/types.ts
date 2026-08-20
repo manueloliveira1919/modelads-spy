@@ -462,6 +462,7 @@ export type Database = {
           active_days: number
           ads_count: number
           category: string | null
+          confidence: number
           created_at: string
           first_ad_start: string | null
           first_seen: string
@@ -479,11 +480,13 @@ export type Database = {
           status: string
           structure: string | null
           updated_at: string
+          visible: boolean
         }
         Insert: {
           active_days?: number
           ads_count?: number
           category?: string | null
+          confidence?: number
           created_at?: string
           first_ad_start?: string | null
           first_seen?: string
@@ -501,11 +504,13 @@ export type Database = {
           status?: string
           structure?: string | null
           updated_at?: string
+          visible?: boolean
         }
         Update: {
           active_days?: number
           ads_count?: number
           category?: string | null
+          confidence?: number
           created_at?: string
           first_ad_start?: string | null
           first_seen?: string
@@ -523,6 +528,7 @@ export type Database = {
           status?: string
           structure?: string | null
           updated_at?: string
+          visible?: boolean
         }
         Relationships: []
       }
@@ -642,6 +648,7 @@ export type Database = {
           category: string | null
           country: string
           created_at: string
+          cycle_no: number
           id: string
           is_active: boolean
           language: string
@@ -656,6 +663,7 @@ export type Database = {
           category?: string | null
           country?: string
           created_at?: string
+          cycle_no?: number
           id?: string
           is_active?: boolean
           language?: string
@@ -670,6 +678,7 @@ export type Database = {
           category?: string | null
           country?: string
           created_at?: string
+          cycle_no?: number
           id?: string
           is_active?: boolean
           language?: string
@@ -1078,9 +1087,14 @@ export type Database = {
       mining_upsert_offers: { Args: { p_rows: Json }; Returns: number }
       mining_upsert_raw: { Args: { p_rows: Json }; Returns: undefined }
       mining_upsert_snapshots: { Args: { p_rows: Json }; Returns: undefined }
+      offer_canonical_category: { Args: { p: string }; Returns: string }
       offer_group_key: {
         Args: { p_link: string; p_page_id: string; p_title: string }
         Returns: string
+      }
+      offer_is_entertainment: {
+        Args: { p_landing: string; p_page: string; p_title: string }
+        Returns: boolean
       }
       offer_norm_link: { Args: { p: string }; Returns: string }
       offer_norm_title: { Args: { p: string }; Returns: string }
@@ -1091,6 +1105,7 @@ export type Database = {
       offer_title_tokens: { Args: { p: string }; Returns: string[] }
       offers_attach_ads: { Args: { p_rows: Json }; Returns: Json }
       offers_recompute: { Args: { p_ids?: string[] }; Returns: undefined }
+      offers_refresh_visibility: { Args: never; Returns: number }
       try_advance_run_phase: {
         Args: { p_from_phase: string; p_run_id: string; p_to_phase: string }
         Returns: boolean

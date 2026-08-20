@@ -28,7 +28,7 @@ import {
 // Número de jobs processados por tick. Mantemos 2 em paralelo para dar
 // progresso, mas a taxa real é controlada por available_at (backoff de rate limit)
 // e por delay entre chamadas à Meta.
-const JOBS_PER_TICK = 2;
+const JOBS_PER_TICK = 4;
 // Backoff aplicado quando a Meta retorna (#613) rate limit.
 // A Meta geralmente reseta a janela a cada hora, então esperamos 60 min.
 const RATE_LIMIT_BACKOFF_MS = 60 * 60 * 1000;
@@ -104,7 +104,14 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
   const errors: string[] = [];
   const rows: Record<string, unknown>[] = [];
 
-  for (const step of steps) {
+  const flushRows = async () => {
+    if (!rows.length) return;
+    const { error } = await supabase.rpc("mining_upsert_raw", { p_rows: rows });
+    if (error) errors.push(`upsert raw: ${error.message}`);
+  };
+
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
     try {
       const items = await searchTermPaginated({
         token,
@@ -136,16 +143,22 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
       const message = (err as Error).message;
       errors.push(`${step.category ?? "—"}/${step.term}: ${message}`);
       if (err instanceof MetaApiError && err.isRateLimit) {
-        // Propaga sinal especial para o loop principal re-enfileirar com backoff.
-        throw new RateLimitError(message, rows.length);
+        // Rate limit da Meta: salva o que já coletou e devolve à fila SÓ os
+        // termos que ainda não rodaram, para não perder cobertura do ciclo.
+        await flushRows();
+        await jobLog(
+          supabase,
+          job.run_id,
+          "meta.search",
+          `rate limit no termo "${step.term}" — ${rows.length} anúncios salvos, ${steps.length - i} termos re-enfileirados`,
+          { term: step.term, ads_saved: rows.length, remaining_terms: steps.length - i, errors },
+        );
+        throw new RateLimitError(message, rows.length, steps.slice(i));
       }
     }
   }
 
-  if (rows.length) {
-    const { error } = await supabase.rpc("mining_upsert_raw", { p_rows: rows });
-    if (error) errors.push(`upsert raw: ${error.message}`);
-  }
+  await flushRows();
 
   await jobLog(supabase, job.run_id, "meta.search", `busca: ${steps.length} termos, ${rows.length} anúncios`, {
     terms: steps.length,
@@ -158,12 +171,15 @@ async function processSearchJob(supabase: any, job: MetaRefreshJob) {
 
 class RateLimitError extends Error {
   collectedAds: number;
-  constructor(message: string, collectedAds: number) {
+  remainingSteps: unknown[];
+  constructor(message: string, collectedAds: number, remainingSteps: unknown[] = []) {
     super(message);
     this.collectedAds = collectedAds;
+    this.remainingSteps = remainingSteps;
     this.name = "RateLimitError";
   }
 }
+
 
 // ---------- Processa 1 job de extração de snapshot ----------
 async function processSnapshotJob(supabase: any, job: MetaRefreshJob) {
@@ -434,6 +450,16 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
     });
     deactivated = Number(data ?? 0);
   }
+  // Fim de ciclo de palavras-chave: reavalia TODO o acervo (visibilidade e
+  // confiança). Nada é apagado — ofertas fracas apenas saem da vitrine e
+  // voltam sozinhas se melhorarem em ciclos seguintes.
+  let visibleOffers: number | null = null;
+  if (runDetails["closes_cycle"] === true) {
+    const { data: vis, error: visErr } = await supabase.rpc("offers_refresh_visibility");
+    if (visErr) console.error("offers_refresh_visibility error", visErr.message);
+    else visibleOffers = Number(vis ?? 0);
+  }
+
   const { data: pagesSeen } = await supabase.rpc("mining_count_pages_seen", { p_run_id: job.run_id });
   const { data: sums } = await supabase.rpc("mining_sum_job_logs", { p_run_id: job.run_id });
   const upserts = Number(sums?.[0]?.upserts ?? 0);
@@ -450,8 +476,16 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
     p_offers_upserted: upserts,
     p_pages_seen: pagesSeen ?? 0,
     p_error: searchErrors > 0 ? `${searchErrors} erro(s) durante a coleta — ver mining_logs` : null,
-    p_details: { deactivated, search_errors: searchErrors, coverage },
+    p_details: {
+      deactivated,
+      search_errors: searchErrors,
+      coverage,
+      cycle: runDetails["cycle"] ?? null,
+      closes_cycle: runDetails["closes_cycle"] === true,
+      visible_offers: visibleOffers,
+    },
   });
+
 
   await supabase.rpc("mining_log", {
     p_kind: "run",
@@ -647,10 +681,12 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
           let errorMessage: string | null = null;
           let rateLimited = false;
           let collectedAds = 0;
+          let remainingSteps: unknown[] = [];
 
           if (error instanceof RateLimitError) {
             rateLimited = true;
             collectedAds = error.collectedAds;
+            remainingSteps = error.remainingSteps;
             errorMessage = error.message;
           } else if (error instanceof Error) {
             errorMessage = error.message;
@@ -659,10 +695,17 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
           }
 
           if (rateLimited) {
-            // Salva o que já conseguiu coletar e re-enfileira o restante para depois.
+            // Salva o que já conseguiu coletar e re-enfileira só os termos restantes.
+            if (remainingSteps.length) {
+              await supabase
+                .from("meta_refresh_jobs")
+                .update({ payload: { ...job.payload, steps: remainingSteps } as any })
+                .eq("id", job.id);
+            }
             if (collectedAds > 0) {
               await jobLog(supabase, job.run_id, "meta.search", `rate limit após ${collectedAds} anúncios coletados`, {
                 collected_ads: collectedAds,
+                remaining_terms: remainingSteps.length,
                 backoff_minutes: RATE_LIMIT_BACKOFF_MS / 60000,
               });
             }
