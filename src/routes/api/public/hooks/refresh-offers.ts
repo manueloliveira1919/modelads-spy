@@ -20,13 +20,15 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     buildSearchPlan,
     countEligibleKeywords,
     markKeywordsMined,
+    getCycleState,
   } = await import("@/lib/mining-config.server");
 
   const startedAt = new Date().toISOString();
 
-  const [keywords, settings] = await Promise.all([
+  const [keywords, settings, cycleState] = await Promise.all([
     loadActiveKeywords(),
     loadMiningSettings(),
+    getCycleState(),
   ]);
 
   if (opts.respectAutoRefresh && !settings.auto_refresh) {
@@ -56,6 +58,10 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
   const eligible = countEligibleKeywords(keywords, settings, category);
   const coverage: "full" | "partial" = !category && plan.length >= eligible ? "full" : "partial";
 
+  // Fecha o ciclo quando esta run consome as últimas palavras pendentes.
+  const keywordIds = plan.map((s) => s.id).filter(Boolean);
+  const closesCycle = !category && keywordIds.length >= cycleState.pending;
+
   const { data: runId, error: runErr } = await supabase.rpc("mining_create_run", {
     p_started_at: startedAt,
   });
@@ -72,6 +78,10 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
       coverage,
       plan_size: plan.length,
       eligible_keywords: eligible,
+      cycle: cycleState.cycle,
+      cycle_pending_before: cycleState.pending,
+      cycle_total_keywords: cycleState.total,
+      closes_cycle: closesCycle,
     },
   });
 
@@ -96,14 +106,13 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     throw new Error(`enfileirar jobs: ${jobsErr.message}`);
   }
 
-  // Marca palavras usadas como mineradas agora para rotação nas próximas runs.
-  const keywordIds = plan.map((s) => s.id).filter(Boolean);
-  await markKeywordsMined(supabase, keywordIds);
+  // Avança o ciclo das palavras usadas para que não repitam antes das demais.
+  await markKeywordsMined(supabase, keywordIds, cycleState.cycle);
 
   await supabase.rpc("mining_log", {
     p_kind: "run",
     p_status: "queued",
-    p_summary: `run enfileirada: ${jobs.length} jobs de busca (${plan.length} keywords)`,
+    p_summary: `run enfileirada: ${jobs.length} jobs de busca (${plan.length} keywords, ciclo ${cycleState.cycle})`,
     p_details: {
       run_id: runId,
       triggered_by: opts.triggeredBy,
@@ -113,6 +122,8 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
       category,
       coverage,
       eligible_keywords: eligible,
+      cycle: cycleState.cycle,
+      closes_cycle: closesCycle,
     },
   });
 
@@ -123,9 +134,13 @@ async function enqueueRefresh(supabase: any, opts: RunOptions) {
     plan_size: plan.length,
     jobs_enqueued: jobs.length,
     coverage,
+    cycle: cycleState.cycle,
+    cycle_pending_before: cycleState.pending,
+    closes_cycle: closesCycle,
     note: "Mineração enfileirada. O worker (a cada minuto) processa os lotes aos poucos.",
   };
 }
+
 
 async function authorize(
   request: Request,
