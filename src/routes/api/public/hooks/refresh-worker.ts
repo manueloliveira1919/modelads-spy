@@ -449,6 +449,7 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   if (coverage === "full") {
     const { data } = await supabase.rpc("mining_deactivate_stale", {
       p_started_at: startedAt ?? new Date().toISOString(),
+      p_coverage: "full",
     });
     deactivated = Number(data ?? 0);
   }
