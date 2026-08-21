@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   classifyStatus,
-  meetsMinimumScale,
+  
   extractPrice,
   inferProductType,
   inferStructure,
