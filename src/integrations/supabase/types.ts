@@ -961,10 +961,12 @@ export type Database = {
       mining_cleanup_run: { Args: { p_run_id: string }; Returns: undefined }
       mining_count_pages_seen: { Args: { p_run_id: string }; Returns: number }
       mining_create_run: { Args: { p_started_at?: string }; Returns: string }
-      mining_deactivate_stale: {
-        Args: { p_started_at: string }
-        Returns: number
-      }
+      mining_deactivate_stale:
+        | { Args: { p_started_at: string }; Returns: number }
+        | {
+            Args: { p_coverage?: string; p_started_at: string }
+            Returns: number
+          }
       mining_enqueue_jobs: { Args: { p_jobs: Json }; Returns: undefined }
       mining_ensure_classify_jobs: {
         Args: { p_run_id: string }

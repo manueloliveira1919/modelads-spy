@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import {
   classifyStatus,
-  meetsMinimumScale,
+  
   extractPrice,
   inferProductType,
   inferStructure,
@@ -366,7 +366,9 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
         page_url: `https://www.facebook.com/${raw.page_id}`,
         link_url: media.linkUrl,
         ad_start_date: ad.ad_delivery_start_time ?? null,
-        is_active: meetsMinimumScale(activeDays, activeAdsCount),
+        // O anúncio é apenas evidência: fica ativo por ter sido visto agora.
+        // A qualificação (5+ dias E 10+ anúncios) pertence só à tabela offers.
+        is_active: true,
         active_days: activeDays,
         active_ads_count: activeAdsCount,
         status: classifyStatus(activeDays, activeAdsCount),
@@ -447,6 +449,7 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   if (coverage === "full") {
     const { data } = await supabase.rpc("mining_deactivate_stale", {
       p_started_at: startedAt ?? new Date().toISOString(),
+      p_coverage: "full",
     });
     deactivated = Number(data ?? 0);
   }
