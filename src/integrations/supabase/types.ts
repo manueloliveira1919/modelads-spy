@@ -462,6 +462,7 @@ export type Database = {
           active_days: number
           ads_count: number
           category: string | null
+          commercial_quality: string | null
           confidence: number
           created_at: string
           first_ad_start: string | null
@@ -476,6 +477,8 @@ export type Database = {
           product_title: string | null
           product_type: string | null
           qualified: boolean
+          quality_checked_at: string | null
+          quality_reasons: Json | null
           reject_reason: string | null
           status: string
           structure: string | null
@@ -486,6 +489,7 @@ export type Database = {
           active_days?: number
           ads_count?: number
           category?: string | null
+          commercial_quality?: string | null
           confidence?: number
           created_at?: string
           first_ad_start?: string | null
@@ -500,6 +504,8 @@ export type Database = {
           product_title?: string | null
           product_type?: string | null
           qualified?: boolean
+          quality_checked_at?: string | null
+          quality_reasons?: Json | null
           reject_reason?: string | null
           status?: string
           structure?: string | null
@@ -510,6 +516,7 @@ export type Database = {
           active_days?: number
           ads_count?: number
           category?: string | null
+          commercial_quality?: string | null
           confidence?: number
           created_at?: string
           first_ad_start?: string | null
@@ -524,6 +531,8 @@ export type Database = {
           product_title?: string | null
           product_type?: string | null
           qualified?: boolean
+          quality_checked_at?: string | null
+          quality_reasons?: Json | null
           reject_reason?: string | null
           status?: string
           structure?: string | null
@@ -1106,6 +1115,22 @@ export type Database = {
       }
       offer_title_tokens: { Args: { p: string }; Returns: string[] }
       offers_attach_ads: { Args: { p_rows: Json }; Returns: Json }
+      offers_quality_snapshot: {
+        Args: { p_ids?: string[] }
+        Returns: {
+          active_days: number
+          ads: Json
+          ads_count: number
+          category: string
+          id: string
+          landing_key: string
+          language: string
+          page_name: string
+          product_title: string
+          qualified: boolean
+          visible: boolean
+        }[]
+      }
       offers_recompute: { Args: { p_ids?: string[] }; Returns: undefined }
       offers_refresh_visibility: { Args: never; Returns: number }
       try_advance_run_phase: {
