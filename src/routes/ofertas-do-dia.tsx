@@ -87,8 +87,8 @@ function Page() {
       if (structure !== "todas" && o.structure !== structure) return false;
       if (productType !== "todos" && o.productType !== productType) return false;
       if (funnel === "whatsapp" && !o.isWhatsapp) return false;
-      // "Ofertas do Dia" = só mineradas/validadas por padrão; nunca mostra "testando"
-      // a menos que o usuário explicitamente escolha "Todos" no filtro de escala.
+      // Filtro de escala: "todos" mostra tudo; "escalados" esconde "testando";
+      // "escaladissimo" mostra só o topo da régua.
       if (scale === "escalados" && o.status === "testando") return false;
       if (scale === "escaladissimo" && o.status !== "escaladissimo") return false;
       if (query && !`${o.page} ${o.headline}`.toLowerCase().includes(query.toLowerCase()))
