@@ -119,11 +119,20 @@ function Page() {
               </h1>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              {offers.length} anúncios monitorados · {escaladas} escaladíssimas ·{" "}
+              {offers.length} ofertas monitoradas · {escaladas} escaladíssimas ·{" "}
               {crescendo} escalado · {testando} testando
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2 sm:items-end">
+            <div className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-1.5 sm:w-auto sm:justify-end sm:gap-3">
+              <span className="font-display text-base font-bold leading-none text-foreground">
+                {totalAds.toLocaleString("pt-BR")}
+              </span>
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                anúncios monitorados
+              </span>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative w-full sm:w-72">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
