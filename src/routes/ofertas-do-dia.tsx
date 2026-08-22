@@ -75,7 +75,7 @@ function Page() {
     (structure !== "todas" ? 1 : 0) +
     (productType !== "todos" ? 1 : 0) +
     (funnel !== "todos" ? 1 : 0) +
-    (scale !== "escalados" ? 1 : 0);
+    (scale !== "todos" ? 1 : 0);
 
   const filtered = useMemo(() => {
     const list = offers.filter((o) => {
@@ -104,6 +104,8 @@ function Page() {
   const escaladas = offers.filter((o) => o.status === "escaladissimo").length;
   const crescendo = offers.filter((o) => o.status === "escalado").length;
   const testando = offers.filter((o) => o.status === "testando").length;
+  // Soma dos anúncios ativos de todas as ofertas visíveis (card de anúncios monitorados).
+  const totalAds = offers.reduce((sum, o) => sum + o.activeAds, 0);
 
   return (
     <AppShell>
