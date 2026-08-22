@@ -218,7 +218,7 @@ const ENTERTAINMENT_WORDS = [
 
 // 1) Marcador entre parênteses/colchetes: "(Dublagem)", "[Dublado]",
 //    "(Episódio 3)", "(Cap. 12)", "(Temporada 2)". Reprova sempre.
-const BRACKET_MARKER =
+export const BRACKET_MARKER =
   /[([]\s*(dublagem|dublado|dublada|legendado|legendada|dub\s*pt[- ]?br|pt[- ]?br|epis[oó]dio|epis[oó]dios|cap[ií]tulo|cap\.?\s*\d+|temporada)\b[^)\]]*[)\]]/i;
 
 // 2) Gancho de reviravolta dramática: cláusula de humilhação/traição/segredo
@@ -230,7 +230,7 @@ const DRAMA_REACTION =
 const DRAMA_ROLE =
   /\b(ceo|bilion[áa]ri[ao]|milion[áa]ri[ao]|patr[ãa]o|patroa|marido|esposa|ex[- ]marido|ex[- ]esposa|madrasta|sogra|empregada|faxineira|herdeir[ao]|noiv[ao]|amante)\b/i;
 
-function hasDramaHook(headline: string): boolean {
+export function hasDramaHook(headline: string): boolean {
   const t = headline || "";
   if (DRAMA_TRIGGER.test(t) && (DRAMA_REACTION.test(t) || DRAMA_ROLE.test(t))) return true;
   // "Traída por X, ela Y" — vírgula separando as duas cláusulas.
@@ -269,7 +269,7 @@ const WATCH_FREE = /\b(gratis|gratuita|gratuitamente|gratuito|de graca|sem pagar
 const WATCH_CONTENT =
   /\b(drama|dramas|dorama|doramas|novela|novelas|episodio|episodios|capitulo|capitulos|serie|series|filme|filmes|curta|curtas)\b/;
 
-function isWatchAppPromo(text: string): boolean {
+export function isWatchAppPromo(text: string): boolean {
   const t = normalizeText(text);
   return WATCH_VERB.test(t) && WATCH_FREE.test(t) && WATCH_CONTENT.test(t);
 }
