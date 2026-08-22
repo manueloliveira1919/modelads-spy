@@ -50,7 +50,7 @@ export const Route = createFileRoute("/ofertas-do-dia")({
   ),
 });
 
-type ScaleFilter = "escalados" | "todos" | "escaladissimo";
+type ScaleFilter = "todos" | "escalados" | "escaladissimo";
 
 function Page() {
   const categoryNames = useActiveCategoryNames();
@@ -59,8 +59,8 @@ function Page() {
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
   const [productType, setProductType] = useState<ProductType | "todos">("todos");
   const [funnel, setFunnel] = useState<"todos" | "whatsapp">("todos");
-  // Padrão exclui "testando" — aqui só aparecem ofertas já mineradas/validadas.
-  const [scale, setScale] = useState<ScaleFilter>("escalados");
+  // Padrão mostra tudo (inclui "testando") — a régua de escala fica como filtro opcional.
+  const [scale, setScale] = useState<ScaleFilter>("todos");
   const [query, setQuery] = useState("");
 
   const [filtersOpen, setFiltersOpen] = useState(false);
