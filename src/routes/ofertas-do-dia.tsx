@@ -50,7 +50,7 @@ export const Route = createFileRoute("/ofertas-do-dia")({
   ),
 });
 
-type ScaleFilter = "escalados" | "todos" | "escaladissimo";
+type ScaleFilter = "todos" | "escalados" | "escaladissimo";
 
 function Page() {
   const categoryNames = useActiveCategoryNames();
@@ -59,8 +59,8 @@ function Page() {
   const [structure, setStructure] = useState<OfferStructure | "todas">("todas");
   const [productType, setProductType] = useState<ProductType | "todos">("todos");
   const [funnel, setFunnel] = useState<"todos" | "whatsapp">("todos");
-  // Padrão exclui "testando" — aqui só aparecem ofertas já mineradas/validadas.
-  const [scale, setScale] = useState<ScaleFilter>("escalados");
+  // Padrão mostra tudo (inclui "testando") — a régua de escala fica como filtro opcional.
+  const [scale, setScale] = useState<ScaleFilter>("todos");
   const [query, setQuery] = useState("");
 
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -75,7 +75,7 @@ function Page() {
     (structure !== "todas" ? 1 : 0) +
     (productType !== "todos" ? 1 : 0) +
     (funnel !== "todos" ? 1 : 0) +
-    (scale !== "escalados" ? 1 : 0);
+    (scale !== "todos" ? 1 : 0);
 
   const filtered = useMemo(() => {
     const list = offers.filter((o) => {
@@ -87,8 +87,8 @@ function Page() {
       if (structure !== "todas" && o.structure !== structure) return false;
       if (productType !== "todos" && o.productType !== productType) return false;
       if (funnel === "whatsapp" && !o.isWhatsapp) return false;
-      // "Ofertas do Dia" = só mineradas/validadas por padrão; nunca mostra "testando"
-      // a menos que o usuário explicitamente escolha "Todos" no filtro de escala.
+      // Filtro de escala: "todos" mostra tudo; "escalados" esconde "testando";
+      // "escaladissimo" mostra só o topo da régua.
       if (scale === "escalados" && o.status === "testando") return false;
       if (scale === "escaladissimo" && o.status !== "escaladissimo") return false;
       if (query && !`${o.page} ${o.headline}`.toLowerCase().includes(query.toLowerCase()))
@@ -104,6 +104,8 @@ function Page() {
   const escaladas = offers.filter((o) => o.status === "escaladissimo").length;
   const crescendo = offers.filter((o) => o.status === "escalado").length;
   const testando = offers.filter((o) => o.status === "testando").length;
+  // Soma dos anúncios ativos de todas as ofertas visíveis (card de anúncios monitorados).
+  const totalAds = offers.reduce((sum, o) => sum + o.activeAds, 0);
 
   return (
     <AppShell>
@@ -117,11 +119,20 @@ function Page() {
               </h1>
             </div>
             <p className="mt-2 text-sm text-muted-foreground">
-              {offers.length} anúncios monitorados · {escaladas} escaladíssimas ·{" "}
+              {offers.length} ofertas monitoradas · {escaladas} escaladíssimas ·{" "}
               {crescendo} escalado · {testando} testando
             </p>
           </div>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2 sm:items-end">
+            <div className="flex w-full items-center justify-between gap-2 rounded-lg border border-border bg-card px-3 py-1.5 sm:w-auto sm:justify-end sm:gap-3">
+              <span className="font-display text-base font-bold leading-none text-foreground">
+                {totalAds.toLocaleString("pt-BR")}
+              </span>
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                anúncios monitorados
+              </span>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative w-full sm:w-72">
               <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <input
@@ -149,6 +160,7 @@ function Page() {
               )}
               <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", filtersOpen && "rotate-180")} />
             </button>
+            </div>
           </div>
         </div>
 
