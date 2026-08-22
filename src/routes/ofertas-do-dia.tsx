@@ -160,6 +160,7 @@ function Page() {
               )}
               <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", filtersOpen && "rotate-180")} />
             </button>
+            </div>
           </div>
         </div>
 
