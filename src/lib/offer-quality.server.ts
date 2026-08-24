@@ -152,3 +152,88 @@ export async function runQualityDryRun(
     examples,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Fase 2: gravação real da classificação. Toca SOMENTE commercial_quality,
+// quality_reasons e quality_checked_at (via RPC offers_set_quality).
+// Nunca altera visible, qualified, is_active ou qualquer outro campo.
+// ---------------------------------------------------------------------------
+export interface QualityApplyReport {
+  totalAnalyzed: number;
+  written: number;
+  commercial: number;
+  suspicious: number;
+  entertainment: number;
+  notAnalyzed: number;
+}
+
+const APPLY_CHUNK = 500;
+
+export async function applyQualityClassification(
+  admin: SupabaseClient,
+): Promise<QualityApplyReport> {
+  // 1) Todos os ids de ofertas (paginado).
+  const ids: string[] = [];
+  for (let from = 0; ; from += IDS_PAGE) {
+    const { data, error } = await admin
+      .from("offers")
+      .select("id")
+      .order("id")
+      .range(from, from + IDS_PAGE - 1);
+    if (error) throw new Error(`apply ids: ${error.message}`);
+    for (const row of data ?? []) ids.push((row as { id: string }).id);
+    if (!data || data.length < IDS_PAGE) break;
+  }
+
+  // 2) Snapshot em lotes + classificação + gravação em lotes.
+  const counts = { commercial: 0, suspicious: 0, entertainment: 0, notAnalyzed: 0 };
+  let written = 0;
+  let pending: { id: string; q: CommercialQuality; reasons: string[] }[] = [];
+
+  const flush = async () => {
+    if (pending.length === 0) return;
+    const { data, error } = await admin.rpc("offers_set_quality", {
+      p_rows: pending,
+    });
+    if (error) throw new Error(`set_quality rpc: ${error.message}`);
+    written += typeof data === "number" ? data : pending.length;
+    pending = [];
+  };
+
+  for (let i = 0; i < ids.length; i += SNAPSHOT_CHUNK) {
+    const chunk = ids.slice(i, i + SNAPSHOT_CHUNK);
+    const { data, error } = await admin.rpc("offers_quality_snapshot", {
+      p_ids: chunk,
+    });
+    if (error) throw new Error(`snapshot rpc: ${error.message}`);
+
+    for (const row of (data ?? []) as unknown as SnapshotRow[]) {
+      const ads: OfferAdEvidence[] = (row.ads ?? []).map((a) => ({
+        headline: a.headline,
+        description: a.description,
+        linkUrl: a.link_url,
+      }));
+      const result = classifyOfferQuality({
+        pageName: row.page_name,
+        productTitle: row.product_title,
+        landingKey: row.landing_key,
+        category: row.category,
+        language: row.language,
+        adsCount: row.ads_count,
+        activeDays: row.active_days,
+        ads,
+      });
+
+      if (result.quality === null) {
+        counts.notAnalyzed += 1;
+        continue; // sem evidência: colunas permanecem NULL
+      }
+      counts[result.quality] += 1;
+      pending.push({ id: row.id, q: result.quality, reasons: result.reasons });
+      if (pending.length >= APPLY_CHUNK) await flush();
+    }
+  }
+  await flush();
+
+  return { totalAnalyzed: ids.length, written, ...counts };
+}

@@ -1133,6 +1133,7 @@ export type Database = {
       }
       offers_recompute: { Args: { p_ids?: string[] }; Returns: undefined }
       offers_refresh_visibility: { Args: never; Returns: number }
+      offers_set_quality: { Args: { p_rows: Json }; Returns: number }
       try_advance_run_phase: {
         Args: { p_from_phase: string; p_run_id: string; p_to_phase: string }
         Returns: boolean
