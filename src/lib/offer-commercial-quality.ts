@@ -11,6 +11,7 @@
 import {
   BRACKET_MARKER,
   hasDramaHook,
+  isCtaOnlyFromGenericPage,
   isWatchAppPromo,
   normalizeText,
 } from "./category-scoring";
@@ -65,6 +66,11 @@ const ENTERTAINMENT_DOMAINS = [
   "webnovel",
   "moboreader",
   "anystories",
+  "flickreels",
+  "reelstv",
+  "dramanow",
+  "dramacool",
+  "netshort",
 ];
 
 function hostLooksEntertainment(host: string): string | null {
@@ -200,6 +206,9 @@ export function classifyOfferQuality(input: OfferQualityInput): OfferQualityResu
   const bracketMatch = rawText.match(BRACKET_MARKER);
   if (bracketMatch) decisive.add(`marcador_dublagem:${(bracketMatch[1] ?? "").toLowerCase()}`);
   if (isWatchAppPromo(rawText)) decisive.add("promo_app_assistir");
+  if (isCtaOnlyFromGenericPage(input.productTitle ?? "", input.pageName ?? "")) {
+    decisive.add("cta_generico_pagina_aleatoria");
+  }
 
   // --- Sinais fortes --------------------------------------------------------
   for (const { p, re } of STRONG_PHRASE_RES) {
