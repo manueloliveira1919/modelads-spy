@@ -214,6 +214,10 @@ const ENTERTAINMENT_WORDS = [
   "dramabox",
   "shortmax",
   "curta drama",
+  "flickreels",
+  "stardusttv",
+  "keep watching",
+  "curtas-metragens",
 ];
 
 // 1) Marcador entre parênteses/colchetes: "(Dublagem)", "[Dublado]",
@@ -223,12 +227,15 @@ export const BRACKET_MARKER =
 
 // 2) Gancho de reviravolta dramática: cláusula de humilhação/traição/segredo
 //    + cláusula de reação dramática.
+// Vocabulário ampliado com a "gramática" de dorama/mini-drama traduzido
+// (apps tipo ReelShort/DramaBox): "Era Apenas a Babá... Até Virar a Esposa",
+// "esconde um segredo mortal", "a rival a queria morta", "Taxado de X, volta pra...".
 const DRAMA_TRIGGER =
-  /\b(tra[ií]d[ao]|tra[ií][çc][ãa]o|humilhad[ao]|humilha[çc][ãa]o|abandonad[ao]|despreza[dr]|rejeitad[ao]|expulsa? de casa|descobri?(?:u)? que|ningu[ée]m sabia|todos riram|zombaram|me chamaram de)\b/i;
+  /\b(tra[ií]d[ao]|tra[ií][çc][ãa]o|humilhad[ao]|humilha[çc][ãa]o|abandonad[ao]|despreza[dr]|rejeitad[ao]|expulsa? de casa|descobri?(?:u)? que|ningu[ée]m sabia|todos riram|zombaram|me chamaram de|taxad[ao] de|era apenas a|esconde um segredo|guarda um segredo|segredo mortal|casamento for[çc]ado|casa perdida)\b/i;
 const DRAMA_REACTION =
-  /\b(deu o troco|dei o troco|vingan[çc]a|se vingou|me vinguei|virou (?:a mesa|o jogo)|voltou (?:milion[áa]ri[ao]|rica?|poderos[ao])|decidi|decido|ela (?:se tornou|virou)|ele (?:se tornou|virou)|herda?(?:ou|ram)? (?:uma )?fortuna|bilion[áa]ri[ao]|milion[áa]ri[ao]|ceo)\b/i;
+  /\b(deu o troco|dei o troco|vingan[çc]a|se vingou|me vinguei|virou (?:a mesa|o jogo)|voltou (?:milion[áa]ri[ao]|rica?|poderos[ao])|decidi|decido|ela (?:se tornou|virou)|ele (?:se tornou|virou)|herda?(?:ou|ram)? (?:uma )?fortuna|bilion[áa]ri[ao]|milion[áa]ri[ao]|ceo|a rival|o que (?:ela|ele) far[áa]|volta pra destruir|volta para destruir)\b/i;
 const DRAMA_ROLE =
-  /\b(ceo|bilion[áa]ri[ao]|milion[áa]ri[ao]|patr[ãa]o|patroa|marido|esposa|ex[- ]marido|ex[- ]esposa|madrasta|sogra|empregada|faxineira|herdeir[ao]|noiv[ao]|amante)\b/i;
+  /\b(ceo|bilion[áa]ri[ao]|milion[áa]ri[ao]|patr[ãa]o|patroa|marido|esposa|ex[- ]marido|ex[- ]esposa|madrasta|sogra|empregada|faxineira|bab[áa]|herdeir[ao]|noiv[ao]|amante|filho ingrato|filha ingrata|rival)\b/i;
 
 export function hasDramaHook(headline: string): boolean {
   const t = headline || "";
@@ -239,16 +246,45 @@ export function hasDramaHook(headline: string): boolean {
 }
 
 // 3) Nome de página genérico (pessoa comum ou identificador aleatório).
-function isGenericPageName(pageName: string): boolean {
+// Publishers de dorama/reels rotacionam nomes de página tipo "Srsz01-GGBoY-CX",
+// "Ns-ZQlam-24", "Ai-RasterReels" — vários segmentos separados por hífen, com
+// mistura de letra+número, sequência de maiúsculas sem cara de sigla, ou
+// caractere fora do alfabeto latino básico (CJK, emoji no meio do nome).
+function looksLikeRandomToken(tok: string): boolean {
+  if (!tok) return false;
+  if (/[^\x00-\x7F]/.test(tok)) return true;
+  if (/\d/.test(tok) && /[a-z]/i.test(tok)) return true;
+  if (/^\d{2,4}$/.test(tok)) return true;
+  if (/^[A-Z]{4,}$/.test(tok)) return true;
+  return false;
+}
+
+export function isGenericPageName(pageName: string): boolean {
   const name = (pageName || "").trim();
   if (!name) return false;
-  // Identificador aleatório: "NS-fhll0702", "New-reading", "abc_2201"
+  const hyphenParts = name.split(/[-_]/).map((p) => p.trim()).filter(Boolean);
+  if (hyphenParts.length >= 2 && hyphenParts.some(looksLikeRandomToken)) return true;
+  // Identificador aleatório clássico: "NS-fhll0702", "New-reading", "abc_2201"
   if (/^[A-Za-z]{1,6}[-_][A-Za-z0-9]{3,}$/.test(name)) return true;
   if (/^[A-Za-z]+\d{3,}$/.test(name)) return true;
   // Nome próprio simples (2 palavras capitalizadas, sem marca/negócio)
   const words = name.split(/\s+/);
   if (words.length === 2 && words.every((w) => /^[A-Z][a-zà-ú]{2,}$/.test(w))) return true;
   return false;
+}
+
+// 3b) Headline que é só um CTA de vídeo ("Continuar", "Ver mais", "Saiba mais")
+// sem nenhum texto de venda ao redor — típico de anúncio em vídeo de app de
+// dorama/reels, onde a copy real está só no vídeo e o texto extraído é o botão.
+// Só conta como sinal quando a página também é genérica (evita bloquear um
+// anunciante real que usou "Saiba mais" como CTA de uma página de marca normal).
+const CTA_ONLY_HEADLINE =
+  /^(continuar|continue|ver mais|saiba mais|assista|assistir|clique aqui|toque aqui|abrir|baixe agora|baixar agora)[.…!]?$/i;
+
+export function isCtaOnlyFromGenericPage(headline: string, pageName: string): boolean {
+  const h = (headline || "").trim();
+  if (!h || !CTA_ONLY_HEADLINE.test(h)) return false;
+  return isGenericPageName(pageName);
 }
 
 const ROMANCE_WORDS =
@@ -286,6 +322,10 @@ export function isEntertainmentNoise(input: EntertainmentInput | string): boolea
   // 1b) Propaganda de app de dramas/novelas — reprova sempre.
   if (isWatchAppPromo(haystack)) return true;
 
+  // 1c) Headline só de CTA ("Continuar") + página com nome de padrão gerado
+  // automaticamente — reprova sempre. Não depende de nenhuma palavra de
+  // entretenimento aparecer no texto (que muitas vezes está só no vídeo).
+  if (isCtaOnlyFromGenericPage(headline, pageName)) return true;
 
   // Vocabulário clássico de entretenimento.
   let hits = 0;
