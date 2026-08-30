@@ -457,10 +457,29 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   // confiança). Nada é apagado — ofertas fracas apenas saem da vitrine e
   // voltam sozinhas se melhorarem em ciclos seguintes.
   let visibleOffers: number | null = null;
+  let qualityChecked: number | null = null;
   if (runDetails["closes_cycle"] === true) {
     const { data: vis, error: visErr } = await supabase.rpc("offers_refresh_visibility");
     if (visErr) console.error("offers_refresh_visibility error", visErr.message);
     else visibleOffers = Number(vis ?? 0);
+
+    // Classificador forte (frases/domínios de entretenimento + gancho dramático)
+    // roda por cima do acervo inteiro no fim do ciclo e grava commercial_quality.
+    // list_active_offers já usa esse campo como trava extra além do offer_is_entertainment
+    // em SQL — os dois se complementam em vez de depender só de um.
+    try {
+      const { applyQualityClassification } = await import("@/lib/offer-quality.server");
+      const report = await applyQualityClassification(supabase);
+      qualityChecked = report.written;
+      await jobLog(supabase, job.run_id, "quality.apply", `qualidade: ${report.written} ofertas classificadas (${report.entertainment} entretenimento, ${report.suspicious} suspeitas)`, {
+        commercial: report.commercial,
+        suspicious: report.suspicious,
+        entertainment: report.entertainment,
+        not_analyzed: report.notAnalyzed,
+      });
+    } catch (err) {
+      console.error("applyQualityClassification error", (err as Error).message);
+    }
   }
 
   const { data: pagesSeen } = await supabase.rpc("mining_count_pages_seen", { p_run_id: job.run_id });
@@ -486,6 +505,7 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
       cycle: runDetails["cycle"] ?? null,
       closes_cycle: runDetails["closes_cycle"] === true,
       visible_offers: visibleOffers,
+      quality_checked: qualityChecked,
     },
   });
 
