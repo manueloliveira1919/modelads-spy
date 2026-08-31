@@ -222,7 +222,7 @@ async function processSnapshotJob(supabase: any, job: MetaRefreshJob) {
 async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
   const { loadActiveBlacklist, loadCategoryVocabulary, loadMiningSettings, buildBlacklistMatcher } =
     await import("@/lib/mining-config.server");
-  const { pickCategory, isEntertainmentNoise } = await import("@/lib/category-scoring");
+  const { pickCategory, isEntertainmentNoise, looksLikePortuguese } = await import("@/lib/category-scoring");
 
   const adIds = job.payload.ad_archive_ids as string[];
 
@@ -250,22 +250,50 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
   const rowsToUpsert: Record<string, unknown>[] = [];
   const skipped = { blacklist: 0, language: 0, category: 0, duplicate: 0, noLanding: 0, lowRelevance: 0, entertainment: 0 };
 
+  // Extrai a primeira URL "de verdade" (não facebook.com) solta dentro de um texto.
+  // Última rede de segurança quando nem snapshot nem link_caption vieram.
+  const extractUrlFromText = (text: string): string | null => {
+    const matches = text.match(/https?:\/\/[^\s)"]+|(?:^|\s)((?:www\.)?[a-z0-9-]+\.[a-z]{2,}(?:\.[a-z]{2,})?(?:\/[^\s)"]*)?)/gi);
+    if (!matches) return null;
+    for (const raw of matches) {
+      const candidate = raw.trim().replace(/^www\./i, "");
+      const url = candidate.startsWith("http") ? candidate : `https://${candidate}`;
+      try {
+        const host = new URL(url).hostname;
+        if (host && !/facebook\.com$|fb\.com$|instagram\.com$/i.test(host) && host.includes(".")) {
+          return url;
+        }
+      } catch {
+        continue;
+      }
+    }
+    return null;
+  };
+
   for (const raw of rawRes.data ?? []) {
     try {
       const ad = raw.raw as MetaAdItem;
       const snapshot = snapshotByAd.get(raw.ad_archive_id);
       // A Meta passou a bloquear a leitura do snapshot (retorna página de erro),
       // então o domínio do anúncio (link caption) é a fonte principal de destino.
+      // Quando nem isso vem, tenta achar uma URL solta no texto do anúncio antes
+      // de desistir e cair no agrupamento por título (que trava a oferta sem link
+      // pra sempre — ver offer_group_key).
       const caption = ad.ad_creative_link_captions?.[0]?.trim() ?? "";
       const captionLink = caption
         ? caption.startsWith("http")
           ? caption
           : `https://${caption.replace(/^\/+/, "")}`
         : null;
+      const bodyLink = captionLink
+        ? null
+        : extractUrlFromText(
+            `${ad.ad_creative_bodies?.[0] ?? ""} ${ad.ad_creative_link_descriptions?.[0] ?? ""}`,
+          );
       const media = {
         imageUrl: snapshot?.image_url ?? null,
         videoUrl: snapshot?.video_url ?? null,
-        linkUrl: snapshot?.link_url ?? captionLink,
+        linkUrl: snapshot?.link_url ?? captionLink ?? bodyLink,
       };
 
       const bodyText = ad.ad_creative_bodies?.[0] ?? "";
@@ -279,7 +307,12 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
         continue;
       }
 
-      const language = normalizeAdLanguage(ad.languages, raw.language_hint);
+      // A Meta erra a detecção de idioma com frequência em textos curtos/com
+      // emoji. Se o texto do próprio anúncio tem marcadores exclusivos de
+      // português, confia nele em vez da tag "languages" da Meta.
+      const detectedLanguage = normalizeAdLanguage(ad.languages, raw.language_hint);
+      const language =
+        detectedLanguage !== "PT" && looksLikePortuguese(fullText) ? "PT" : detectedLanguage;
       if (allowedLangs.size && !allowedLangs.has(language) && !allowedLangs.has("BR")) {
         if (!(allowedLangs.has("BR") && language === "PT")) {
           skipped.language++;
@@ -458,7 +491,16 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   // voltam sozinhas se melhorarem em ciclos seguintes.
   let visibleOffers: number | null = null;
   let qualityChecked: number | null = null;
+  let mergedOffers: number | null = null;
   if (runDetails["closes_cycle"] === true) {
+    // Funde ofertas órfãs (nasceram sem link, agrupadas por título) com a
+    // oferta certa da mesma página quando o título já apareceu antes com
+    // link. Sem isso, ofertas comerciais legítimas ficam presas fora da
+    // vitrine indefinidamente por causa de offer_group_key's fallback.
+    const { data: mergedCount, error: mergeErr } = await supabase.rpc("offers_merge_duplicates");
+    if (mergeErr) console.error("offers_merge_duplicates error", mergeErr.message);
+    else mergedOffers = Number(mergedCount ?? 0);
+
     const { data: vis, error: visErr } = await supabase.rpc("offers_refresh_visibility");
     if (visErr) console.error("offers_refresh_visibility error", visErr.message);
     else visibleOffers = Number(vis ?? 0);
@@ -506,6 +548,7 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
       closes_cycle: runDetails["closes_cycle"] === true,
       visible_offers: visibleOffers,
       quality_checked: qualityChecked,
+      merged_offers: mergedOffers,
     },
   });
 
