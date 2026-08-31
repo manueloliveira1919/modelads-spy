@@ -2,6 +2,20 @@
 // A categoria da oferta deixa de vir do termo pesquisado e passa a ser decidida
 // pelo texto completo do anúncio comparado ao vocabulário de cada categoria.
 
+// Detector leve de português — usado como segunda opinião quando o campo
+// "languages" da Meta vem preenchido mas provavelmente errado (comum em
+// textos curtos/cheios de emoji, onde a detecção automática deles falha).
+// Só marcadores exclusivos do português (não existem em espanhol/inglês),
+// pra não gerar falso positivo.
+const PT_MARKERS = /\b(voc[êe]s?|n[ãa]o|ent[ãa]o|tamb[ée]m|cora[çc][ãa]o|informa[çc][ãa]o|a[çc][ãa]o|aten[çc][ãa]o|op[çc][ãa]o|paix[ãa]o|liga[çc][ãa]o|solu[çc][ãa]o)\b/i;
+
+export function looksLikePortuguese(text: string): boolean {
+  const t = text || "";
+  const hits = (t.match(PT_MARKERS) || []).length;
+  const tilCount = (t.match(/[ãõ]/gi) || []).length;
+  return hits >= 1 || tilCount >= 2;
+}
+
 export function normalizeText(s: string): string {
   return (s || "")
     .normalize("NFD")
