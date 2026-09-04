@@ -466,6 +466,7 @@ export type Database = {
           confidence: number
           created_at: string
           first_ad_start: string | null
+          first_qualified_at: string | null
           first_seen: string
           group_key: string
           id: string
@@ -493,6 +494,7 @@ export type Database = {
           confidence?: number
           created_at?: string
           first_ad_start?: string | null
+          first_qualified_at?: string | null
           first_seen?: string
           group_key: string
           id?: string
@@ -520,6 +522,7 @@ export type Database = {
           confidence?: number
           created_at?: string
           first_ad_start?: string | null
+          first_qualified_at?: string | null
           first_seen?: string
           group_key?: string
           id?: string
@@ -929,7 +932,7 @@ export type Database = {
         }
       }
       list_active_offers: {
-        Args: never
+        Args: { p_sort?: string }
         Returns: {
           active_ads_count: number
           active_days: number
@@ -1103,8 +1106,22 @@ export type Database = {
         Args: { p_link: string; p_page_id: string; p_title: string }
         Returns: string
       }
-      offer_is_entertainment: {
-        Args: { p_landing: string; p_page: string; p_title: string }
+      offer_is_entertainment:
+        | {
+            Args: { p_landing: string; p_page: string; p_title: string }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              p_desc?: string
+              p_landing: string
+              p_page: string
+              p_title: string
+            }
+            Returns: boolean
+          }
+      offer_is_whatsapp: {
+        Args: { p_link: string; p_text: string }
         Returns: boolean
       }
       offer_norm_link: { Args: { p: string }; Returns: string }
@@ -1115,6 +1132,7 @@ export type Database = {
       }
       offer_title_tokens: { Args: { p: string }; Returns: string[] }
       offers_attach_ads: { Args: { p_rows: Json }; Returns: Json }
+      offers_merge_duplicates: { Args: never; Returns: number }
       offers_quality_snapshot: {
         Args: { p_ids?: string[] }
         Returns: {
@@ -1156,12 +1174,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1185,11 +1203,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1210,11 +1228,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1235,11 +1253,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1252,11 +1270,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
