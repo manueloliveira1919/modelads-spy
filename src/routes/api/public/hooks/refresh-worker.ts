@@ -492,21 +492,25 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   let visibleOffers: number | null = null;
   let qualityChecked: number | null = null;
   let mergedOffers: number | null = null;
+
+  // Funde ofertas órfãs (nasceram sem link, agrupadas por título) com a
+  // oferta certa da mesma página quando o título já apareceu antes com
+  // link, e recalcula visibilidade — roda em TODA run (parcial ou completa).
+  // É leve o suficiente pra isso, e sem rodar toda vez a fragmentação
+  // (mesma página com várias ofertas pequenas) se acumula entre uma
+  // fusão e outra, especialmente com muitas palavras-chave novas.
+  const { data: mergedCount, error: mergeErr } = await supabase.rpc("offers_merge_duplicates");
+  if (mergeErr) console.error("offers_merge_duplicates error", mergeErr.message);
+  else mergedOffers = Number(mergedCount ?? 0);
+
+  const { data: vis, error: visErr } = await supabase.rpc("offers_refresh_visibility");
+  if (visErr) console.error("offers_refresh_visibility error", visErr.message);
+  else visibleOffers = Number(vis ?? 0);
+
   if (runDetails["closes_cycle"] === true) {
-    // Funde ofertas órfãs (nasceram sem link, agrupadas por título) com a
-    // oferta certa da mesma página quando o título já apareceu antes com
-    // link. Sem isso, ofertas comerciais legítimas ficam presas fora da
-    // vitrine indefinidamente por causa de offer_group_key's fallback.
-    const { data: mergedCount, error: mergeErr } = await supabase.rpc("offers_merge_duplicates");
-    if (mergeErr) console.error("offers_merge_duplicates error", mergeErr.message);
-    else mergedOffers = Number(mergedCount ?? 0);
-
-    const { data: vis, error: visErr } = await supabase.rpc("offers_refresh_visibility");
-    if (visErr) console.error("offers_refresh_visibility error", visErr.message);
-    else visibleOffers = Number(vis ?? 0);
-
     // Classificador forte (frases/domínios de entretenimento + gancho dramático)
     // roda por cima do acervo inteiro no fim do ciclo e grava commercial_quality.
+    // Esse sim fica restrito ao fechamento de ciclo — é mais custoso que a fusão.
     // list_active_offers já usa esse campo como trava extra além do offer_is_entertainment
     // em SQL — os dois se complementam em vez de depender só de um.
     try {
