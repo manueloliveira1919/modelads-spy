@@ -12,6 +12,8 @@ import {
 } from "@/lib/quiz-session";
 import type { QuizElement, QuizSection, QuizSettings, OptionItem } from "@/lib/quiz-types";
 
+type Sx = Record<string, string | number | boolean | undefined>;
+
 export type RunnerDevice = "desktop" | "tablet" | "mobile";
 
 const DEVICE_WIDTH: Record<RunnerDevice, number> = {
@@ -86,20 +88,20 @@ function PrimaryButton({
 }: {
   label: string;
   settings: QuizSettings;
-  st?: Record<string, any>;
+  st?: Sx;
   onClick: () => void;
 }) {
   const s = st ?? {};
   const full = (s.width || settings.button.width) === "full";
   return (
-    <div style={{ textAlign: s.align || "center" }}>
+    <div style={{ textAlign: (s.align as React.CSSProperties["textAlign"]) || "center" }}>
       <button
         type="button"
         onClick={onClick}
         className="transition-transform active:scale-[.98]"
         style={{
-          backgroundColor: s.bg || settings.colors.button,
-          color: s.color || settings.colors.buttonText,
+          backgroundColor: (s.bg as string) || settings.colors.button,
+          color: (s.color as string) || settings.colors.buttonText,
           borderRadius: Number(s.radius ?? settings.button.radius),
           minHeight: Math.max(48, settings.button.height),
           fontSize: Number(s.size) || 16,
@@ -175,7 +177,10 @@ export function QuizRunner({
       const k = answerKey(sectionId, elementId);
       const prev = s.answers[k];
       const values = prev && prev.type === "fields" ? prev.values : {};
-      return { ...s, answers: { ...s.answers, [k]: { type: "fields", values: { ...values, [key]: value } } } };
+      return {
+        ...s,
+        answers: { ...s.answers, [k]: { type: "fields", values: { ...values, [key]: value } } },
+      };
     });
   };
 
@@ -183,7 +188,7 @@ export function QuizRunner({
     if (!section) return false;
     for (const el of section.elements) {
       if (el.type !== "options") continue;
-      const st = el.settings as Record<string, any>;
+      const st = el.settings as Sx;
       if (!st.required) continue;
       const ans = session.answers[answerKey(section.id, el.id)] as OptionsAnswer | undefined;
       if (!ans || ans.optionIds.length === 0) {
@@ -200,10 +205,7 @@ export function QuizRunner({
     go(1);
   }, [validate, isLast, go]);
 
-  const hasButton = useMemo(
-    () => !!section?.elements.some((e) => e.type === "button"),
-    [section],
-  );
+  const hasButton = useMemo(() => !!section?.elements.some((e) => e.type === "button"), [section]);
 
   if (!section) {
     return (
@@ -214,8 +216,8 @@ export function QuizRunner({
   }
 
   const renderElement = (el: QuizElement) => {
-    const st = el.settings as Record<string, any>;
-    const ct = el.content as Record<string, any>;
+    const st = el.settings as Sx;
+    const ct = el.content as Record<string, unknown>;
 
     switch (el.type) {
       case "text":
@@ -225,20 +227,23 @@ export function QuizRunner({
             style={{
               fontSize: Number(st.size) || 16,
               fontWeight: Number(st.weight) || 400,
-              textAlign: st.align || "center",
-              color: st.color || settings.colors.text,
+              textAlign: (st.align as React.CSSProperties["textAlign"]) || "center",
+              color: (st.color as string) || settings.colors.text,
               marginBottom: Number(st.spacing) || 0,
               lineHeight: 1.35,
             }}
           >
-            {ct.text || ""}
+            {String(ct.text ?? "")}
           </p>
         );
       case "image":
         return ct.url ? (
-          <div key={el.id} style={{ textAlign: st.align || "center" }}>
+          <div
+            key={el.id}
+            style={{ textAlign: (st.align as React.CSSProperties["textAlign"]) || "center" }}
+          >
             <img
-              src={ct.url}
+              src={String(ct.url)}
               alt=""
               loading="lazy"
               style={{
@@ -289,7 +294,7 @@ export function QuizRunner({
           <div key={el.id} className="flex flex-col gap-3">
             {ct.description ? (
               <p className="text-center text-sm" style={{ color: `${settings.colors.text}AA` }}>
-                {ct.description}
+                {String(ct.description)}
               </p>
             ) : null}
             {options.map((o) => {
@@ -334,7 +339,12 @@ export function QuizRunner({
                       background: active ? settings.colors.primary : "transparent",
                     }}
                   >
-                    {active && <Check className="h-3.5 w-3.5" style={{ color: settings.colors.buttonText }} />}
+                    {active && (
+                      <Check
+                        className="h-3.5 w-3.5"
+                        style={{ color: settings.colors.buttonText }}
+                      />
+                    )}
                   </span>
                 </button>
               );
@@ -376,8 +386,8 @@ export function QuizRunner({
             style={{
               fontSize: Number(st.size) || 14,
               fontWeight: Number(st.weight) || 600,
-              color: st.color || settings.colors.secondary,
-              textAlign: st.align || "center",
+              color: (st.color as string) || settings.colors.secondary,
+              textAlign: (st.align as React.CSSProperties["textAlign"]) || "center",
             }}
           >
             {percent}% concluído

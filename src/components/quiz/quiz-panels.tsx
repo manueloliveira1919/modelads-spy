@@ -200,7 +200,11 @@ function ElementEditor({
               />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Tamanho" value={Number(st.size)} onChange={(v) => setSt({ size: v })} />
+              <NumberField
+                label="Tamanho"
+                value={Number(st.size)}
+                onChange={(v) => setSt({ size: v })}
+              />
               <SelectField
                 label="Peso"
                 value={String(st.weight ?? 400)}
@@ -260,9 +264,22 @@ function ElementEditor({
               />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Largura (%)" value={Number(st.width)} onChange={(v) => setSt({ width: v })} max={100} />
-              <NumberField label="Altura (px, 0 = auto)" value={Number(st.height)} onChange={(v) => setSt({ height: v })} />
-              <NumberField label="Arredondamento" value={Number(st.radius)} onChange={(v) => setSt({ radius: v })} />
+              <NumberField
+                label="Largura (%)"
+                value={Number(st.width)}
+                onChange={(v) => setSt({ width: v })}
+                max={100}
+              />
+              <NumberField
+                label="Altura (px, 0 = auto)"
+                value={Number(st.height)}
+                onChange={(v) => setSt({ height: v })}
+              />
+              <NumberField
+                label="Arredondamento"
+                value={Number(st.radius)}
+                onChange={(v) => setSt({ radius: v })}
+              />
               <SelectField
                 label="Alinhamento"
                 value={String(st.align ?? "center")}
@@ -283,17 +300,29 @@ function ElementEditor({
                 className="h-9"
               />
             </Field>
-            <NumberField label="Arredondamento" value={Number(st.radius)} onChange={(v) => setSt({ radius: v })} />
+            <NumberField
+              label="Arredondamento"
+              value={Number(st.radius)}
+              onChange={(v) => setSt({ radius: v })}
+            />
           </>
         )}
 
         {el.type === "button" && (
           <>
             <Field label="Texto">
-              <Input value={ct.label ?? ""} onChange={(e) => setCt({ label: e.target.value })} className="h-9" />
+              <Input
+                value={ct.label ?? ""}
+                onChange={(e) => setCt({ label: e.target.value })}
+                className="h-9"
+              />
             </Field>
             <div className="grid grid-cols-2 gap-3">
-              <NumberField label="Tamanho do texto" value={Number(st.size)} onChange={(v) => setSt({ size: v })} />
+              <NumberField
+                label="Tamanho do texto"
+                value={Number(st.size)}
+                onChange={(v) => setSt({ size: v })}
+              />
               <SelectField
                 label="Largura"
                 value={String(st.width ?? "full")}
@@ -309,10 +338,24 @@ function ElementEditor({
                 options={ALIGN_OPTIONS}
                 onChange={(v) => setSt({ align: v })}
               />
-              <NumberField label="Arredondamento" value={Number(st.radius)} onChange={(v) => setSt({ radius: v })} />
+              <NumberField
+                label="Arredondamento"
+                value={Number(st.radius)}
+                onChange={(v) => setSt({ radius: v })}
+              />
             </div>
-            <ColorField label="Cor do botão" value={String(st.bg ?? "")} fallback="#6D7CFF" onChange={(v) => setSt({ bg: v })} />
-            <ColorField label="Cor do texto" value={String(st.color ?? "")} fallback="#FFFFFF" onChange={(v) => setSt({ color: v })} />
+            <ColorField
+              label="Cor do botão"
+              value={String(st.bg ?? "")}
+              fallback="#6D7CFF"
+              onChange={(v) => setSt({ bg: v })}
+            />
+            <ColorField
+              label="Cor do texto"
+              value={String(st.color ?? "")}
+              fallback="#FFFFFF"
+              onChange={(v) => setSt({ color: v })}
+            />
             <p className="text-[11px] text-muted-foreground">
               A ação/URL do botão será configurada nas próximas fases.
             </p>
@@ -346,62 +389,64 @@ function ElementEditor({
             </Field>
 
             <div className="space-y-2">
-              {((ct.options ?? []) as { id: string; label: string; image?: string }[]).map((o, i, arr) => {
-                const update = (patch: Record<string, unknown>) => {
-                  const next = [...arr];
-                  next[i] = { ...o, ...patch };
-                  setCt({ options: next });
-                };
-                const move = (dir: -1 | 1) => {
-                  const target = i + dir;
-                  if (target < 0 || target >= arr.length) return;
-                  const next = [...arr];
-                  const [item] = next.splice(i, 1);
-                  next.splice(target, 0, item);
-                  setCt({ options: next });
-                };
-                return (
-                  <div key={o.id} className="space-y-2 rounded-lg border border-border p-2">
-                    <div className="flex items-center gap-1.5">
+              {((ct.options ?? []) as { id: string; label: string; image?: string }[]).map(
+                (o, i, arr) => {
+                  const update = (patch: Record<string, unknown>) => {
+                    const next = [...arr];
+                    next[i] = { ...o, ...patch };
+                    setCt({ options: next });
+                  };
+                  const move = (dir: -1 | 1) => {
+                    const target = i + dir;
+                    if (target < 0 || target >= arr.length) return;
+                    const next = [...arr];
+                    const [item] = next.splice(i, 1);
+                    next.splice(target, 0, item);
+                    setCt({ options: next });
+                  };
+                  return (
+                    <div key={o.id} className="space-y-2 rounded-lg border border-border p-2">
+                      <div className="flex items-center gap-1.5">
+                        <Input
+                          value={o.label}
+                          onChange={(e) => update({ label: e.target.value })}
+                          className="h-9"
+                        />
+                        <button
+                          type="button"
+                          aria-label="Mover opção para cima"
+                          onClick={() => move(-1)}
+                          className="rounded p-1 text-muted-foreground hover:text-foreground"
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Mover opção para baixo"
+                          onClick={() => move(1)}
+                          className="rounded p-1 text-muted-foreground hover:text-foreground"
+                        >
+                          ↓
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Remover opção"
+                          onClick={() => setCt({ options: arr.filter((x) => x.id !== o.id) })}
+                          className="rounded p-1.5 text-muted-foreground hover:text-destructive"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                       <Input
-                        value={o.label}
-                        onChange={(e) => update({ label: e.target.value })}
-                        className="h-9"
+                        value={o.image ?? ""}
+                        placeholder="URL da imagem (opcional)"
+                        onChange={(e) => update({ image: e.target.value })}
+                        className="h-8 text-xs"
                       />
-                      <button
-                        type="button"
-                        aria-label="Mover opção para cima"
-                        onClick={() => move(-1)}
-                        className="rounded p-1 text-muted-foreground hover:text-foreground"
-                      >
-                        ↑
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Mover opção para baixo"
-                        onClick={() => move(1)}
-                        className="rounded p-1 text-muted-foreground hover:text-foreground"
-                      >
-                        ↓
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Remover opção"
-                        onClick={() => setCt({ options: arr.filter((x) => x.id !== o.id) })}
-                        className="rounded p-1.5 text-muted-foreground hover:text-destructive"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </button>
                     </div>
-                    <Input
-                      value={o.image ?? ""}
-                      placeholder="URL da imagem (opcional)"
-                      onChange={(e) => update({ image: e.target.value })}
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                );
-              })}
+                  );
+                },
+              )}
               <Button
                 type="button"
                 variant="outline"
@@ -410,7 +455,10 @@ function ElementEditor({
                   setCt({
                     options: [
                       ...((ct.options ?? []) as { id: string; label: string }[]),
-                      { id: uid(), label: `Opção ${(((ct.options as unknown[]) ?? []).length ?? 0) + 1}` },
+                      {
+                        id: uid(),
+                        label: `Opção ${(((ct.options as unknown[]) ?? []).length ?? 0) + 1}`,
+                      },
                     ],
                   })
                 }
@@ -423,27 +471,29 @@ function ElementEditor({
 
         {el.type === "fields" && (
           <div className="space-y-2">
-            {((ct.fields ?? []) as { key: string; label: string; enabled: boolean }[]).map((f, i) => (
-              <div key={f.key} className="flex items-center gap-2">
-                <Input
-                  value={f.label}
-                  onChange={(e) => {
-                    const next = [...(ct.fields as any[])];
-                    next[i] = { ...f, label: e.target.value };
-                    setCt({ fields: next });
-                  }}
-                  className="h-9"
-                />
-                <Switch
-                  checked={f.enabled}
-                  onCheckedChange={(v) => {
-                    const next = [...(ct.fields as any[])];
-                    next[i] = { ...f, enabled: v };
-                    setCt({ fields: next });
-                  }}
-                />
-              </div>
-            ))}
+            {((ct.fields ?? []) as { key: string; label: string; enabled: boolean }[]).map(
+              (f, i) => (
+                <div key={f.key} className="flex items-center gap-2">
+                  <Input
+                    value={f.label}
+                    onChange={(e) => {
+                      const next = [...(ct.fields as any[])];
+                      next[i] = { ...f, label: e.target.value };
+                      setCt({ fields: next });
+                    }}
+                    className="h-9"
+                  />
+                  <Switch
+                    checked={f.enabled}
+                    onCheckedChange={(v) => {
+                      const next = [...(ct.fields as any[])];
+                      next[i] = { ...f, enabled: v };
+                      setCt({ fields: next });
+                    }}
+                  />
+                </div>
+              ),
+            )}
             <p className="text-[11px] text-muted-foreground">
               A captura de leads será ativada nas próximas fases.
             </p>
@@ -452,15 +502,29 @@ function ElementEditor({
 
         {el.type === "percentage" && (
           <div className="grid grid-cols-2 gap-3">
-            <NumberField label="Tamanho" value={Number(st.size)} onChange={(v) => setSt({ size: v })} />
-            <NumberField label="Peso" value={Number(st.weight)} onChange={(v) => setSt({ weight: v })} max={900} />
+            <NumberField
+              label="Tamanho"
+              value={Number(st.size)}
+              onChange={(v) => setSt({ size: v })}
+            />
+            <NumberField
+              label="Peso"
+              value={Number(st.weight)}
+              onChange={(v) => setSt({ weight: v })}
+              max={900}
+            />
             <SelectField
               label="Alinhamento"
               value={String(st.align ?? "center")}
               options={ALIGN_OPTIONS}
               onChange={(v) => setSt({ align: v })}
             />
-            <ColorField label="Cor" value={String(st.color ?? "")} fallback="#1DB8FF" onChange={(v) => setSt({ color: v })} />
+            <ColorField
+              label="Cor"
+              value={String(st.color ?? "")}
+              fallback="#1DB8FF"
+              onChange={(v) => setSt({ color: v })}
+            />
           </div>
         )}
 
@@ -505,7 +569,11 @@ export function SectionProperties({
   return (
     <div className="space-y-4">
       <Field label="Nome da seção">
-        <Input value={section.title} onChange={(e) => onChange({ title: e.target.value })} className="h-9" />
+        <Input
+          value={section.title}
+          onChange={(e) => onChange({ title: e.target.value })}
+          className="h-9"
+        />
       </Field>
 
       <div className="space-y-2">
@@ -517,9 +585,7 @@ export function SectionProperties({
             key={el.id}
             el={el}
             onChange={(patch) => setElement(el.id, patch)}
-            onRemove={() =>
-              onChange({ elements: section.elements.filter((e) => e.id !== el.id) })
-            }
+            onRemove={() => onChange({ elements: section.elements.filter((e) => e.id !== el.id) })}
             onMove={(dir) => moveElement(el.id, dir)}
           />
         ))}
@@ -602,7 +668,9 @@ export function AppearancePanel({
         <Field label="URL da imagem de fundo">
           <Input
             value={settings.background.imageUrl}
-            onChange={(e) => onChange({ background: { ...settings.background, imageUrl: e.target.value } })}
+            onChange={(e) =>
+              onChange({ background: { ...settings.background, imageUrl: e.target.value } })
+            }
             className="h-9"
           />
         </Field>
@@ -686,7 +754,9 @@ export function AppearancePanel({
           <Label className="text-xs text-muted-foreground">Mostrar porcentagem</Label>
           <Switch
             checked={settings.progress.showPercentage}
-            onCheckedChange={(v) => onChange({ progress: { ...settings.progress, showPercentage: v } })}
+            onCheckedChange={(v) =>
+              onChange({ progress: { ...settings.progress, showPercentage: v } })
+            }
           />
         </div>
         <div className="grid grid-cols-2 gap-3">

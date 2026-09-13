@@ -82,11 +82,7 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 
 function EditorPage() {
   return (
-    <ProGate
-      icon={HelpCircle}
-      title="Modelar Quiz"
-      description="Editor visual do seu quiz."
-    >
+    <ProGate icon={HelpCircle} title="Modelar Quiz" description="Editor visual do seu quiz.">
       <EditorContent />
     </ProGate>
   );
@@ -126,19 +122,16 @@ function EditorContent() {
     };
   }, [id]);
 
-  const persist = useCallback(
-    async (q: Quiz, s: QuizSection[]) => {
-      setSaveState("saving");
-      try {
-        await saveQuiz(q, s);
-        dirtyRef.current = false;
-        setSaveState("saved");
-      } catch {
-        setSaveState("error");
-      }
-    },
-    [],
-  );
+  const persist = useCallback(async (q: Quiz, s: QuizSection[]) => {
+    setSaveState("saving");
+    try {
+      await saveQuiz(q, s);
+      dirtyRef.current = false;
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
+  }, []);
 
   // autosave com debounce
   useEffect(() => {
@@ -222,7 +215,10 @@ function EditorContent() {
     () => sections.find((s) => s.id === selectedId) ?? null,
     [sections, selectedId],
   );
-  const selectedIndex = Math.max(0, sections.findIndex((s) => s.id === selectedId));
+  const selectedIndex = Math.max(
+    0,
+    sections.findIndex((s) => s.id === selectedId),
+  );
 
   if (loadError) {
     return (
@@ -395,7 +391,14 @@ function EditorContent() {
         />
         <SaveIndicator state={saveState} />
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => { setRunKey((k) => k + 1); setPreviewMode(true); }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setRunKey((k) => k + 1);
+              setPreviewMode(true);
+            }}
+          >
             <Eye className="mr-1.5 h-4 w-4" /> Visualizar
           </Button>
           <Button

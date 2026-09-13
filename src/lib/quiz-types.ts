@@ -63,15 +63,32 @@ export const DEFAULT_QUIZ_SETTINGS: QuizSettings = {
   progress: { enabled: true, showPercentage: true, thickness: 8, radius: 999, style: "gradient" },
 };
 
-export interface TextContent { text: string }
-export interface ImageContent { url: string }
-export interface VideoContent { url: string }
-export interface ButtonContent { label: string }
-export interface OptionItem { id: string; label: string; image?: string }
-export interface OptionsContent { description?: string; options: OptionItem[] }
+export interface TextContent {
+  text: string;
+}
+export interface ImageContent {
+  url: string;
+}
+export interface VideoContent {
+  url: string;
+}
+export interface ButtonContent {
+  label: string;
+}
+export interface OptionItem {
+  id: string;
+  label: string;
+  image?: string;
+}
+export interface OptionsContent {
+  description?: string;
+  options: OptionItem[];
+}
 /** Tipos de resposta suportados (arquitetura preparada para novos tipos). */
 export type QuestionSelection = "single" | "multiple";
-export interface FieldsContent { fields: { key: "name" | "email" | "whatsapp"; label: string; enabled: boolean }[] }
+export interface FieldsContent {
+  fields: { key: "name" | "email" | "whatsapp"; label: string; enabled: boolean }[];
+}
 
 export interface QuizElement {
   id: string;
@@ -139,7 +156,10 @@ export function makeElement(
   content: Record<string, unknown> = {},
   settings: Record<string, unknown> = {},
 ): QuizElement {
-  const base: Record<ElementType, { content: Record<string, unknown>; settings: Record<string, unknown> }> = {
+  const base: Record<
+    ElementType,
+    { content: Record<string, unknown>; settings: Record<string, unknown> }
+  > = {
     text: {
       content: { text: "Escreva seu texto aqui" },
       settings: { size: 18, weight: 500, align: "center", color: "", spacing: 8 },
@@ -208,19 +228,30 @@ export function makeSection(
     elements: [],
   };
 
-  const push = (t: ElementType, content?: Record<string, unknown>, settings?: Record<string, unknown>) =>
-    section.elements.push(makeElement(id, t, section.elements.length, content, settings));
+  const push = (
+    t: ElementType,
+    content?: Record<string, unknown>,
+    settings?: Record<string, unknown>,
+  ) => section.elements.push(makeElement(id, t, section.elements.length, content, settings));
 
   switch (type) {
     case "cover":
       push("text", { text: "Descubra em 1 minuto" }, { size: 32, weight: 700 });
-      push("text", { text: "Responda algumas perguntas rápidas e receba um resultado personalizado." }, { size: 16, weight: 400 });
+      push(
+        "text",
+        { text: "Responda algumas perguntas rápidas e receba um resultado personalizado." },
+        { size: 16, weight: 400 },
+      );
       push("image");
       push("button", { label: "Começar agora" });
       break;
     case "content":
       push("text", { text: "Título do conteúdo" }, { size: 26, weight: 700 });
-      push("text", { text: "Use este espaço para explicar, contextualizar ou criar conexão." }, { size: 16, weight: 400 });
+      push(
+        "text",
+        { text: "Use este espaço para explicar, contextualizar ou criar conexão." },
+        { size: 16, weight: 400 },
+      );
       push("image");
       push("video");
       break;
@@ -231,7 +262,11 @@ export function makeSection(
       break;
     case "result":
       push("text", { text: "Seu resultado está pronto!" }, { size: 28, weight: 700 });
-      push("text", { text: "Com base nas suas respostas, preparamos a melhor recomendação para você." }, { size: 16, weight: 400 });
+      push(
+        "text",
+        { text: "Com base nas suas respostas, preparamos a melhor recomendação para você." },
+        { size: 16, weight: 400 },
+      );
       push("image");
       push("button", { label: "Quero minha recomendação" });
       break;
@@ -305,7 +340,10 @@ export const QUIZ_TEMPLATES: QuizTemplate[] = [
   },
 ];
 
-export function buildSectionsFromTemplate(quizId: string, templateKey: string | null): QuizSection[] {
+export function buildSectionsFromTemplate(
+  quizId: string,
+  templateKey: string | null,
+): QuizSection[] {
   if (!templateKey) {
     return [makeSection(quizId, "cover", 0)];
   }
