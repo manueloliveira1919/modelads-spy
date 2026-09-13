@@ -383,9 +383,11 @@ export function QuizRunner({
             label={String(ct.label || "Continuar")}
             settings={settings}
             st={st}
-            onClick={advance}
+            loading={saving}
+            onClick={() => runCta(el)}
           />
         );
+
       case "options": {
         const multiple = st.selection === "multiple";
         const ans = session.answers[answerKey(section.id, el.id)] as OptionsAnswer | undefined;
@@ -458,14 +460,33 @@ export function QuizRunner({
         const values = ans && ans.type === "fields" ? ans.values : {};
         return (
           <div key={el.id} className="flex flex-col gap-3">
-            {((ct.fields ?? []) as { key: string; label: string; enabled: boolean }[])
+            {(
+              (ct.fields ?? []) as {
+                key: string;
+                label: string;
+                enabled: boolean;
+                required?: boolean;
+              }[]
+            )
               .filter((f) => f.enabled)
               .map((f) => (
                 <input
                   key={f.key}
                   value={values[f.key] ?? ""}
-                  placeholder={f.label}
-                  onChange={(e) => setField(section.id, el.id, f.key, e.target.value)}
+                  placeholder={f.required === false ? f.label : `${f.label} *`}
+                  type={f.key === "email" ? "email" : f.key === "whatsapp" ? "tel" : "text"}
+                  inputMode={f.key === "whatsapp" ? "numeric" : undefined}
+                  autoComplete={
+                    f.key === "email" ? "email" : f.key === "name" ? "name" : "tel-national"
+                  }
+                  onChange={(e) =>
+                    setField(
+                      section.id,
+                      el.id,
+                      f.key,
+                      f.key === "whatsapp" ? maskPhone(e.target.value) : e.target.value,
+                    )
+                  }
                   className="w-full bg-transparent outline-none"
                   style={{
                     border: `1px solid ${settings.colors.text}33`,
@@ -480,6 +501,7 @@ export function QuizRunner({
           </div>
         );
       }
+
       case "percentage":
         return (
           <div
