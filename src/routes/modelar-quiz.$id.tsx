@@ -135,8 +135,11 @@ function EditorContent() {
       await saveQuiz(q, s);
       dirtyRef.current = false;
       setSaveState("saved");
-    } catch {
+      return true;
+    } catch (e) {
       setSaveState("error");
+      if (e instanceof SlugTakenError) toast.error("Este endereço já está sendo utilizado.");
+      return false;
     }
   }, []);
 
@@ -455,10 +458,10 @@ function EditorContent() {
           <Button
             variant="secondary"
             size="sm"
-            disabled={saveState === "saving"}
+            disabled={saveState === "saving" || slugBlocked}
             onClick={async () => {
-              await persist(quiz, sections);
-              toast.success("Quiz salvo.");
+              const ok = await persist(quiz, sections);
+              if (ok) toast.success("Quiz salvo.");
             }}
           >
             Salvar
@@ -466,13 +469,27 @@ function EditorContent() {
           <Button
             size="sm"
             className="bg-gradient-brand text-white"
+            disabled={slugBlocked && quiz.status !== "published"}
             onClick={async () => {
+              const publishing = quiz.status !== "published";
+              if (publishing) {
+                // Revalida o endereço no banco antes de colocar o link no ar.
+                const free = await isSlugAvailable(quiz.slug, quiz.id).catch(() => false);
+                if (!free) {
+                  toast.error("Este endereço já está sendo utilizado. Escolha outro para publicar.");
+                  return;
+                }
+              }
               const next = {
                 ...quiz,
-                status: (quiz.status === "published" ? "draft" : "published") as Quiz["status"],
+                status: (publishing ? "published" : "draft") as Quiz["status"],
               };
               setQuiz(next);
-              await persist(next, sections);
+              const ok = await persist(next, sections);
+              if (!ok) {
+                setQuiz(quiz);
+                return;
+              }
               toast.success(
                 next.status === "published"
                   ? "Quiz publicado. O link já está no ar."
