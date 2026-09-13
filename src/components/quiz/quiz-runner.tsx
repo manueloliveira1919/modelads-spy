@@ -524,15 +524,32 @@ export function QuizRunner({
   };
 
   return (
-    <div className={cn("flex w-full flex-col items-center gap-3", className)}>
+    <div
+      className={cn(
+        "flex w-full flex-col items-center gap-3",
+        fullScreen && "min-h-[100dvh] justify-center px-0 py-0",
+        className,
+      )}
+      style={fullScreen ? backgroundStyle(settings) : undefined}
+    >
       <div
-        className="w-full overflow-hidden rounded-2xl border border-border shadow-2xl"
-        style={{ maxWidth: DEVICE_WIDTH[device], ...backgroundStyle(settings) }}
+        className={cn(
+          "w-full",
+          fullScreen
+            ? "min-h-[100dvh]"
+            : "overflow-hidden rounded-2xl border border-border shadow-2xl",
+        )}
+        style={
+          fullScreen
+            ? undefined
+            : { maxWidth: DEVICE_WIDTH[device], ...backgroundStyle(settings) }
+        }
       >
         <div
           className="mx-auto flex min-h-[460px] w-full flex-col px-5 py-7 sm:px-6"
           style={{
             maxWidth: settings.layout.contentWidth,
+            minHeight: fullScreen ? "100dvh" : undefined,
             fontFamily: `${settings.font}, system-ui, sans-serif`,
             color: settings.colors.text,
           }}
@@ -569,7 +586,12 @@ export function QuizRunner({
 
             {/* Botão padrão quando a seção não tem botão e a navegação precisa continuar */}
             {!hasButton && !isLast && (
-              <PrimaryButton label="Continuar" settings={settings} onClick={advance} />
+              <PrimaryButton
+                label="Continuar"
+                settings={settings}
+                loading={saving}
+                onClick={() => void advance()}
+              />
             )}
           </div>
 
@@ -598,16 +620,19 @@ export function QuizRunner({
         </div>
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span>
-          Etapa {index + 1} de {total}
-        </span>
-        {onExit && (
-          <button type="button" onClick={onExit} className="underline">
-            Fechar
-          </button>
-        )}
-      </div>
+      {!fullScreen && (
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span>
+            Etapa {index + 1} de {total}
+          </span>
+          {onExit && (
+            <button type="button" onClick={onExit} className="underline">
+              Fechar
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
