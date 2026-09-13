@@ -395,7 +395,7 @@ function EditorContent() {
         />
         <SaveIndicator state={saveState} />
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => { setPreviewIndex(selectedIndex); setPreviewMode(true); }}>
+          <Button variant="outline" size="sm" onClick={() => { setRunKey((k) => k + 1); setPreviewMode(true); }}>
             <Eye className="mr-1.5 h-4 w-4" /> Visualizar
           </Button>
           <Button
