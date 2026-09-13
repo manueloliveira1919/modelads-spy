@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { createQuiz, deleteQuiz, duplicateQuiz, listQuizzes } from "@/lib/quiz-api";
+import { useSlugAvailability } from "@/lib/use-slug-availability";
 import { QUIZ_TEMPLATES, slugify, type QuizListItem } from "@/lib/quiz-types";
 
 export const Route = createFileRoute("/modelar-quiz/")({
@@ -281,6 +282,7 @@ function NewQuizDialog({
 
   const autoSlug = useMemo(() => slugify(name), [name]);
   const effectiveSlug = slugTouched ? slug : autoSlug;
+  const slugCheck = useSlugAvailability(effectiveSlug);
 
   const mut = useMutation({
     mutationFn: () =>
