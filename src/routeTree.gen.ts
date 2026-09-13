@@ -39,6 +39,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
+import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
 import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
 import { Route as AdminQualidadeRouteImport } from './routes/admin.qualidade'
 import { Route as AdminPalavrasChaveRouteImport } from './routes/admin.palavras-chave'
@@ -201,6 +202,11 @@ const OfertaIdRoute = OfertaIdRouteImport.update({
   path: '/oferta/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ModelarQuizIdRoute = ModelarQuizIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ModelarQuizRoute,
+} as any)
 const AdminSuporteRoute = AdminSuporteRouteImport.update({
   id: '/suporte',
   path: '/suporte',
@@ -296,6 +302,7 @@ export interface FileRoutesByFullPath {
   '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
+  '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
@@ -337,6 +344,7 @@ export interface FileRoutesByTo {
   '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
+  '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/admin': typeof AdminIndexRoute
   '/modelar-quiz': typeof ModelarQuizIndexRoute
@@ -381,6 +389,7 @@ export interface FileRoutesById {
   '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
+  '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
@@ -426,6 +435,7 @@ export interface FileRouteTypes {
     | '/admin/palavras-chave'
     | '/admin/qualidade'
     | '/admin/suporte'
+    | '/modelar-quiz/$id'
     | '/oferta/$id'
     | '/admin/'
     | '/modelar-quiz/'
@@ -467,6 +477,7 @@ export interface FileRouteTypes {
     | '/admin/palavras-chave'
     | '/admin/qualidade'
     | '/admin/suporte'
+    | '/modelar-quiz/$id'
     | '/oferta/$id'
     | '/admin'
     | '/modelar-quiz'
@@ -510,6 +521,7 @@ export interface FileRouteTypes {
     | '/admin/palavras-chave'
     | '/admin/qualidade'
     | '/admin/suporte'
+    | '/modelar-quiz/$id'
     | '/oferta/$id'
     | '/admin/'
     | '/modelar-quiz/'
@@ -762,6 +774,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OfertaIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/modelar-quiz/$id': {
+      id: '/modelar-quiz/$id'
+      path: '/$id'
+      fullPath: '/modelar-quiz/$id'
+      preLoaderRoute: typeof ModelarQuizIdRouteImport
+      parentRoute: typeof ModelarQuizRoute
+    }
     '/admin/suporte': {
       id: '/admin/suporte'
       path: '/suporte'
@@ -871,10 +890,12 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface ModelarQuizRouteChildren {
+  ModelarQuizIdRoute: typeof ModelarQuizIdRoute
   ModelarQuizIndexRoute: typeof ModelarQuizIndexRoute
 }
 
 const ModelarQuizRouteChildren: ModelarQuizRouteChildren = {
+  ModelarQuizIdRoute: ModelarQuizIdRoute,
   ModelarQuizIndexRoute: ModelarQuizIndexRoute,
 }
 
