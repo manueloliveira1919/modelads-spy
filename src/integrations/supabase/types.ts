@@ -1309,6 +1309,14 @@ export type Database = {
       offers_recompute: { Args: { p_ids?: string[] }; Returns: undefined }
       offers_refresh_visibility: { Args: never; Returns: number }
       offers_set_quality: { Args: { p_rows: Json }; Returns: number }
+      quiz_slug_available: {
+        Args: { p_exclude_id?: string; p_slug: string }
+        Returns: boolean
+      }
+      quiz_suggest_slug: {
+        Args: { p_exclude_id?: string; p_slug: string }
+        Returns: string
+      }
       submit_quiz_lead: {
         Args: {
           p_email?: string
