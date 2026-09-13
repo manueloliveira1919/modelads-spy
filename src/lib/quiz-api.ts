@@ -104,7 +104,9 @@ export async function createQuiz(input: {
   slug: string;
   templateKey: string | null;
 }): Promise<string> {
-  const slug = await uniqueSlug(input.userId, input.slug || input.name);
+  const desired = slugify(input.slug || input.name);
+  // Unicidade global: usa o endereço pedido se estiver livre, senão a primeira alternativa.
+  const slug = desired && (await isSlugAvailable(desired)) ? desired : await uniqueSlug(input.userId, desired || input.name);
   const quizId = uid();
 
   const { error } = await db(QUIZZES).insert({
@@ -115,6 +117,7 @@ export async function createQuiz(input: {
     status: "draft",
     settings: DEFAULT_QUIZ_SETTINGS,
   });
+  if (isUniqueViolation(error)) throw new SlugTakenError();
   if (error) throw error;
 
   const sections = buildSectionsFromTemplate(quizId, input.templateKey);
@@ -196,14 +199,19 @@ export async function loadQuiz(quizId: string): Promise<{ quiz: Quiz; sections: 
 }
 
 export async function saveQuiz(quiz: Quiz, sections: QuizSection[]): Promise<void> {
+  const slug = slugify(quiz.slug);
+  if (!slug) throw new SlugTakenError();
+  if (!(await isSlugAvailable(slug, quiz.id))) throw new SlugTakenError();
+
   const { error } = await db(QUIZZES)
     .update({
       name: quiz.name,
-      slug: quiz.slug,
+      slug,
       status: quiz.status,
       settings: quiz.settings,
     })
     .eq("id", quiz.id);
+  if (isUniqueViolation(error)) throw new SlugTakenError();
   if (error) throw error;
 
   // Seções: upsert das atuais + remoção das que saíram.
