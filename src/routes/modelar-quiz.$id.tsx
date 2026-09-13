@@ -13,6 +13,7 @@ import {
   Monitor,
   Plus,
   Rocket,
+  RotateCcw,
   Smartphone,
   Tablet,
   Trash2,
@@ -34,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { QuizPreview, type PreviewDevice } from "@/components/quiz/quiz-preview";
+import { QuizRunner } from "@/components/quiz/quiz-runner";
 import { AppearancePanel, SectionProperties } from "@/components/quiz/quiz-panels";
 import { loadQuiz, saveQuiz } from "@/lib/quiz-api";
 import {
@@ -80,11 +82,7 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 
 function EditorPage() {
   return (
-    <ProGate
-      icon={HelpCircle}
-      title="Modelar Quiz"
-      description="Editor visual do seu quiz."
-    >
+    <ProGate icon={HelpCircle} title="Modelar Quiz" description="Editor visual do seu quiz.">
       <EditorContent />
     </ProGate>
   );
@@ -103,7 +101,7 @@ function EditorContent() {
   const [loadError, setLoadError] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<"secoes" | "preview" | "propriedades">("preview");
   const [previewMode, setPreviewMode] = useState(search.preview === 1);
-  const [previewIndex, setPreviewIndex] = useState(0);
+  const [runKey, setRunKey] = useState(0);
   const [dragId, setDragId] = useState<string | null>(null);
 
   const dirtyRef = useRef(false);
@@ -124,19 +122,16 @@ function EditorContent() {
     };
   }, [id]);
 
-  const persist = useCallback(
-    async (q: Quiz, s: QuizSection[]) => {
-      setSaveState("saving");
-      try {
-        await saveQuiz(q, s);
-        dirtyRef.current = false;
-        setSaveState("saved");
-      } catch {
-        setSaveState("error");
-      }
-    },
-    [],
-  );
+  const persist = useCallback(async (q: Quiz, s: QuizSection[]) => {
+    setSaveState("saving");
+    try {
+      await saveQuiz(q, s);
+      dirtyRef.current = false;
+      setSaveState("saved");
+    } catch {
+      setSaveState("error");
+    }
+  }, []);
 
   // autosave com debounce
   useEffect(() => {
@@ -220,7 +215,10 @@ function EditorContent() {
     () => sections.find((s) => s.id === selectedId) ?? null,
     [sections, selectedId],
   );
-  const selectedIndex = Math.max(0, sections.findIndex((s) => s.id === selectedId));
+  const selectedIndex = Math.max(
+    0,
+    sections.findIndex((s) => s.id === selectedId),
+  );
 
   if (loadError) {
     return (
@@ -247,32 +245,16 @@ function EditorContent() {
           </Button>
           <DeviceSwitch device={device} onChange={setDevice} />
         </div>
-        <QuizPreview
-          section={sections[previewIndex] ?? null}
+        <QuizRunner
+          key={runKey}
+          quizId={quiz.id}
+          sections={sections}
           settings={quiz.settings}
           device={device}
-          index={previewIndex}
-          total={sections.length}
         />
-        <div className="flex items-center justify-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={previewIndex === 0}
-            onClick={() => setPreviewIndex((i) => i - 1)}
-          >
-            Anterior
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            {sections.length === 0 ? 0 : previewIndex + 1} / {sections.length}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={previewIndex >= sections.length - 1}
-            onClick={() => setPreviewIndex((i) => i + 1)}
-          >
-            Próxima
+        <div className="flex items-center justify-center">
+          <Button variant="outline" size="sm" onClick={() => setRunKey((k) => k + 1)}>
+            <RotateCcw className="mr-1.5 h-4 w-4" /> Reiniciar quiz
           </Button>
         </div>
       </div>
@@ -409,7 +391,14 @@ function EditorContent() {
         />
         <SaveIndicator state={saveState} />
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => { setPreviewIndex(selectedIndex); setPreviewMode(true); }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setRunKey((k) => k + 1);
+              setPreviewMode(true);
+            }}
+          >
             <Eye className="mr-1.5 h-4 w-4" /> Visualizar
           </Button>
           <Button
