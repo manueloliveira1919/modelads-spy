@@ -247,32 +247,16 @@ function EditorContent() {
           </Button>
           <DeviceSwitch device={device} onChange={setDevice} />
         </div>
-        <QuizPreview
-          section={sections[previewIndex] ?? null}
+        <QuizRunner
+          key={runKey}
+          quizId={quiz.id}
+          sections={sections}
           settings={quiz.settings}
           device={device}
-          index={previewIndex}
-          total={sections.length}
         />
-        <div className="flex items-center justify-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={previewIndex === 0}
-            onClick={() => setPreviewIndex((i) => i - 1)}
-          >
-            Anterior
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            {sections.length === 0 ? 0 : previewIndex + 1} / {sections.length}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={previewIndex >= sections.length - 1}
-            onClick={() => setPreviewIndex((i) => i + 1)}
-          >
-            Próxima
+        <div className="flex items-center justify-center">
+          <Button variant="outline" size="sm" onClick={() => setRunKey((k) => k + 1)}>
+            <RotateCcw className="mr-1.5 h-4 w-4" /> Reiniciar quiz
           </Button>
         </div>
       </div>

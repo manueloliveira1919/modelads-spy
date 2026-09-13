@@ -320,47 +320,104 @@ function ElementEditor({
         )}
 
         {el.type === "options" && (
-          <div className="space-y-2">
-            {((ct.options ?? []) as { id: string; label: string }[]).map((o, i) => (
-              <div key={o.id} className="flex items-center gap-2">
-                <Input
-                  value={o.label}
-                  onChange={(e) => {
-                    const next = [...(ct.options as { id: string; label: string }[])];
-                    next[i] = { ...o, label: e.target.value };
-                    setCt({ options: next });
-                  }}
-                  className="h-9"
-                />
-                <button
-                  type="button"
-                  aria-label="Remover opção"
-                  onClick={() =>
-                    setCt({
-                      options: (ct.options as { id: string }[]).filter((x) => x.id !== o.id),
-                    })
-                  }
-                  className="rounded p-1.5 text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() =>
-                setCt({
-                  options: [
-                    ...((ct.options ?? []) as { id: string; label: string }[]),
-                    { id: uid(), label: `Opção ${(((ct.options as unknown[]) ?? []).length ?? 0) + 1}` },
-                  ],
-                })
-              }
-            >
-              <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar opção
-            </Button>
+          <div className="space-y-3">
+            <SelectField
+              label="Tipo de resposta"
+              value={String(st.selection ?? "single")}
+              options={[
+                { value: "single", label: "Seleção única" },
+                { value: "multiple", label: "Múltipla seleção" },
+              ]}
+              onChange={(v) => setSt({ selection: v })}
+            />
+            <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
+              <Label className="text-xs">Pergunta obrigatória</Label>
+              <Switch
+                checked={st.required !== false}
+                onCheckedChange={(v) => setSt({ required: v })}
+              />
+            </div>
+            <Field label="Descrição (opcional)">
+              <Textarea
+                value={ct.description ?? ""}
+                rows={2}
+                onChange={(e) => setCt({ description: e.target.value })}
+              />
+            </Field>
+
+            <div className="space-y-2">
+              {((ct.options ?? []) as { id: string; label: string; image?: string }[]).map((o, i, arr) => {
+                const update = (patch: Record<string, unknown>) => {
+                  const next = [...arr];
+                  next[i] = { ...o, ...patch };
+                  setCt({ options: next });
+                };
+                const move = (dir: -1 | 1) => {
+                  const target = i + dir;
+                  if (target < 0 || target >= arr.length) return;
+                  const next = [...arr];
+                  const [item] = next.splice(i, 1);
+                  next.splice(target, 0, item);
+                  setCt({ options: next });
+                };
+                return (
+                  <div key={o.id} className="space-y-2 rounded-lg border border-border p-2">
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        value={o.label}
+                        onChange={(e) => update({ label: e.target.value })}
+                        className="h-9"
+                      />
+                      <button
+                        type="button"
+                        aria-label="Mover opção para cima"
+                        onClick={() => move(-1)}
+                        className="rounded p-1 text-muted-foreground hover:text-foreground"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Mover opção para baixo"
+                        onClick={() => move(1)}
+                        className="rounded p-1 text-muted-foreground hover:text-foreground"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Remover opção"
+                        onClick={() => setCt({ options: arr.filter((x) => x.id !== o.id) })}
+                        className="rounded p-1.5 text-muted-foreground hover:text-destructive"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                    <Input
+                      value={o.image ?? ""}
+                      placeholder="URL da imagem (opcional)"
+                      onChange={(e) => update({ image: e.target.value })}
+                      className="h-8 text-xs"
+                    />
+                  </div>
+                );
+              })}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setCt({
+                    options: [
+                      ...((ct.options ?? []) as { id: string; label: string }[]),
+                      { id: uid(), label: `Opção ${(((ct.options as unknown[]) ?? []).length ?? 0) + 1}` },
+                    ],
+                  })
+                }
+              >
+                <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar opção
+              </Button>
+            </div>
           </div>
         )}
 
