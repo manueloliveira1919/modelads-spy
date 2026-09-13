@@ -87,8 +87,14 @@ export interface OptionsContent {
 /** Tipos de resposta suportados (arquitetura preparada para novos tipos). */
 export type QuestionSelection = "single" | "multiple";
 export interface FieldsContent {
-  fields: { key: "name" | "email" | "whatsapp"; label: string; enabled: boolean }[];
+  fields: {
+    key: "name" | "email" | "whatsapp";
+    label: string;
+    enabled: boolean;
+    required?: boolean;
+  }[];
 }
+
 
 export interface QuizElement {
   id: string;
