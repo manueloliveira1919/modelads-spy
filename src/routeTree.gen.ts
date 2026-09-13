@@ -36,6 +36,7 @@ import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
@@ -185,6 +186,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ModelarQuizIndexRoute = ModelarQuizIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ModelarQuizRoute,
+} as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -269,7 +275,7 @@ export interface FileRoutesByFullPath {
   '/minha-conta': typeof MinhaContaRoute
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
-  '/modelar-quiz': typeof ModelarQuizRoute
+  '/modelar-quiz': typeof ModelarQuizRouteWithChildren
   '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
@@ -292,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/admin/suporte': typeof AdminSuporteRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
   '/api/public/hooks/refresh-worker': typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -310,7 +317,6 @@ export interface FileRoutesByTo {
   '/minha-conta': typeof MinhaContaRoute
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
-  '/modelar-quiz': typeof ModelarQuizRoute
   '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
@@ -333,6 +339,7 @@ export interface FileRoutesByTo {
   '/admin/suporte': typeof AdminSuporteRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/admin': typeof AdminIndexRoute
+  '/modelar-quiz': typeof ModelarQuizIndexRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
   '/api/public/hooks/refresh-worker': typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -353,7 +360,7 @@ export interface FileRoutesById {
   '/minha-conta': typeof MinhaContaRoute
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
-  '/modelar-quiz': typeof ModelarQuizRoute
+  '/modelar-quiz': typeof ModelarQuizRouteWithChildren
   '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
@@ -376,6 +383,7 @@ export interface FileRoutesById {
   '/admin/suporte': typeof AdminSuporteRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/admin/': typeof AdminIndexRoute
+  '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
   '/api/public/hooks/refresh-worker': typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -420,6 +428,7 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/oferta/$id'
     | '/admin/'
+    | '/modelar-quiz/'
     | '/api/public/hooks/refresh-offers'
     | '/api/public/hooks/refresh-worker'
   fileRoutesByTo: FileRoutesByTo
@@ -438,7 +447,6 @@ export interface FileRouteTypes {
     | '/minha-conta'
     | '/modela-spy-ai'
     | '/modelar-oferta'
-    | '/modelar-quiz'
     | '/modelar-whatsapp'
     | '/ofertas'
     | '/ofertas-do-dia'
@@ -461,6 +469,7 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/oferta/$id'
     | '/admin'
+    | '/modelar-quiz'
     | '/api/public/hooks/refresh-offers'
     | '/api/public/hooks/refresh-worker'
   id:
@@ -503,6 +512,7 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/oferta/$id'
     | '/admin/'
+    | '/modelar-quiz/'
     | '/api/public/hooks/refresh-offers'
     | '/api/public/hooks/refresh-worker'
   fileRoutesById: FileRoutesById
@@ -523,7 +533,7 @@ export interface RootRouteChildren {
   MinhaContaRoute: typeof MinhaContaRoute
   ModelaSpyAiRoute: typeof ModelaSpyAiRoute
   ModelarOfertaRoute: typeof ModelarOfertaRoute
-  ModelarQuizRoute: typeof ModelarQuizRoute
+  ModelarQuizRoute: typeof ModelarQuizRouteWithChildren
   ModelarWhatsappRoute: typeof ModelarWhatsappRoute
   OfertasRoute: typeof OfertasRoute
   OfertasDoDiaRoute: typeof OfertasDoDiaRoute
@@ -731,6 +741,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/modelar-quiz/': {
+      id: '/modelar-quiz/'
+      path: '/'
+      fullPath: '/modelar-quiz/'
+      preLoaderRoute: typeof ModelarQuizIndexRouteImport
+      parentRoute: typeof ModelarQuizRoute
+    }
     '/admin/': {
       id: '/admin/'
       path: '/'
@@ -853,6 +870,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface ModelarQuizRouteChildren {
+  ModelarQuizIndexRoute: typeof ModelarQuizIndexRoute
+}
+
+const ModelarQuizRouteChildren: ModelarQuizRouteChildren = {
+  ModelarQuizIndexRoute: ModelarQuizIndexRoute,
+}
+
+const ModelarQuizRouteWithChildren = ModelarQuizRoute._addFileChildren(
+  ModelarQuizRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
@@ -869,7 +898,7 @@ const rootRouteChildren: RootRouteChildren = {
   MinhaContaRoute: MinhaContaRoute,
   ModelaSpyAiRoute: ModelaSpyAiRoute,
   ModelarOfertaRoute: ModelarOfertaRoute,
-  ModelarQuizRoute: ModelarQuizRoute,
+  ModelarQuizRoute: ModelarQuizRouteWithChildren,
   ModelarWhatsappRoute: ModelarWhatsappRoute,
   OfertasRoute: OfertasRoute,
   OfertasDoDiaRoute: OfertasDoDiaRoute,
