@@ -41,10 +41,12 @@ import { cn } from "@/lib/utils";
 import { QuizPreview, type PreviewDevice } from "@/components/quiz/quiz-preview";
 import { QuizRunner } from "@/components/quiz/quiz-runner";
 import { AppearancePanel, SectionProperties } from "@/components/quiz/quiz-panels";
-import { loadQuiz, saveQuiz } from "@/lib/quiz-api";
+import { isSlugAvailable, loadQuiz, saveQuiz, SlugTakenError } from "@/lib/quiz-api";
+import { useSlugAvailability } from "@/lib/use-slug-availability";
 import {
   SECTION_LABEL,
   makeSection,
+  slugify,
   uid,
   type Quiz,
   type QuizSection,
