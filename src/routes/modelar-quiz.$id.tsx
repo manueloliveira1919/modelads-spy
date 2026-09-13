@@ -41,10 +41,12 @@ import { cn } from "@/lib/utils";
 import { QuizPreview, type PreviewDevice } from "@/components/quiz/quiz-preview";
 import { QuizRunner } from "@/components/quiz/quiz-runner";
 import { AppearancePanel, SectionProperties } from "@/components/quiz/quiz-panels";
-import { loadQuiz, saveQuiz } from "@/lib/quiz-api";
+import { isSlugAvailable, loadQuiz, saveQuiz, SlugTakenError } from "@/lib/quiz-api";
+import { useSlugAvailability } from "@/lib/use-slug-availability";
 import {
   SECTION_LABEL,
   makeSection,
+  slugify,
   uid,
   type Quiz,
   type QuizSection,
@@ -108,6 +110,9 @@ function EditorContent() {
   const [runKey, setRunKey] = useState(0);
   const [dragId, setDragId] = useState<string | null>(null);
 
+  const slugCheck = useSlugAvailability(quiz?.slug ?? "", id);
+  const slugBlocked = slugCheck.status === "taken" || slugCheck.status === "empty";
+
   const dirtyRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -132,20 +137,24 @@ function EditorContent() {
       await saveQuiz(q, s);
       dirtyRef.current = false;
       setSaveState("saved");
-    } catch {
+      return true;
+    } catch (e) {
       setSaveState("error");
+      if (e instanceof SlugTakenError) toast.error("Este endereço já está sendo utilizado.");
+      return false;
     }
   }, []);
 
   // autosave com debounce
   useEffect(() => {
     if (!quiz || !dirtyRef.current) return;
+    if (slugCheck.status === "taken" || slugCheck.status === "checking") return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => persist(quiz, sections), 1200);
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [quiz, sections, persist]);
+  }, [quiz, sections, persist, slugCheck.status]);
 
   const touch = () => {
     dirtyRef.current = true;
@@ -398,6 +407,39 @@ function EditorContent() {
           onChange={(e) => updateQuiz({ name: e.target.value })}
           className="h-9 w-full max-w-xs"
         />
+        <div className="flex min-w-[240px] flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">/quiz/</span>
+            <Input
+              value={quiz.slug}
+              onChange={(e) => updateQuiz({ slug: slugify(e.target.value) })}
+              className="h-9 w-full max-w-[200px]"
+              placeholder="endereco-do-quiz"
+            />
+          </div>
+          {slugCheck.status === "taken" && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] text-destructive">
+                ✕ Este endereço já está sendo utilizado
+              </span>
+              {slugCheck.suggestion && (
+                <button
+                  type="button"
+                  className="text-[11px] font-semibold text-brand underline"
+                  onClick={() => updateQuiz({ slug: slugCheck.suggestion! })}
+                >
+                  Usar {slugCheck.suggestion}
+                </button>
+              )}
+            </div>
+          )}
+          {slugCheck.status === "available" && (
+            <span className="text-[11px] text-emerald-400">✓ Endereço disponível</span>
+          )}
+          {slugCheck.status === "empty" && (
+            <span className="text-[11px] text-destructive">Informe um endereço.</span>
+          )}
+        </div>
         <SaveIndicator state={saveState} />
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <Button asChild variant="ghost" size="sm">
@@ -418,10 +460,10 @@ function EditorContent() {
           <Button
             variant="secondary"
             size="sm"
-            disabled={saveState === "saving"}
+            disabled={saveState === "saving" || slugBlocked}
             onClick={async () => {
-              await persist(quiz, sections);
-              toast.success("Quiz salvo.");
+              const ok = await persist(quiz, sections);
+              if (ok) toast.success("Quiz salvo.");
             }}
           >
             Salvar
@@ -429,13 +471,27 @@ function EditorContent() {
           <Button
             size="sm"
             className="bg-gradient-brand text-white"
+            disabled={slugBlocked && quiz.status !== "published"}
             onClick={async () => {
+              const publishing = quiz.status !== "published";
+              if (publishing) {
+                // Revalida o endereço no banco antes de colocar o link no ar.
+                const free = await isSlugAvailable(quiz.slug, quiz.id).catch(() => false);
+                if (!free) {
+                  toast.error("Este endereço já está sendo utilizado. Escolha outro para publicar.");
+                  return;
+                }
+              }
               const next = {
                 ...quiz,
-                status: (quiz.status === "published" ? "draft" : "published") as Quiz["status"],
+                status: (publishing ? "published" : "draft") as Quiz["status"],
               };
               setQuiz(next);
-              await persist(next, sections);
+              const ok = await persist(next, sections);
+              if (!ok) {
+                setQuiz(quiz);
+                return;
+              }
               toast.success(
                 next.status === "published"
                   ? "Quiz publicado. O link já está no ar."

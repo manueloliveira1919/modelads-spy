@@ -60,14 +60,42 @@ export async function listQuizzes(): Promise<QuizListItem[]> {
   }));
 }
 
-async function uniqueSlug(userId: string, base: string): Promise<string> {
-  const root = slugify(base) || "quiz";
-  const { data } = await db(QUIZZES).select("slug").eq("user_id", userId);
-  const taken = new Set<string>((data ?? []).map((r: AnyRow) => r.slug));
-  if (!taken.has(root)) return root;
-  let i = 2;
-  while (taken.has(`${root}-${i}`)) i += 1;
-  return `${root}-${i}`;
+/** Disponibilidade do endereço público — global (todos os usuários). */
+export async function isSlugAvailable(slug: string, excludeId?: string | null): Promise<boolean> {
+  const clean = slugify(slug);
+  if (!clean) return false;
+  const { data, error } = await (supabase as any).rpc("quiz_slug_available", {
+    p_slug: clean,
+    p_exclude_id: excludeId ?? null,
+  });
+  if (error) throw error;
+  return Boolean(data);
+}
+
+/** Sugere um endereço livre a partir de uma base (base, base-2, base-3...). */
+export async function suggestSlug(base: string, excludeId?: string | null): Promise<string> {
+  const clean = slugify(base) || "quiz";
+  const { data, error } = await (supabase as any).rpc("quiz_suggest_slug", {
+    p_slug: clean,
+    p_exclude_id: excludeId ?? null,
+  });
+  if (error) throw error;
+  return (data as string) || clean;
+}
+
+export class SlugTakenError extends Error {
+  constructor() {
+    super("Este endereço já está sendo utilizado.");
+    this.name = "SlugTakenError";
+  }
+}
+
+function isUniqueViolation(error: AnyRow | null): boolean {
+  return Boolean(error && (error.code === "23505" || /duplicate key|quizzes_slug_unique/i.test(String(error.message ?? ""))));
+}
+
+async function uniqueSlug(_userId: string, base: string): Promise<string> {
+  return suggestSlug(base);
 }
 
 export async function createQuiz(input: {
@@ -76,7 +104,9 @@ export async function createQuiz(input: {
   slug: string;
   templateKey: string | null;
 }): Promise<string> {
-  const slug = await uniqueSlug(input.userId, input.slug || input.name);
+  const desired = slugify(input.slug || input.name);
+  // Unicidade global: usa o endereço pedido se estiver livre, senão a primeira alternativa.
+  const slug = desired && (await isSlugAvailable(desired)) ? desired : await uniqueSlug(input.userId, desired || input.name);
   const quizId = uid();
 
   const { error } = await db(QUIZZES).insert({
@@ -87,6 +117,7 @@ export async function createQuiz(input: {
     status: "draft",
     settings: DEFAULT_QUIZ_SETTINGS,
   });
+  if (isUniqueViolation(error)) throw new SlugTakenError();
   if (error) throw error;
 
   const sections = buildSectionsFromTemplate(quizId, input.templateKey);
@@ -168,14 +199,19 @@ export async function loadQuiz(quizId: string): Promise<{ quiz: Quiz; sections: 
 }
 
 export async function saveQuiz(quiz: Quiz, sections: QuizSection[]): Promise<void> {
+  const slug = slugify(quiz.slug);
+  if (!slug) throw new SlugTakenError();
+  if (!(await isSlugAvailable(slug, quiz.id))) throw new SlugTakenError();
+
   const { error } = await db(QUIZZES)
     .update({
       name: quiz.name,
-      slug: quiz.slug,
+      slug,
       status: quiz.status,
       settings: quiz.settings,
     })
     .eq("id", quiz.id);
+  if (isUniqueViolation(error)) throw new SlugTakenError();
   if (error) throw error;
 
   // Seções: upsert das atuais + remoção das que saíram.

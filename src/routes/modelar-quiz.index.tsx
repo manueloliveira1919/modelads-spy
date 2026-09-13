@@ -38,7 +38,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { createQuiz, deleteQuiz, duplicateQuiz, listQuizzes } from "@/lib/quiz-api";
+import {
+  createQuiz,
+  deleteQuiz,
+  duplicateQuiz,
+  listQuizzes,
+  SlugTakenError,
+} from "@/lib/quiz-api";
+import { useSlugAvailability } from "@/lib/use-slug-availability";
 import { QUIZ_TEMPLATES, slugify, type QuizListItem } from "@/lib/quiz-types";
 
 export const Route = createFileRoute("/modelar-quiz/")({
@@ -281,6 +288,7 @@ function NewQuizDialog({
 
   const autoSlug = useMemo(() => slugify(name), [name]);
   const effectiveSlug = slugTouched ? slug : autoSlug;
+  const slugCheck = useSlugAvailability(effectiveSlug);
 
   const mut = useMutation({
     mutationFn: () =>
@@ -295,7 +303,12 @@ function NewQuizDialog({
       onCreated(id);
       toast.success("Quiz criado.");
     },
-    onError: () => toast.error("Não foi possível criar o quiz."),
+    onError: (e: unknown) =>
+      toast.error(
+        e instanceof SlugTakenError
+          ? "Este endereço já está sendo utilizado."
+          : "Não foi possível criar o quiz.",
+      ),
   });
 
   return (
@@ -326,6 +339,36 @@ function NewQuizDialog({
               }}
               placeholder="quiz-de-emagrecimento"
             />
+            {slugCheck.status === "checking" && (
+              <p className="text-xs text-muted-foreground">Verificando endereço…</p>
+            )}
+            {slugCheck.status === "available" && (
+              <p className="text-xs text-emerald-400">✓ Endereço disponível</p>
+            )}
+            {slugCheck.status === "error" && (
+              <p className="text-xs text-muted-foreground">
+                Não foi possível verificar agora. Tente novamente.
+              </p>
+            )}
+            {slugCheck.status === "taken" && (
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs text-destructive">✕ Este endereço já está sendo utilizado</p>
+                {slugCheck.suggestion && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setSlugTouched(true);
+                      setSlug(slugCheck.suggestion!);
+                    }}
+                  >
+                    Usar {slugCheck.suggestion}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -377,7 +420,12 @@ function NewQuizDialog({
             Cancelar
           </Button>
           <Button
-            disabled={!name.trim() || mut.isPending}
+            disabled={
+              !name.trim() ||
+              mut.isPending ||
+              slugCheck.status === "taken" ||
+              slugCheck.status === "checking"
+            }
             onClick={() => mut.mutate()}
             className="bg-gradient-brand text-white"
           >
