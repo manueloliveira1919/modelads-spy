@@ -409,7 +409,12 @@ function NewQuizDialog({
             Cancelar
           </Button>
           <Button
-            disabled={!name.trim() || mut.isPending}
+            disabled={
+              !name.trim() ||
+              mut.isPending ||
+              slugCheck.status === "taken" ||
+              slugCheck.status === "checking"
+            }
             onClick={() => mut.mutate()}
             className="bg-gradient-brand text-white"
           >
