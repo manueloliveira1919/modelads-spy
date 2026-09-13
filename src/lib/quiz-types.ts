@@ -230,7 +230,7 @@ export function makeSection(
       push("text", { text: "Seu resultado está pronto!" }, { size: 28, weight: 700 });
       push("text", { text: "Com base nas suas respostas, preparamos a melhor recomendação para você." }, { size: 16, weight: 400 });
       push("image");
-      push("button", { label: "Quero минha recomendação" });
+      push("button", { label: "Quero minha recomendação" });
       break;
     case "capture":
       push("text", { text: "Para onde enviamos seu resultado?" }, { size: 24, weight: 700 });
