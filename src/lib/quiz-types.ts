@@ -87,8 +87,14 @@ export interface OptionsContent {
 /** Tipos de resposta suportados (arquitetura preparada para novos tipos). */
 export type QuestionSelection = "single" | "multiple";
 export interface FieldsContent {
-  fields: { key: "name" | "email" | "whatsapp"; label: string; enabled: boolean }[];
+  fields: {
+    key: "name" | "email" | "whatsapp";
+    label: string;
+    enabled: boolean;
+    required?: boolean;
+  }[];
 }
+
 
 export interface QuizElement {
   id: string;
@@ -171,8 +177,21 @@ export function makeElement(
     video: { content: { url: "" }, settings: { radius: 16 } },
     button: {
       content: { label: "Continuar" },
-      settings: { size: 16, width: "full", align: "center", bg: "", color: "", radius: 12 },
+      settings: {
+        size: 16,
+        width: "full",
+        align: "center",
+        bg: "",
+        color: "",
+        radius: 12,
+        cta: "none",
+        ctaUrl: "",
+        ctaPhone: "",
+        ctaMessage: "",
+        ctaTarget: "_blank",
+      },
     },
+
     options: {
       content: {
         description: "",
@@ -192,9 +211,10 @@ export function makeElement(
     fields: {
       content: {
         fields: [
-          { key: "name", label: "Nome", enabled: true },
-          { key: "email", label: "E-mail", enabled: true },
-          { key: "whatsapp", label: "WhatsApp", enabled: true },
+          { key: "name", label: "Nome", enabled: true, required: true },
+          { key: "email", label: "E-mail", enabled: true, required: true },
+          { key: "whatsapp", label: "WhatsApp", enabled: true, required: true },
+
         ],
       },
       settings: {},

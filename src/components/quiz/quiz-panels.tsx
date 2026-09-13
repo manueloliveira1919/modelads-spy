@@ -356,9 +356,61 @@ function ElementEditor({
               fallback="#FFFFFF"
               onChange={(v) => setSt({ color: v })}
             />
-            <p className="text-[11px] text-muted-foreground">
-              A ação/URL do botão será configurada nas próximas fases.
-            </p>
+            <div className="space-y-3 rounded-lg border border-border p-3">
+              <SelectField
+                label="Ação do botão"
+                value={String(st.cta ?? "none")}
+                options={[
+                  { value: "none", label: "Avançar no quiz" },
+                  { value: "url", label: "Abrir link" },
+                  { value: "whatsapp", label: "Abrir WhatsApp" },
+                  { value: "checkout", label: "Ir para checkout" },
+                  { value: "sales", label: "Ir para página de vendas" },
+                ]}
+                onChange={(v) => setSt({ cta: v })}
+              />
+              {(st.cta === "url" || st.cta === "checkout" || st.cta === "sales") && (
+                <Field label="URL de destino">
+                  <Input
+                    value={String(st.ctaUrl ?? "")}
+                    placeholder="https://..."
+                    onChange={(e) => setSt({ ctaUrl: e.target.value })}
+                    className="h-9"
+                  />
+                </Field>
+              )}
+              {st.cta === "whatsapp" && (
+                <>
+                  <Field label="Número do WhatsApp (com DDD)">
+                    <Input
+                      value={String(st.ctaPhone ?? "")}
+                      placeholder="11999999999"
+                      onChange={(e) => setSt({ ctaPhone: e.target.value })}
+                      className="h-9"
+                    />
+                  </Field>
+                  <Field label="Mensagem inicial (opcional)">
+                    <Textarea
+                      value={String(st.ctaMessage ?? "")}
+                      rows={2}
+                      onChange={(e) => setSt({ ctaMessage: e.target.value })}
+                    />
+                  </Field>
+                </>
+              )}
+              {st.cta && st.cta !== "none" && (
+                <SelectField
+                  label="Abrir em"
+                  value={String(st.ctaTarget ?? "_blank")}
+                  options={[
+                    { value: "_blank", label: "Nova aba" },
+                    { value: "_self", label: "Mesma aba" },
+                  ]}
+                  onChange={(v) => setSt({ ctaTarget: v })}
+                />
+              )}
+            </div>
+
           </>
         )}
 
@@ -471,9 +523,16 @@ function ElementEditor({
 
         {el.type === "fields" && (
           <div className="space-y-2">
-            {((ct.fields ?? []) as { key: string; label: string; enabled: boolean }[]).map(
-              (f, i) => (
-                <div key={f.key} className="flex items-center gap-2">
+            {(
+              (ct.fields ?? []) as {
+                key: string;
+                label: string;
+                enabled: boolean;
+                required?: boolean;
+              }[]
+            ).map((f, i) => (
+              <div key={f.key} className="space-y-2 rounded-lg border border-border p-2">
+                <div className="flex items-center gap-2">
                   <Input
                     value={f.label}
                     onChange={(e) => {
@@ -492,12 +551,25 @@ function ElementEditor({
                     }}
                   />
                 </div>
-              ),
-            )}
+                <div className="flex items-center justify-between">
+                  <Label className="text-[11px] text-muted-foreground">Obrigatório</Label>
+                  <Switch
+                    checked={f.required !== false}
+                    onCheckedChange={(v) => {
+                      const next = [...(ct.fields as any[])];
+                      next[i] = { ...f, required: v };
+                      setCt({ fields: next });
+                    }}
+                  />
+                </div>
+              </div>
+            ))}
             <p className="text-[11px] text-muted-foreground">
-              A captura de leads será ativada nas próximas fases.
+              Os dados preenchidos aqui viram leads quando o quiz está publicado. No editor nada é
+              salvo.
             </p>
           </div>
+
         )}
 
         {el.type === "percentage" && (

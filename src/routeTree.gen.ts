@@ -38,6 +38,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as QuizSlugRouteImport } from './routes/quiz.$slug'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
 import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
@@ -49,6 +50,7 @@ import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configura
 import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
 import { Route as AdminBlacklistRouteImport } from './routes/admin.blacklist'
+import { Route as ModelarQuizLeadsIdRouteImport } from './routes/modelar-quiz.leads.$id'
 import { Route as ApiPublicHooksRefreshWorkerRouteImport } from './routes/api/public/hooks/refresh-worker'
 import { Route as ApiPublicHooksRefreshOffersRouteImport } from './routes/api/public/hooks/refresh-offers'
 
@@ -197,6 +199,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const QuizSlugRoute = QuizSlugRouteImport.update({
+  id: '/quiz/$slug',
+  path: '/quiz/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OfertaIdRoute = OfertaIdRouteImport.update({
   id: '/oferta/$id',
   path: '/oferta/$id',
@@ -252,6 +259,11 @@ const AdminBlacklistRoute = AdminBlacklistRouteImport.update({
   path: '/blacklist',
   getParentRoute: () => AdminRoute,
 } as any)
+const ModelarQuizLeadsIdRoute = ModelarQuizLeadsIdRouteImport.update({
+  id: '/leads/$id',
+  path: '/leads/$id',
+  getParentRoute: () => ModelarQuizRoute,
+} as any)
 const ApiPublicHooksRefreshWorkerRoute =
   ApiPublicHooksRefreshWorkerRouteImport.update({
     id: '/api/public/hooks/refresh-worker',
@@ -304,8 +316,10 @@ export interface FileRoutesByFullPath {
   '/admin/suporte': typeof AdminSuporteRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/quiz/$slug': typeof QuizSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
+  '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
   '/api/public/hooks/refresh-worker': typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -346,8 +360,10 @@ export interface FileRoutesByTo {
   '/admin/suporte': typeof AdminSuporteRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/quiz/$slug': typeof QuizSlugRoute
   '/admin': typeof AdminIndexRoute
   '/modelar-quiz': typeof ModelarQuizIndexRoute
+  '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
   '/api/public/hooks/refresh-worker': typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -391,8 +407,10 @@ export interface FileRoutesById {
   '/admin/suporte': typeof AdminSuporteRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/quiz/$slug': typeof QuizSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
+  '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
   '/api/public/hooks/refresh-worker': typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -437,8 +455,10 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/quiz/$slug'
     | '/admin/'
     | '/modelar-quiz/'
+    | '/modelar-quiz/leads/$id'
     | '/api/public/hooks/refresh-offers'
     | '/api/public/hooks/refresh-worker'
   fileRoutesByTo: FileRoutesByTo
@@ -479,8 +499,10 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/quiz/$slug'
     | '/admin'
     | '/modelar-quiz'
+    | '/modelar-quiz/leads/$id'
     | '/api/public/hooks/refresh-offers'
     | '/api/public/hooks/refresh-worker'
   id:
@@ -523,8 +545,10 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/quiz/$slug'
     | '/admin/'
     | '/modelar-quiz/'
+    | '/modelar-quiz/leads/$id'
     | '/api/public/hooks/refresh-offers'
     | '/api/public/hooks/refresh-worker'
   fileRoutesById: FileRoutesById
@@ -558,6 +582,7 @@ export interface RootRouteChildren {
   UpgradeRoute: typeof UpgradeRoute
   UtmRoute: typeof UtmRoute
   OfertaIdRoute: typeof OfertaIdRoute
+  QuizSlugRoute: typeof QuizSlugRoute
   ApiPublicHooksRefreshOffersRoute: typeof ApiPublicHooksRefreshOffersRoute
   ApiPublicHooksRefreshWorkerRoute: typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -767,6 +792,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/quiz/$slug': {
+      id: '/quiz/$slug'
+      path: '/quiz/$slug'
+      fullPath: '/quiz/$slug'
+      preLoaderRoute: typeof QuizSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oferta/$id': {
       id: '/oferta/$id'
       path: '/oferta/$id'
@@ -844,6 +876,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBlacklistRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/modelar-quiz/leads/$id': {
+      id: '/modelar-quiz/leads/$id'
+      path: '/leads/$id'
+      fullPath: '/modelar-quiz/leads/$id'
+      preLoaderRoute: typeof ModelarQuizLeadsIdRouteImport
+      parentRoute: typeof ModelarQuizRoute
+    }
     '/api/public/hooks/refresh-worker': {
       id: '/api/public/hooks/refresh-worker'
       path: '/api/public/hooks/refresh-worker'
@@ -892,11 +931,13 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 interface ModelarQuizRouteChildren {
   ModelarQuizIdRoute: typeof ModelarQuizIdRoute
   ModelarQuizIndexRoute: typeof ModelarQuizIndexRoute
+  ModelarQuizLeadsIdRoute: typeof ModelarQuizLeadsIdRoute
 }
 
 const ModelarQuizRouteChildren: ModelarQuizRouteChildren = {
   ModelarQuizIdRoute: ModelarQuizIdRoute,
   ModelarQuizIndexRoute: ModelarQuizIndexRoute,
+  ModelarQuizLeadsIdRoute: ModelarQuizLeadsIdRoute,
 }
 
 const ModelarQuizRouteWithChildren = ModelarQuizRoute._addFileChildren(
@@ -932,6 +973,7 @@ const rootRouteChildren: RootRouteChildren = {
   UpgradeRoute: UpgradeRoute,
   UtmRoute: UtmRoute,
   OfertaIdRoute: OfertaIdRoute,
+  QuizSlugRoute: QuizSlugRoute,
   ApiPublicHooksRefreshOffersRoute: ApiPublicHooksRefreshOffersRoute,
   ApiPublicHooksRefreshWorkerRoute: ApiPublicHooksRefreshWorkerRoute,
 }

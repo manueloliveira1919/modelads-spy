@@ -4,7 +4,9 @@ import {
   ArrowLeft,
   Check,
   Copy,
+  ExternalLink,
   Eye,
+
   GripVertical,
   HelpCircle,
   Image as ImageIcon,
@@ -19,7 +21,9 @@ import {
   Trash2,
   TriangleAlert,
   Type as TypeIcon,
+  Users,
   X,
+
 } from "lucide-react";
 import { toast } from "sonner";
 import { ProGate } from "@/components/pro-gate";
@@ -236,6 +240,11 @@ function EditorContent() {
     return <div className="h-64 animate-pulse rounded-2xl border border-border bg-card/50" />;
   }
 
+  const publicUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/quiz/${quiz.slug}` : `/quiz/${quiz.slug}`;
+
+
+
   if (previewMode) {
     return (
       <div className="space-y-4">
@@ -391,6 +400,11 @@ function EditorContent() {
         />
         <SaveIndicator state={saveState} />
         <div className="ml-auto flex flex-wrap items-center gap-2">
+          <Button asChild variant="ghost" size="sm">
+            <Link to="/modelar-quiz/leads/$id" params={{ id: quiz.id }}>
+              <Users className="mr-1.5 h-4 w-4" /> Leads
+            </Link>
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -423,7 +437,9 @@ function EditorContent() {
               setQuiz(next);
               await persist(next, sections);
               toast.success(
-                next.status === "published" ? "Quiz publicado." : "Quiz voltou para rascunho.",
+                next.status === "published"
+                  ? "Quiz publicado. O link já está no ar."
+                  : "Quiz voltou para rascunho. O link público saiu do ar.",
               );
             }}
           >
@@ -432,6 +448,29 @@ function EditorContent() {
           </Button>
         </div>
       </div>
+
+      {quiz.status === "published" && (
+        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-emerald-500/30 bg-emerald-500/5 p-3 text-sm">
+          <span className="font-medium text-emerald-400">Publicado</span>
+          <code className="truncate rounded bg-muted px-2 py-1 text-xs">{publicUrl}</code>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              void navigator.clipboard.writeText(publicUrl);
+              toast.success("Link copiado");
+            }}
+          >
+            <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar link
+          </Button>
+          <Button asChild variant="ghost" size="sm">
+            <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+              <ExternalLink className="mr-1.5 h-3.5 w-3.5" /> Abrir
+            </a>
+          </Button>
+        </div>
+      )}
+
 
       {/* Mobile / tablet: abas */}
       <div className="lg:hidden">

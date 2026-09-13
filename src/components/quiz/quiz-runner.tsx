@@ -1,8 +1,9 @@
-// Motor de execução do quiz (Fase 2).
-// Renderiza uma seção por vez, guarda respostas na sessão local e controla a navegação.
+// Motor de execução do quiz (Fases 2 e 3).
+// Renderiza uma seção por vez, guarda respostas na sessão local, controla a navegação
+// e — no modo "live" — grava o lead da seção de captura e executa o CTA do resultado.
 
 import { useCallback, useMemo, useState } from "react";
-import { ArrowLeft, Check, RotateCcw } from "lucide-react";
+import { ArrowLeft, Check, Loader2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   answerKey,
@@ -10,7 +11,17 @@ import {
   type OptionsAnswer,
   type QuizSessionState,
 } from "@/lib/quiz-session";
+import {
+  ctaHref,
+  isValidEmail,
+  isValidPhone,
+  maskPhone,
+  readCta,
+  storablePhone,
+} from "@/lib/quiz-conversion";
+import { submitQuizLead } from "@/lib/quiz-public";
 import type { QuizElement, QuizSection, QuizSettings, OptionItem } from "@/lib/quiz-types";
+
 
 type Sx = Record<string, string | number | boolean | undefined>;
 
@@ -84,11 +95,13 @@ function PrimaryButton({
   label,
   settings,
   st,
+  loading = false,
   onClick,
 }: {
   label: string;
   settings: QuizSettings;
   st?: Sx;
+  loading?: boolean;
   onClick: () => void;
 }) {
   const s = st ?? {};
@@ -98,7 +111,8 @@ function PrimaryButton({
       <button
         type="button"
         onClick={onClick}
-        className="transition-transform active:scale-[.98]"
+        disabled={loading}
+        className="inline-flex items-center justify-center gap-2 transition-transform active:scale-[.98] disabled:opacity-70"
         style={{
           backgroundColor: (s.bg as string) || settings.colors.button,
           color: (s.color as string) || settings.colors.buttonText,
@@ -110,17 +124,21 @@ function PrimaryButton({
           padding: full ? "0 16px" : "0 28px",
         }}
       >
+        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {label}
       </button>
     </div>
   );
 }
 
+
 export function QuizRunner({
   sections,
   settings,
   quizId,
   device = "mobile",
+  mode = "preview",
+  fullScreen = false,
   onExit,
   className,
 }: {
@@ -128,12 +146,16 @@ export function QuizRunner({
   settings: QuizSettings;
   quizId: string;
   device?: RunnerDevice;
+  /** "live" grava leads reais; "preview" não toca no banco. */
+  mode?: "preview" | "live";
+  fullScreen?: boolean;
   onExit?: () => void;
   className?: string;
 }) {
   const [session, setSession] = useState<QuizSessionState>(() => newSession(quizId));
   const [error, setError] = useState<string | null>(null);
   const [anim, setAnim] = useState<"in" | "out">("in");
+  const [saving, setSaving] = useState(false);
 
   const total = sections.length;
   const index = Math.min(session.current_section, Math.max(0, total - 1));
@@ -187,23 +209,101 @@ export function QuizRunner({
   const validate = useCallback((): boolean => {
     if (!section) return false;
     for (const el of section.elements) {
-      if (el.type !== "options") continue;
       const st = el.settings as Sx;
-      if (st.required === false) continue;
-      const ans = session.answers[answerKey(section.id, el.id)] as OptionsAnswer | undefined;
-      if (!ans || ans.optionIds.length === 0) {
-        setError("Escolha pelo menos uma opção para continuar.");
-        return false;
+
+      if (el.type === "options") {
+        if (st.required === false) continue;
+        const ans = session.answers[answerKey(section.id, el.id)] as OptionsAnswer | undefined;
+        if (!ans || ans.optionIds.length === 0) {
+          setError("Escolha pelo menos uma opção para continuar.");
+          return false;
+        }
+      }
+
+      if (el.type === "fields") {
+        const ans = session.answers[answerKey(section.id, el.id)];
+        const values = ans && ans.type === "fields" ? ans.values : {};
+        const fields = (el.content.fields ?? []) as {
+          key: string;
+          label: string;
+          enabled: boolean;
+          required?: boolean;
+        }[];
+        for (const f of fields) {
+          if (!f.enabled) continue;
+          const raw = (values[f.key] ?? "").trim();
+          const required = f.required !== false;
+          if (required && !raw) {
+            setError(`Preencha o campo ${f.label}.`);
+            return false;
+          }
+          if (!raw) continue;
+          if (f.key === "email" && !isValidEmail(raw)) {
+            setError("Informe um e-mail válido.");
+            return false;
+          }
+          if (f.key === "whatsapp" && !isValidPhone(raw)) {
+            setError("Informe um WhatsApp válido com DDD.");
+            return false;
+          }
+        }
       }
     }
     return true;
   }, [section, session.answers]);
 
-  const advance = useCallback(() => {
+  const captureElement = useMemo(
+    () => section?.elements.find((e) => e.type === "fields") ?? null,
+    [section],
+  );
+
+  const advance = useCallback(async () => {
+    if (saving) return;
     if (!validate()) return;
+
+    if (mode === "live" && section && captureElement) {
+      const ans = session.answers[answerKey(section.id, captureElement.id)];
+      const values = ans && ans.type === "fields" ? ans.values : {};
+      const hasAny = Object.values(values).some((v) => (v ?? "").trim().length > 0);
+      if (hasAny) {
+        setSaving(true);
+        try {
+          await submitQuizLead({
+            quizId,
+            sessionId: session.session_id,
+            name: values.name?.trim() || undefined,
+            email: values.email?.trim() || undefined,
+            whatsapp: values.whatsapp ? storablePhone(values.whatsapp) : undefined,
+          });
+        } catch {
+          setSaving(false);
+          setError("Não foi possível enviar seus dados. Tente novamente.");
+          return;
+        }
+        setSaving(false);
+      }
+    }
+
     if (isLast) return;
     go(1);
-  }, [validate, isLast, go]);
+  }, [saving, validate, mode, section, captureElement, session, quizId, isLast, go]);
+
+  const runCta = useCallback(
+    (el: QuizElement) => {
+      const href = ctaHref(readCta(el.settings as Record<string, unknown>));
+      if (!href) {
+        void advance();
+        return;
+      }
+      if (mode !== "live") {
+        setError("Pré-visualização: o botão abriria " + href);
+        return;
+      }
+      const target = (el.settings as Sx).ctaTarget === "_self" ? "_self" : "_blank";
+      window.open(href, target, target === "_blank" ? "noopener,noreferrer" : undefined);
+    },
+    [advance, mode],
+  );
 
   const hasButton = useMemo(() => !!section?.elements.some((e) => e.type === "button"), [section]);
 
@@ -214,6 +314,7 @@ export function QuizRunner({
       </div>
     );
   }
+
 
   const renderElement = (el: QuizElement) => {
     const st = el.settings as Sx;
@@ -282,9 +383,11 @@ export function QuizRunner({
             label={String(ct.label || "Continuar")}
             settings={settings}
             st={st}
-            onClick={advance}
+            loading={saving}
+            onClick={() => runCta(el)}
           />
         );
+
       case "options": {
         const multiple = st.selection === "multiple";
         const ans = session.answers[answerKey(section.id, el.id)] as OptionsAnswer | undefined;
@@ -357,14 +460,33 @@ export function QuizRunner({
         const values = ans && ans.type === "fields" ? ans.values : {};
         return (
           <div key={el.id} className="flex flex-col gap-3">
-            {((ct.fields ?? []) as { key: string; label: string; enabled: boolean }[])
+            {(
+              (ct.fields ?? []) as {
+                key: string;
+                label: string;
+                enabled: boolean;
+                required?: boolean;
+              }[]
+            )
               .filter((f) => f.enabled)
               .map((f) => (
                 <input
                   key={f.key}
                   value={values[f.key] ?? ""}
-                  placeholder={f.label}
-                  onChange={(e) => setField(section.id, el.id, f.key, e.target.value)}
+                  placeholder={f.required === false ? f.label : `${f.label} *`}
+                  type={f.key === "email" ? "email" : f.key === "whatsapp" ? "tel" : "text"}
+                  inputMode={f.key === "whatsapp" ? "numeric" : undefined}
+                  autoComplete={
+                    f.key === "email" ? "email" : f.key === "name" ? "name" : "tel-national"
+                  }
+                  onChange={(e) =>
+                    setField(
+                      section.id,
+                      el.id,
+                      f.key,
+                      f.key === "whatsapp" ? maskPhone(e.target.value) : e.target.value,
+                    )
+                  }
                   className="w-full bg-transparent outline-none"
                   style={{
                     border: `1px solid ${settings.colors.text}33`,
@@ -379,6 +501,7 @@ export function QuizRunner({
           </div>
         );
       }
+
       case "percentage":
         return (
           <div
@@ -401,15 +524,32 @@ export function QuizRunner({
   };
 
   return (
-    <div className={cn("flex w-full flex-col items-center gap-3", className)}>
+    <div
+      className={cn(
+        "flex w-full flex-col items-center gap-3",
+        fullScreen && "min-h-[100dvh] justify-center px-0 py-0",
+        className,
+      )}
+      style={fullScreen ? backgroundStyle(settings) : undefined}
+    >
       <div
-        className="w-full overflow-hidden rounded-2xl border border-border shadow-2xl"
-        style={{ maxWidth: DEVICE_WIDTH[device], ...backgroundStyle(settings) }}
+        className={cn(
+          "w-full",
+          fullScreen
+            ? "min-h-[100dvh]"
+            : "overflow-hidden rounded-2xl border border-border shadow-2xl",
+        )}
+        style={
+          fullScreen
+            ? undefined
+            : { maxWidth: DEVICE_WIDTH[device], ...backgroundStyle(settings) }
+        }
       >
         <div
           className="mx-auto flex min-h-[460px] w-full flex-col px-5 py-7 sm:px-6"
           style={{
             maxWidth: settings.layout.contentWidth,
+            minHeight: fullScreen ? "100dvh" : undefined,
             fontFamily: `${settings.font}, system-ui, sans-serif`,
             color: settings.colors.text,
           }}
@@ -446,7 +586,12 @@ export function QuizRunner({
 
             {/* Botão padrão quando a seção não tem botão e a navegação precisa continuar */}
             {!hasButton && !isLast && (
-              <PrimaryButton label="Continuar" settings={settings} onClick={advance} />
+              <PrimaryButton
+                label="Continuar"
+                settings={settings}
+                loading={saving}
+                onClick={() => void advance()}
+              />
             )}
           </div>
 
@@ -475,16 +620,19 @@ export function QuizRunner({
         </div>
       </div>
 
-      <div className="flex items-center gap-3 text-xs text-muted-foreground">
-        <span>
-          Etapa {index + 1} de {total}
-        </span>
-        {onExit && (
-          <button type="button" onClick={onExit} className="underline">
-            Fechar
-          </button>
-        )}
-      </div>
+      {!fullScreen && (
+        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <span>
+            Etapa {index + 1} de {total}
+          </span>
+          {onExit && (
+            <button type="button" onClick={onExit} className="underline">
+              Fechar
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
+
