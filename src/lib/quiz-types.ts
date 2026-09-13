@@ -67,8 +67,10 @@ export interface TextContent { text: string }
 export interface ImageContent { url: string }
 export interface VideoContent { url: string }
 export interface ButtonContent { label: string }
-export interface OptionItem { id: string; label: string }
-export interface OptionsContent { options: OptionItem[] }
+export interface OptionItem { id: string; label: string; image?: string }
+export interface OptionsContent { description?: string; options: OptionItem[] }
+/** Tipos de resposta suportados (arquitetura preparada para novos tipos). */
+export type QuestionSelection = "single" | "multiple";
 export interface FieldsContent { fields: { key: "name" | "email" | "whatsapp"; label: string; enabled: boolean }[] }
 
 export interface QuizElement {
@@ -153,13 +155,14 @@ export function makeElement(
     },
     options: {
       content: {
+        description: "",
         options: [
           { id: uid(), label: "Opção 1" },
           { id: uid(), label: "Opção 2" },
           { id: uid(), label: "Opção 3" },
         ],
       },
-      settings: {},
+      settings: { selection: "single", required: true },
     },
     progress: { content: {}, settings: {} },
     percentage: {
