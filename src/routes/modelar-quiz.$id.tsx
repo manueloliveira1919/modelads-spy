@@ -402,6 +402,39 @@ function EditorContent() {
           onChange={(e) => updateQuiz({ name: e.target.value })}
           className="h-9 w-full max-w-xs"
         />
+        <div className="flex min-w-[240px] flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">/quiz/</span>
+            <Input
+              value={quiz.slug}
+              onChange={(e) => updateQuiz({ slug: slugify(e.target.value) })}
+              className="h-9 w-full max-w-[200px]"
+              placeholder="endereco-do-quiz"
+            />
+          </div>
+          {slugCheck.status === "taken" && (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] text-destructive">
+                ✕ Este endereço já está sendo utilizado
+              </span>
+              {slugCheck.suggestion && (
+                <button
+                  type="button"
+                  className="text-[11px] font-semibold text-brand underline"
+                  onClick={() => updateQuiz({ slug: slugCheck.suggestion! })}
+                >
+                  Usar {slugCheck.suggestion}
+                </button>
+              )}
+            </div>
+          )}
+          {slugCheck.status === "available" && (
+            <span className="text-[11px] text-emerald-400">✓ Endereço disponível</span>
+          )}
+          {slugCheck.status === "empty" && (
+            <span className="text-[11px] text-destructive">Informe um endereço.</span>
+          )}
+        </div>
         <SaveIndicator state={saveState} />
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <Button asChild variant="ghost" size="sm">
