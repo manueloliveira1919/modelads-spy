@@ -13,6 +13,7 @@ import {
   Monitor,
   Plus,
   Rocket,
+  RotateCcw,
   Smartphone,
   Tablet,
   Trash2,
@@ -34,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { QuizPreview, type PreviewDevice } from "@/components/quiz/quiz-preview";
+import { QuizRunner } from "@/components/quiz/quiz-runner";
 import { AppearancePanel, SectionProperties } from "@/components/quiz/quiz-panels";
 import { loadQuiz, saveQuiz } from "@/lib/quiz-api";
 import {
@@ -103,7 +105,7 @@ function EditorContent() {
   const [loadError, setLoadError] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<"secoes" | "preview" | "propriedades">("preview");
   const [previewMode, setPreviewMode] = useState(search.preview === 1);
-  const [previewIndex, setPreviewIndex] = useState(0);
+  const [runKey, setRunKey] = useState(0);
   const [dragId, setDragId] = useState<string | null>(null);
 
   const dirtyRef = useRef(false);
