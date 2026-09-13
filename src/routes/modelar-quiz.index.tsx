@@ -326,6 +326,36 @@ function NewQuizDialog({
               }}
               placeholder="quiz-de-emagrecimento"
             />
+            {slugCheck.status === "checking" && (
+              <p className="text-xs text-muted-foreground">Verificando endereço…</p>
+            )}
+            {slugCheck.status === "available" && (
+              <p className="text-xs text-emerald-400">✓ Endereço disponível</p>
+            )}
+            {slugCheck.status === "error" && (
+              <p className="text-xs text-muted-foreground">
+                Não foi possível verificar agora. Tente novamente.
+              </p>
+            )}
+            {slugCheck.status === "taken" && (
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-xs text-destructive">✕ Este endereço já está sendo utilizado</p>
+                {slugCheck.suggestion && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setSlugTouched(true);
+                      setSlug(slugCheck.suggestion!);
+                    }}
+                  >
+                    Usar {slugCheck.suggestion}
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
