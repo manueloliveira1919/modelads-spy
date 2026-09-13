@@ -108,6 +108,9 @@ function EditorContent() {
   const [runKey, setRunKey] = useState(0);
   const [dragId, setDragId] = useState<string | null>(null);
 
+  const slugCheck = useSlugAvailability(quiz?.slug ?? "", id);
+  const slugBlocked = slugCheck.status === "taken" || slugCheck.status === "empty";
+
   const dirtyRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -140,6 +143,7 @@ function EditorContent() {
   // autosave com debounce
   useEffect(() => {
     if (!quiz || !dirtyRef.current) return;
+    if (slugCheck.status === "taken" || slugCheck.status === "checking") return;
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => persist(quiz, sections), 1200);
     return () => {
