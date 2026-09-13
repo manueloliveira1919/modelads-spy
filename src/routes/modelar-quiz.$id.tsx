@@ -149,7 +149,7 @@ function EditorContent() {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [quiz, sections, persist]);
+  }, [quiz, sections, persist, slugCheck.status]);
 
   const touch = () => {
     dirtyRef.current = true;
