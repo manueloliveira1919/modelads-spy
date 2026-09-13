@@ -47,9 +47,8 @@ import {
 } from "@/lib/quiz-types";
 
 export const Route = createFileRoute("/modelar-quiz/$id")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    preview: search.preview ? 1 : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>): { preview?: 1 } =>
+    search.preview ? { preview: 1 } : {},
   head: () => ({
     meta: [
       { title: "Editor de Quiz — Modelads" },
