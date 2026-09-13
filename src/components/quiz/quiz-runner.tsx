@@ -132,6 +132,8 @@ export function QuizRunner({
   settings,
   quizId,
   device = "mobile",
+  mode = "preview",
+  fullScreen = false,
   onExit,
   className,
 }: {
@@ -139,12 +141,16 @@ export function QuizRunner({
   settings: QuizSettings;
   quizId: string;
   device?: RunnerDevice;
+  /** "live" grava leads reais; "preview" não toca no banco. */
+  mode?: "preview" | "live";
+  fullScreen?: boolean;
   onExit?: () => void;
   className?: string;
 }) {
   const [session, setSession] = useState<QuizSessionState>(() => newSession(quizId));
   const [error, setError] = useState<string | null>(null);
   const [anim, setAnim] = useState<"in" | "out">("in");
+  const [saving, setSaving] = useState(false);
 
   const total = sections.length;
   const index = Math.min(session.current_section, Math.max(0, total - 1));
@@ -198,23 +204,101 @@ export function QuizRunner({
   const validate = useCallback((): boolean => {
     if (!section) return false;
     for (const el of section.elements) {
-      if (el.type !== "options") continue;
       const st = el.settings as Sx;
-      if (st.required === false) continue;
-      const ans = session.answers[answerKey(section.id, el.id)] as OptionsAnswer | undefined;
-      if (!ans || ans.optionIds.length === 0) {
-        setError("Escolha pelo menos uma opção para continuar.");
-        return false;
+
+      if (el.type === "options") {
+        if (st.required === false) continue;
+        const ans = session.answers[answerKey(section.id, el.id)] as OptionsAnswer | undefined;
+        if (!ans || ans.optionIds.length === 0) {
+          setError("Escolha pelo menos uma opção para continuar.");
+          return false;
+        }
+      }
+
+      if (el.type === "fields") {
+        const ans = session.answers[answerKey(section.id, el.id)];
+        const values = ans && ans.type === "fields" ? ans.values : {};
+        const fields = (el.content.fields ?? []) as {
+          key: string;
+          label: string;
+          enabled: boolean;
+          required?: boolean;
+        }[];
+        for (const f of fields) {
+          if (!f.enabled) continue;
+          const raw = (values[f.key] ?? "").trim();
+          const required = f.required !== false;
+          if (required && !raw) {
+            setError(`Preencha o campo ${f.label}.`);
+            return false;
+          }
+          if (!raw) continue;
+          if (f.key === "email" && !isValidEmail(raw)) {
+            setError("Informe um e-mail válido.");
+            return false;
+          }
+          if (f.key === "whatsapp" && !isValidPhone(raw)) {
+            setError("Informe um WhatsApp válido com DDD.");
+            return false;
+          }
+        }
       }
     }
     return true;
   }, [section, session.answers]);
 
-  const advance = useCallback(() => {
+  const captureElement = useMemo(
+    () => section?.elements.find((e) => e.type === "fields") ?? null,
+    [section],
+  );
+
+  const advance = useCallback(async () => {
+    if (saving) return;
     if (!validate()) return;
+
+    if (mode === "live" && section && captureElement) {
+      const ans = session.answers[answerKey(section.id, captureElement.id)];
+      const values = ans && ans.type === "fields" ? ans.values : {};
+      const hasAny = Object.values(values).some((v) => (v ?? "").trim().length > 0);
+      if (hasAny) {
+        setSaving(true);
+        try {
+          await submitQuizLead({
+            quizId,
+            sessionId: session.session_id,
+            name: values.name?.trim() || undefined,
+            email: values.email?.trim() || undefined,
+            whatsapp: values.whatsapp ? storablePhone(values.whatsapp) : undefined,
+          });
+        } catch {
+          setSaving(false);
+          setError("Não foi possível enviar seus dados. Tente novamente.");
+          return;
+        }
+        setSaving(false);
+      }
+    }
+
     if (isLast) return;
     go(1);
-  }, [validate, isLast, go]);
+  }, [saving, validate, mode, section, captureElement, session, quizId, isLast, go]);
+
+  const runCta = useCallback(
+    (el: QuizElement) => {
+      const href = ctaHref(readCta(el.settings as Record<string, unknown>));
+      if (!href) {
+        void advance();
+        return;
+      }
+      if (mode !== "live") {
+        setError("Pré-visualização: o botão abriria " + href);
+        return;
+      }
+      const target = (el.settings as Sx).ctaTarget === "_self" ? "_self" : "_blank";
+      window.open(href, target, target === "_blank" ? "noopener,noreferrer" : undefined);
+    },
+    [advance, mode],
+  );
 
   const hasButton = useMemo(() => !!section?.elements.some((e) => e.type === "button"), [section]);
 
@@ -225,6 +309,7 @@ export function QuizRunner({
       </div>
     );
   }
+
 
   const renderElement = (el: QuizElement) => {
     const st = el.settings as Sx;
