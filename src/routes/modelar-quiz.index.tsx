@@ -1,7 +1,18 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, Eye, HelpCircle, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Copy,
+  Eye,
+  HelpCircle,
+  Link as LinkIcon,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  Users,
+} from "lucide-react";
+
 import { toast } from "sonner";
 import { ProGate } from "@/components/pro-gate";
 import { useAuth } from "@/lib/auth-context";
@@ -167,6 +178,24 @@ function QuizListContent() {
                   <Eye className="mr-1 h-3.5 w-3.5" /> Visualizar
                 </Link>
               </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link to="/modelar-quiz/leads/$id" params={{ id: q.id }}>
+                  <Users className="mr-1 h-3.5 w-3.5" /> Leads
+                </Link>
+              </Button>
+              {q.status === "published" && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const url = `${window.location.origin}/quiz/${q.slug}`;
+                    void navigator.clipboard.writeText(url);
+                    toast.success("Link do quiz copiado");
+                  }}
+                >
+                  <LinkIcon className="mr-1 h-3.5 w-3.5" /> Copiar link
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="outline"
@@ -184,6 +213,7 @@ function QuizListContent() {
                 <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir
               </Button>
             </div>
+
           </article>
         ))}
       </div>

@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Download, Loader2, Users } from "lucide-react";
-import { AppShell } from "@/components/app-shell";
-import { RequireAuth } from "@/components/require-auth";
+import { ProGate } from "@/components/pro-gate";
 import { Button } from "@/components/ui/button";
 import { loadQuiz } from "@/lib/quiz-api";
 import { downloadLeadsCsv, listQuizLeads } from "@/lib/quiz-leads";
@@ -26,13 +25,16 @@ export const Route = createFileRoute("/modelar-quiz/leads/$id")({
     ],
   }),
   component: () => (
-    <RequireAuth>
-      <AppShell>
-        <LeadsPage />
-      </AppShell>
-    </RequireAuth>
+    <ProGate
+      icon={Users}
+      title="Leads do Quiz"
+      description="Contatos capturados pelos seus quizzes publicados."
+    >
+      <LeadsPage />
+    </ProGate>
   ),
 });
+
 
 function LeadsPage() {
   const { id } = Route.useParams();
