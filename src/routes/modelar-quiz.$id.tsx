@@ -240,6 +240,11 @@ function EditorContent() {
     return <div className="h-64 animate-pulse rounded-2xl border border-border bg-card/50" />;
   }
 
+  const publicUrl =
+    typeof window !== "undefined" ? `${window.location.origin}/quiz/${quiz.slug}` : `/quiz/${quiz.slug}`;
+
+
+
   if (previewMode) {
     return (
       <div className="space-y-4">
