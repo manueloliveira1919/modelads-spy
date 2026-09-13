@@ -38,6 +38,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
+import { Route as QuizSlugRouteImport } from './routes/quiz.$slug'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
 import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
@@ -197,6 +198,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
+const QuizSlugRoute = QuizSlugRouteImport.update({
+  id: '/quiz/$slug',
+  path: '/quiz/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OfertaIdRoute = OfertaIdRouteImport.update({
   id: '/oferta/$id',
   path: '/oferta/$id',
@@ -304,6 +310,7 @@ export interface FileRoutesByFullPath {
   '/admin/suporte': typeof AdminSuporteRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/quiz/$slug': typeof QuizSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
@@ -346,6 +353,7 @@ export interface FileRoutesByTo {
   '/admin/suporte': typeof AdminSuporteRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/quiz/$slug': typeof QuizSlugRoute
   '/admin': typeof AdminIndexRoute
   '/modelar-quiz': typeof ModelarQuizIndexRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
@@ -391,6 +399,7 @@ export interface FileRoutesById {
   '/admin/suporte': typeof AdminSuporteRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/quiz/$slug': typeof QuizSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
@@ -437,6 +446,7 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/quiz/$slug'
     | '/admin/'
     | '/modelar-quiz/'
     | '/api/public/hooks/refresh-offers'
@@ -479,6 +489,7 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/quiz/$slug'
     | '/admin'
     | '/modelar-quiz'
     | '/api/public/hooks/refresh-offers'
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/quiz/$slug'
     | '/admin/'
     | '/modelar-quiz/'
     | '/api/public/hooks/refresh-offers'
@@ -558,6 +570,7 @@ export interface RootRouteChildren {
   UpgradeRoute: typeof UpgradeRoute
   UtmRoute: typeof UtmRoute
   OfertaIdRoute: typeof OfertaIdRoute
+  QuizSlugRoute: typeof QuizSlugRoute
   ApiPublicHooksRefreshOffersRoute: typeof ApiPublicHooksRefreshOffersRoute
   ApiPublicHooksRefreshWorkerRoute: typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -767,6 +780,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/quiz/$slug': {
+      id: '/quiz/$slug'
+      path: '/quiz/$slug'
+      fullPath: '/quiz/$slug'
+      preLoaderRoute: typeof QuizSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/oferta/$id': {
       id: '/oferta/$id'
       path: '/oferta/$id'
@@ -932,6 +952,7 @@ const rootRouteChildren: RootRouteChildren = {
   UpgradeRoute: UpgradeRoute,
   UtmRoute: UtmRoute,
   OfertaIdRoute: OfertaIdRoute,
+  QuizSlugRoute: QuizSlugRoute,
   ApiPublicHooksRefreshOffersRoute: ApiPublicHooksRefreshOffersRoute,
   ApiPublicHooksRefreshWorkerRoute: ApiPublicHooksRefreshWorkerRoute,
 }
