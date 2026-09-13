@@ -696,6 +696,47 @@ export type Database = {
           },
         ]
       }
+      quiz_leads: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          name: string | null
+          quiz_id: string
+          session_id: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          quiz_id: string
+          session_id: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          name?: string | null
+          quiz_id?: string
+          session_id?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_leads_quiz_id_fkey"
+            columns: ["quiz_id"]
+            isOneToOne: false
+            referencedRelation: "quizzes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       quiz_sections: {
         Row: {
           created_at: string
@@ -1000,6 +1041,7 @@ export type Database = {
           structure: string
         }[]
       }
+      get_public_quiz: { Args: { p_slug: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1267,6 +1309,16 @@ export type Database = {
       offers_recompute: { Args: { p_ids?: string[] }; Returns: undefined }
       offers_refresh_visibility: { Args: never; Returns: number }
       offers_set_quality: { Args: { p_rows: Json }; Returns: number }
+      submit_quiz_lead: {
+        Args: {
+          p_email?: string
+          p_name?: string
+          p_quiz_id: string
+          p_session_id: string
+          p_whatsapp?: string
+        }
+        Returns: string
+      }
       try_advance_run_phase: {
         Args: { p_from_phase: string; p_run_id: string; p_to_phase: string }
         Returns: boolean
