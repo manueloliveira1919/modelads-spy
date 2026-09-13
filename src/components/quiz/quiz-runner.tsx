@@ -189,7 +189,7 @@ export function QuizRunner({
     for (const el of section.elements) {
       if (el.type !== "options") continue;
       const st = el.settings as Sx;
-      if (!st.required) continue;
+      if (st.required === false) continue;
       const ans = session.answers[answerKey(section.id, el.id)] as OptionsAnswer | undefined;
       if (!ans || ans.optionIds.length === 0) {
         setError("Escolha pelo menos uma opção para continuar.");
