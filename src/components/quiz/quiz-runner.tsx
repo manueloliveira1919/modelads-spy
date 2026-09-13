@@ -95,11 +95,13 @@ function PrimaryButton({
   label,
   settings,
   st,
+  loading = false,
   onClick,
 }: {
   label: string;
   settings: QuizSettings;
   st?: Sx;
+  loading?: boolean;
   onClick: () => void;
 }) {
   const s = st ?? {};
@@ -109,7 +111,8 @@ function PrimaryButton({
       <button
         type="button"
         onClick={onClick}
-        className="transition-transform active:scale-[.98]"
+        disabled={loading}
+        className="inline-flex items-center justify-center gap-2 transition-transform active:scale-[.98] disabled:opacity-70"
         style={{
           backgroundColor: (s.bg as string) || settings.colors.button,
           color: (s.color as string) || settings.colors.buttonText,
@@ -121,11 +124,13 @@ function PrimaryButton({
           padding: full ? "0 16px" : "0 28px",
         }}
       >
+        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
         {label}
       </button>
     </div>
   );
 }
+
 
 export function QuizRunner({
   sections,
