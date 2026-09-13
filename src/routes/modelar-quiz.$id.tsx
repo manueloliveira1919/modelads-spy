@@ -4,7 +4,9 @@ import {
   ArrowLeft,
   Check,
   Copy,
+  ExternalLink,
   Eye,
+
   GripVertical,
   HelpCircle,
   Image as ImageIcon,
@@ -19,7 +21,9 @@ import {
   Trash2,
   TriangleAlert,
   Type as TypeIcon,
+  Users,
   X,
+
 } from "lucide-react";
 import { toast } from "sonner";
 import { ProGate } from "@/components/pro-gate";
