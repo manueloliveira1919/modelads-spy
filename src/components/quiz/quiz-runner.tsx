@@ -1,8 +1,9 @@
-// Motor de execução do quiz (Fase 2).
-// Renderiza uma seção por vez, guarda respostas na sessão local e controla a navegação.
+// Motor de execução do quiz (Fases 2 e 3).
+// Renderiza uma seção por vez, guarda respostas na sessão local, controla a navegação
+// e — no modo "live" — grava o lead da seção de captura e executa o CTA do resultado.
 
 import { useCallback, useMemo, useState } from "react";
-import { ArrowLeft, Check, RotateCcw } from "lucide-react";
+import { ArrowLeft, Check, Loader2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   answerKey,
@@ -10,7 +11,17 @@ import {
   type OptionsAnswer,
   type QuizSessionState,
 } from "@/lib/quiz-session";
+import {
+  ctaHref,
+  isValidEmail,
+  isValidPhone,
+  maskPhone,
+  readCta,
+  storablePhone,
+} from "@/lib/quiz-conversion";
+import { submitQuizLead } from "@/lib/quiz-public";
 import type { QuizElement, QuizSection, QuizSettings, OptionItem } from "@/lib/quiz-types";
+
 
 type Sx = Record<string, string | number | boolean | undefined>;
 
