@@ -38,7 +38,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
-import { createQuiz, deleteQuiz, duplicateQuiz, listQuizzes } from "@/lib/quiz-api";
+import {
+  createQuiz,
+  deleteQuiz,
+  duplicateQuiz,
+  listQuizzes,
+  SlugTakenError,
+} from "@/lib/quiz-api";
 import { useSlugAvailability } from "@/lib/use-slug-availability";
 import { QUIZ_TEMPLATES, slugify, type QuizListItem } from "@/lib/quiz-types";
 
@@ -297,7 +303,12 @@ function NewQuizDialog({
       onCreated(id);
       toast.success("Quiz criado.");
     },
-    onError: () => toast.error("Não foi possível criar o quiz."),
+    onError: (e: unknown) =>
+      toast.error(
+        e instanceof SlugTakenError
+          ? "Este endereço já está sendo utilizado."
+          : "Não foi possível criar o quiz.",
+      ),
   });
 
   return (
