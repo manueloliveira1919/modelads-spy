@@ -308,6 +308,16 @@ function ClientesPage() {
                           </DropdownMenuItem>
                         ))}
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setCreditTarget(p);
+                            setCreditAmount("");
+                            setCreditReason("");
+                          }}
+                        >
+                          <Coins className="mr-2 h-4 w-4" /> Ajustar créditos
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         {p.is_suspended ? (
                           <DropdownMenuItem
                             onClick={() =>
