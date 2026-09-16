@@ -71,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isPro,
     isPlus,
+    isPremium,
     hasProAccess: isPro,
     hasRole: (role) => roles.includes(role) || (role !== "admin" && isAdmin),
     signOut: async () => {
