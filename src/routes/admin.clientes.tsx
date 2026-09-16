@@ -344,6 +344,49 @@ function ClientesPage() {
           </TableBody>
         </Table>
       </Card>
+
+      <Dialog open={Boolean(creditTarget)} onOpenChange={(o) => !o && setCreditTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajustar créditos</DialogTitle>
+            <DialogDescription>
+              {creditTarget?.email ?? creditTarget?.display_name ?? "Usuário"} — saldo atual:{" "}
+              {creditTarget ? (creditsQuery.data?.get(creditTarget.id) ?? 0) : 0}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <Input
+              type="number"
+              placeholder="Quantidade (use -50 para remover)"
+              value={creditAmount}
+              onChange={(e) => setCreditAmount(e.target.value)}
+            />
+            <Input
+              placeholder="Motivo (opcional)"
+              value={creditReason}
+              onChange={(e) => setCreditReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setCreditTarget(null)}>
+              Cancelar
+            </Button>
+            <Button
+              disabled={adjustMut.isPending || !creditTarget || !Number(creditAmount)}
+              onClick={() =>
+                creditTarget &&
+                adjustMut.mutate({
+                  userId: creditTarget.id,
+                  amount: Number(creditAmount),
+                  reason: creditReason,
+                })
+              }
+            >
+              Confirmar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
