@@ -59,8 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isAdmin = roles.includes("admin");
-  const isPro = isAdmin || roles.includes("pro") || roles.includes("plus");
-  const isPlus = isAdmin || roles.includes("plus") || roles.includes("pro");
+  const isPremium = isAdmin || roles.includes("premium");
+  const isPro = isAdmin || isPremium || roles.includes("pro") || roles.includes("plus");
+  const isPlus = isPro;
 
   const value: AuthState = {
     user,
