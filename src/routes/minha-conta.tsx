@@ -88,7 +88,50 @@ function Page() {
           {roles.length > 1 && (
             <Row icon={Shield} label="Papéis" value={roles.join(", ")} />
           )}
+          <Row
+            icon={Coins}
+            label="Créditos de IA"
+            value={
+              <span className="font-semibold">{unlimited ? "Ilimitado" : balance}</span>
+            }
+          />
         </div>
+
+        {!unlimited && (
+          <div className="rounded-2xl border border-border bg-card p-6">
+            <h3 className="font-display text-lg font-semibold">Histórico de créditos</h3>
+            {ledgerQuery.isLoading ? (
+              <div className="mt-4 h-16 animate-pulse rounded-xl bg-muted/50" />
+            ) : (ledgerQuery.data ?? []).length === 0 ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Nenhuma movimentação registrada até agora.
+              </p>
+            ) : (
+              <ul className="mt-4 divide-y divide-border">
+                {(ledgerQuery.data ?? []).map((e) => (
+                  <li key={e.id} className="flex items-center justify-between gap-3 py-2.5">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm">{e.description ?? e.entry_type}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {new Date(e.created_at).toLocaleString("pt-BR")}
+                      </div>
+                    </div>
+                    <div
+                      className={
+                        e.amount < 0
+                          ? "shrink-0 text-sm font-semibold text-rose-400"
+                          : "shrink-0 text-sm font-semibold text-success"
+                      }
+                    >
+                      {e.amount > 0 ? `+${e.amount}` : e.amount}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
 
         {!isPro && (
           <div className="rounded-2xl border border-brand/40 bg-gradient-to-br from-brand/10 to-card p-6">
