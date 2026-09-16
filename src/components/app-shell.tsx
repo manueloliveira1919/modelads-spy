@@ -234,7 +234,12 @@ function UserFooter() {
             <div className="truncate text-sm font-medium text-foreground">{email}</div>
             <div className="truncate text-xs text-muted-foreground">
               Plano <span className={cn("font-semibold", isPro && "text-brand")}>{plan}</span>
-              {roles.length === 0 && " · carregando"}
+            </div>
+            <div className="truncate text-xs text-muted-foreground">
+              Créditos:{" "}
+              <span className="font-semibold text-foreground">
+                {unlimited ? "Ilimitado" : balance}
+              </span>
             </div>
           </div>
           <button
