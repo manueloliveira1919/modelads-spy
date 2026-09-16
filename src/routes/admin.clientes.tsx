@@ -187,6 +187,7 @@ function ClientesPage() {
   function primaryRole(userId: string): Role {
     const rs = rolesQuery.data?.get(userId) ?? [];
     if (rs.includes("admin")) return "admin";
+    if (rs.includes("premium")) return "premium";
     if (rs.includes("plus")) return "plus";
     if (rs.includes("pro")) return "pro";
     return "starter";
@@ -217,6 +218,7 @@ function ClientesPage() {
               <TableHead>Email</TableHead>
               <TableHead>Telefone</TableHead>
               <TableHead>Plano</TableHead>
+              <TableHead>Créditos</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Cadastro</TableHead>
               <TableHead className="w-10" />
