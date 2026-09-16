@@ -61,7 +61,7 @@ function Page() {
     );
   }
 
-  const plan = isAdmin ? "Admin" : isPro ? "PRO" : "Starter";
+  const plan = entitlements ? planLabel(entitlements.planCode) : isAdmin ? "Admin" : isPro ? "PRO" : "Starter";
 
   return (
     <AppShell>
