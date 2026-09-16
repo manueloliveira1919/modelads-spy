@@ -1,8 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { User, Mail, Shield, LogOut, Sparkles } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { User, Mail, Shield, LogOut, Sparkles, Coins } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { RequireAuth } from "@/components/require-auth";
 import { useAuth } from "@/lib/auth-context";
+import { useEntitlements } from "@/hooks/use-entitlements";
+import { fetchMyLedger, planLabel } from "@/lib/entitlements";
 
 export const Route = createFileRoute("/minha-conta")({
   head: () => ({
