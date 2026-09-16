@@ -23,7 +23,13 @@ export const Route = createFileRoute("/minha-conta")({
 
 function Page() {
   const { user, isPro, isAdmin, roles, signOut, loading } = useAuth();
+  const { entitlements, unlimited, balance } = useEntitlements();
   const navigate = useNavigate();
+  const ledgerQuery = useQuery({
+    queryKey: ["credit-ledger", user?.id ?? "anon"],
+    queryFn: () => fetchMyLedger(20),
+    enabled: Boolean(user) && !unlimited,
+  });
 
   if (loading) {
     return (
