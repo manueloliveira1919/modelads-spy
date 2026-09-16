@@ -22,6 +22,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
+import { useEntitlements } from "@/hooks/use-entitlements";
+import { planLabel } from "@/lib/entitlements";
 import { useProLock } from "@/components/pro-lock-modal";
 
 type NavItem = {
@@ -215,9 +217,10 @@ function SidebarNav({
 }
 
 function UserFooter() {
-  const { user, roles, isPro, isAdmin, signOut } = useAuth();
+  const { user, isPro, isAdmin, signOut } = useAuth();
+  const { entitlements, unlimited, balance } = useEntitlements();
   const navigate = useNavigate();
-  const plan = isAdmin ? "Admin" : isPro ? "PRO" : "Starter";
+  const plan = entitlements ? planLabel(entitlements.planCode) : isAdmin ? "Admin" : isPro ? "PRO" : "Starter";
   const email = user?.email ?? "Convidado";
 
   return (
@@ -231,7 +234,12 @@ function UserFooter() {
             <div className="truncate text-sm font-medium text-foreground">{email}</div>
             <div className="truncate text-xs text-muted-foreground">
               Plano <span className={cn("font-semibold", isPro && "text-brand")}>{plan}</span>
-              {roles.length === 0 && " · carregando"}
+            </div>
+            <div className="truncate text-xs text-muted-foreground">
+              Créditos:{" "}
+              <span className="font-semibold text-foreground">
+                {unlimited ? "Ilimitado" : balance}
+              </span>
             </div>
           </div>
           <button

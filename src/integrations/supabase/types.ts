@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_operation_costs: {
+        Row: {
+          created_at: string
+          credit_cost: number
+          daily_limit: number | null
+          feature_key: string | null
+          id: string
+          is_active: boolean
+          label: string
+          operation_key: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credit_cost?: number
+          daily_limit?: number | null
+          feature_key?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          operation_key: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credit_cost?: number
+          daily_limit?: number | null
+          feature_key?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          operation_key?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blacklist_words: {
         Row: {
           category: string | null
@@ -41,6 +77,51 @@ export type Database = {
           kind?: string | null
           updated_at?: string
           word?: string
+        }
+        Relationships: []
+      }
+      credit_ledger: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          entry_type: string
+          id: string
+          operation_key: string | null
+          reference_id: string | null
+          source: string | null
+          tool_key: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_type: string
+          id?: string
+          operation_key?: string | null
+          reference_id?: string | null
+          source?: string | null
+          tool_key?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_type?: string
+          id?: string
+          operation_key?: string | null
+          reference_id?: string | null
+          source?: string | null
+          tool_key?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -544,35 +625,82 @@ export type Database = {
         }
         Relationships: []
       }
-      plans: {
+      plan_features: {
         Row: {
-          code: string
           created_at: string
-          description: string | null
+          enabled: boolean
+          feature_key: string
           id: string
-          is_active: boolean
-          name: string
-          price_cents: number
+          plan_code: string
           updated_at: string
         }
         Insert: {
-          code: string
           created_at?: string
-          description?: string | null
+          enabled?: boolean
+          feature_key: string
           id?: string
-          is_active?: boolean
-          name: string
-          price_cents?: number
+          plan_code: string
           updated_at?: string
         }
         Update: {
+          created_at?: string
+          enabled?: boolean
+          feature_key?: string
+          id?: string
+          plan_code?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "plan_features_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          availability: string
+          code: string
+          created_at: string
+          description: string | null
+          display_price: string | null
+          id: string
+          is_active: boolean
+          monthly_credits: number
+          name: string
+          price_cents: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          availability?: string
+          code: string
+          created_at?: string
+          description?: string | null
+          display_price?: string | null
+          id?: string
+          is_active?: boolean
+          monthly_credits?: number
+          name: string
+          price_cents?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          availability?: string
           code?: string
           created_at?: string
           description?: string | null
+          display_price?: string | null
           id?: string
           is_active?: boolean
+          monthly_credits?: number
           name?: string
           price_cents?: number
+          sort_order?: number
           updated_at?: string
         }
         Relationships: []
@@ -990,11 +1118,71 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_code: string
+          provider: string | null
+          provider_customer_id: string | null
+          provider_subscription_id: string | null
+          subscription_expires_at: string | null
+          subscription_started_at: string | null
+          subscription_status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_code?: string
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          subscription_expires_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_code?: string
+          provider?: string | null
+          provider_customer_id?: string | null
+          provider_subscription_id?: string | null
+          subscription_expires_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_code_fkey"
+            columns: ["plan_code"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      admin_adjust_credits: {
+        Args: { p_amount: number; p_reason?: string; p_user_id: string }
+        Returns: Json
+      }
       claim_refresh_jobs: {
         Args: { p_limit?: number }
         Returns: {
@@ -1017,6 +1205,16 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      consume_ai_credits: {
+        Args: {
+          p_description?: string
+          p_operation_key: string
+          p_reference_id?: string
+        }
+        Returns: Json
+      }
+      current_plan_code: { Args: { _user_id: string }; Returns: string }
+      get_my_entitlements: { Args: never; Returns: Json }
       get_offer_row: {
         Args: { p_id: string }
         Returns: {
@@ -1042,6 +1240,10 @@ export type Database = {
         }[]
       }
       get_public_quiz: { Args: { p_slug: string }; Returns: Json }
+      has_feature: {
+        Args: { _feature_key: string; _user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1333,7 +1535,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "starter" | "plus" | "pro" | "admin"
+      app_role: "starter" | "plus" | "pro" | "admin" | "premium"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1461,7 +1663,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["starter", "plus", "pro", "admin"],
+      app_role: ["starter", "plus", "pro", "admin", "premium"],
     },
   },
 } as const

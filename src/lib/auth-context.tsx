@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
-export type AppRole = "starter" | "plus" | "pro" | "admin";
+export type AppRole = "starter" | "plus" | "pro" | "premium" | "admin";
 
 interface AuthState {
   user: User | null;
@@ -10,8 +10,9 @@ interface AuthState {
   roles: AppRole[];
   loading: boolean;
   isAdmin: boolean;
-  isPro: boolean; // pro OR admin OR plus
+  isPro: boolean; // pro OR premium OR admin OR plus
   isPlus: boolean;
+  isPremium: boolean;
   hasProAccess: boolean; // semantic alias for isPro
   hasRole: (role: AppRole) => boolean;
   signOut: () => Promise<void>;
@@ -58,8 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const isAdmin = roles.includes("admin");
-  const isPro = isAdmin || roles.includes("pro") || roles.includes("plus");
-  const isPlus = isAdmin || roles.includes("plus") || roles.includes("pro");
+  const isPremium = isAdmin || roles.includes("premium");
+  const isPro = isAdmin || isPremium || roles.includes("pro") || roles.includes("plus");
+  const isPlus = isPro;
 
   const value: AuthState = {
     user,
@@ -69,6 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAdmin,
     isPro,
     isPlus,
+    isPremium,
     hasProAccess: isPro,
     hasRole: (role) => roles.includes(role) || (role !== "admin" && isAdmin),
     signOut: async () => {
