@@ -270,6 +270,13 @@ function ClientesPage() {
                     </Select>
                   </TableCell>
                   <TableCell>
+                    {role === "admin" ? (
+                      <span className="text-muted-foreground">Ilimitado</span>
+                    ) : (
+                      <span className="font-medium">{creditsQuery.data?.get(p.id) ?? 0}</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
                     {p.is_suspended ? (
                       <Badge className="bg-rose-500/15 text-rose-400 hover:bg-rose-500/20">
                         Suspenso
