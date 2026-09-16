@@ -32,7 +32,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, UserX, UserCheck, Repeat } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { MoreHorizontal, Search, UserX, UserCheck, Repeat, Coins } from "lucide-react";
+import { adminAdjustCredits } from "@/lib/entitlements";
 
 export const Route = createFileRoute("/admin/clientes")({
   component: ClientesPage,
@@ -49,12 +58,47 @@ type Profile = {
   created_at: string;
 };
 
-type Role = "starter" | "pro" | "plus" | "admin";
-const ROLES: Role[] = ["starter", "pro", "plus", "admin"];
+type Role = "starter" | "pro" | "premium" | "plus" | "admin";
+const ROLES: Role[] = ["starter", "pro", "premium", "plus", "admin"];
 
 function ClientesPage() {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [creditTarget, setCreditTarget] = useState<Profile | null>(null);
+  const [creditAmount, setCreditAmount] = useState("");
+  const [creditReason, setCreditReason] = useState("");
+
+  const creditsQuery = useQuery({
+    queryKey: ["admin", "credits"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("credits").select("user_id, balance");
+      if (error) throw error;
+      const map = new Map<string, number>();
+      (data ?? []).forEach((c) => map.set(c.user_id, c.balance));
+      return map;
+    },
+  });
+
+  const adjustMut = useMutation({
+    mutationFn: async (args: { userId: string; amount: number; reason: string }) => {
+      const res = await adminAdjustCredits(args.userId, args.amount, args.reason);
+      if (!res.ok) throw new Error(res.message ?? "Não foi possível ajustar os créditos.");
+      await logSystem({
+        action: "user.credits_adjust",
+        kind: "user",
+        metadata: { user_id: args.userId, amount: args.amount, reason: args.reason },
+      });
+      return res;
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["admin", "credits"] });
+      setCreditTarget(null);
+      setCreditAmount("");
+      setCreditReason("");
+      toast.success(`Créditos atualizados. Novo saldo: ${res.balance}`);
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
 
   const profilesQuery = useQuery({
     queryKey: ["admin", "profiles"],
