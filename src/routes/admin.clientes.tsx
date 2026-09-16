@@ -227,14 +227,14 @@ function ClientesPage() {
           <TableBody>
             {profilesQuery.isLoading && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   Carregando…
                 </TableCell>
               </TableRow>
             )}
             {!profilesQuery.isLoading && rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-muted-foreground">
+                <TableCell colSpan={8} className="text-center text-muted-foreground">
                   Nenhum cliente encontrado.
                 </TableCell>
               </TableRow>
