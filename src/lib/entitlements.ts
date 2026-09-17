@@ -133,8 +133,8 @@ export async function consumeAiCredits(
 ): Promise<ConsumeResult> {
   const { data, error } = await supabase.rpc("consume_ai_credits", {
     p_operation_key: operationKey,
-    p_reference_id: options?.referenceId ?? null,
-    p_description: options?.description ?? null,
+    p_reference_id: options?.referenceId ?? undefined,
+    p_description: options?.description ?? undefined,
   });
   if (error) return { ok: false, reason: "error", message: error.message };
   return (data ?? { ok: false }) as unknown as ConsumeResult;
@@ -149,7 +149,7 @@ export async function adminAdjustCredits(
   const { data, error } = await supabase.rpc("admin_adjust_credits", {
     p_user_id: userId,
     p_amount: amount,
-    p_reason: reason ?? null,
+    p_reason: reason ?? undefined,
   });
   if (error) return { ok: false, message: error.message };
   return (data ?? { ok: false }) as unknown as { ok: boolean; balance?: number; message?: string };
