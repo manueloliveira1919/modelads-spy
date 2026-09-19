@@ -97,15 +97,17 @@ export const PRODUCT_TYPES: ProductType[] = [
 export function inferProductType(text: string): ProductType {
   const t = (text || "").toLowerCase();
   // Físico primeiro: "suplemento com acompanhamento" é produto, não curso.
+  // "kit" sozinho saiu daqui — "kit de atividades"/"kit digital" é Ebook/PDF,
+  // só conta como físico quando vem com sinal de envio de verdade.
   if (
-    /\b(frete|entrega|envio|kit|unidade|frasco|garrafas?|produto f[íi]sico|receba em casa|encapsulados?|c[áa]psulas?|suplementos?|ch[áa]|chas|f[óo]rmula natural|gotas|extrato|comprimidos?)\b/.test(
+    /\b(frete|entrega|envio|receba em casa|unidade|frasco|garrafas?|produto f[íi]sico|encapsulados?|c[áa]psulas?|suplementos?|ch[áa]|chas|f[óo]rmula natural|gotas|extrato|comprimidos?)\b/.test(
       t,
     )
   ) {
     return "Produto Físico";
   }
   if (
-    /\b(e[- ]?book|ebook|pdf|apostila|guia (em )?pdf|livro digital|receitas?|card[áa]pio|protocolo|plano alimentar)\b/.test(
+    /\b(e[- ]?book|ebook|pdf|apostila|guia (em )?pdf|livro digital|receitas?|card[áa]pio|protocolo|plano alimentar|mapas? mentais?|planners?|atividades (infantis|educativas|para crian[çc]as)|kit de atividades|moldes?|molde digital|planilhas?|desenhos para colorir|devocional|estudo b[íi]blico|material digital|arquivo digital|e[- ]?book infantil)\b/.test(
       t,
     )
   ) {
