@@ -468,7 +468,7 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
 // Visita o link de verdade de cada oferta para pegar preço e confirmar que é
 // uma oferta válida — mesma ideia das ferramentas de referência (Fusion Ads).
 // Processa só um lote por vez para não estourar o tempo do tick.
-const LANDING_ANALYZE_BATCH = 20;
+const LANDING_ANALYZE_BATCH = 60;
 const LANDING_FETCH_TIMEOUT_MS = 8000;
 
 async function fetchLandingHtml(url: string): Promise<{ finalUrl: string; html: string }> {
@@ -510,7 +510,7 @@ async function analyzeLandingBatch(supabase: any, runId: string): Promise<Landin
 
   const stats: LandingBatchStats = { analyzed: 0, validated: 0, failed: 0 };
 
-  await runInBatches(offers ?? [], 5, async (offer: { id: string; landing_key: string }) => {
+  await runInBatches(offers ?? [], 10, async (offer: { id: string; landing_key: string }) => {
     const key = offer.landing_key.trim();
     const url = key.startsWith("http") ? key : `https://${key.replace(/^\/+/, "")}`;
     let update: Record<string, unknown>;
