@@ -21,6 +21,7 @@ import {
   sleep,
   type MetaAdItem,
 } from "@/lib/meta-mining.server";
+import { analyzeLandingHtml } from "@/lib/landing-analysis.server";
 
 // Worker de jobs — chamado pelo pg_cron a cada minuto. A fila e as RPCs
 // internas são acessadas pelo cliente privilegiado exclusivamente no servidor.
@@ -462,6 +463,108 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
   return dbError;
 }
 
+
+// ---------- Análise da página de destino real (landing page) ----------
+// Visita o link de verdade de cada oferta para pegar preço e confirmar que é
+// uma oferta válida — mesma ideia das ferramentas de referência (Fusion Ads).
+// Processa só um lote por vez para não estourar o tempo do tick.
+const LANDING_ANALYZE_BATCH = 20;
+const LANDING_FETCH_TIMEOUT_MS = 8000;
+
+async function fetchLandingHtml(url: string): Promise<{ finalUrl: string; html: string }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), LANDING_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
+        "accept-language": "pt-BR,pt;q=0.9,en;q=0.8",
+      },
+    });
+    if (!res.ok) throw new Error(`landing http ${res.status}`);
+    const html = await res.text();
+    return { finalUrl: res.url || url, html };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+interface LandingBatchStats {
+  analyzed: number;
+  validated: number;
+  failed: number;
+}
+
+// Seleciona até LANDING_ANALYZE_BATCH ofertas com landing_key nunca verificadas
+// e grava o resultado em public.offers. Retorna contagens para o log.
+async function analyzeLandingBatch(supabase: any, runId: string): Promise<LandingBatchStats> {
+  const { data: offers, error } = await supabase
+    .from("offers")
+    .select("id, landing_key")
+    .not("landing_key", "is", null)
+    .is("landing_checked_at", null)
+    .limit(LANDING_ANALYZE_BATCH);
+  if (error) throw new Error(`selecionar ofertas: ${error.message}`);
+
+  const stats: LandingBatchStats = { analyzed: 0, validated: 0, failed: 0 };
+
+  await runInBatches(offers ?? [], 5, async (offer: { id: string; landing_key: string }) => {
+    const key = offer.landing_key.trim();
+    const url = key.startsWith("http") ? key : `https://${key.replace(/^\/+/, "")}`;
+    let update: Record<string, unknown>;
+    try {
+      const { finalUrl, html } = await fetchLandingHtml(url);
+      const analysis = analyzeLandingHtml(finalUrl, html);
+      update = {
+        landing_price: analysis.price,
+        landing_structure: analysis.structure,
+        landing_destination: analysis.destination,
+        landing_validated: analysis.validated,
+        landing_checked_at: new Date().toISOString(),
+      };
+      if (analysis.validated) stats.validated++;
+    } catch {
+      // Falhou (timeout, rede, 404...): marca como verificada para não ficar
+      // tentando a mesma URL quebrada para sempre; demais campos ficam null.
+      update = {
+        landing_price: null,
+        landing_structure: null,
+        landing_destination: null,
+        landing_validated: null,
+        landing_checked_at: new Date().toISOString(),
+      };
+      stats.failed++;
+    }
+    stats.analyzed++;
+    const { error: upErr } = await supabase
+      .from("offers")
+      .update(update)
+      .eq("id", offer.id);
+    if (upErr) {
+      await jobLog(supabase, runId, "landing.analyze", `falha ao gravar landing da oferta ${offer.id}`, {
+        offer_id: offer.id,
+        error: upErr.message,
+      });
+    }
+  });
+
+  return stats;
+}
+
+// ---------- Processa 1 job de análise de landing ----------
+async function processLandingAnalyzeJob(supabase: any, job: MetaRefreshJob) {
+  const stats = await analyzeLandingBatch(supabase, job.run_id);
+  await jobLog(
+    supabase,
+    job.run_id,
+    "landing.analyze",
+    `landing: ${stats.analyzed} páginas analisadas, ${stats.validated} validadas, ${stats.failed} falharam`,
+    { ...stats },
+  );
+  return null;
+}
 
 // ---------- Finaliza a run: deactivate + métricas + fecha o registro ----------
 async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
