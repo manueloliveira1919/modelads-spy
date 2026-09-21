@@ -551,7 +551,12 @@ export type Database = {
           first_seen: string
           group_key: string
           id: string
+          landing_checked_at: string | null
+          landing_destination: string | null
           landing_key: string | null
+          landing_price: string | null
+          landing_structure: string | null
+          landing_validated: boolean | null
           language: string | null
           last_seen: string
           page_id: string
@@ -579,7 +584,12 @@ export type Database = {
           first_seen?: string
           group_key: string
           id?: string
+          landing_checked_at?: string | null
+          landing_destination?: string | null
           landing_key?: string | null
+          landing_price?: string | null
+          landing_structure?: string | null
+          landing_validated?: boolean | null
           language?: string | null
           last_seen?: string
           page_id: string
@@ -607,7 +617,12 @@ export type Database = {
           first_seen?: string
           group_key?: string
           id?: string
+          landing_checked_at?: string | null
+          landing_destination?: string | null
           landing_key?: string | null
+          landing_price?: string | null
+          landing_structure?: string | null
+          landing_validated?: boolean | null
           language?: string | null
           last_seen?: string
           page_id?: string
@@ -1460,7 +1475,10 @@ export type Database = {
       mining_upsert_offers: { Args: { p_rows: Json }; Returns: number }
       mining_upsert_raw: { Args: { p_rows: Json }; Returns: undefined }
       mining_upsert_snapshots: { Args: { p_rows: Json }; Returns: undefined }
-      offer_canonical_category: { Args: { p: string }; Returns: string }
+      offer_canonical_category: {
+        Args: { p_category: string }
+        Returns: string
+      }
       offer_group_key: {
         Args: { p_link: string; p_page_id: string; p_title: string }
         Returns: string
