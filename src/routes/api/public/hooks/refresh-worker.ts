@@ -606,6 +606,24 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   if (mergeErr) console.error("offers_merge_duplicates error", mergeErr.message);
   else mergedOffers = Number(mergedCount ?? 0);
 
+  // Análise da página de destino real: roda um lote ao final de cada run,
+  // mesmo lugar da fusão de duplicadas. Erro aqui nunca derruba o finalize.
+  let landingStats: LandingBatchStats | null = null;
+  try {
+    landingStats = await analyzeLandingBatch(supabase, job.run_id);
+    if (landingStats.analyzed > 0) {
+      await jobLog(
+        supabase,
+        job.run_id,
+        "landing.analyze",
+        `landing: ${landingStats.analyzed} páginas analisadas, ${landingStats.validated} validadas, ${landingStats.failed} falharam`,
+        { ...landingStats },
+      );
+    }
+  } catch (err) {
+    console.error("analyzeLandingBatch error", (err as Error).message);
+  }
+
   const { data: vis, error: visErr } = await supabase.rpc("offers_refresh_visibility");
   if (visErr) console.error("offers_refresh_visibility error", visErr.message);
   else visibleOffers = Number(vis ?? 0);
@@ -831,6 +849,10 @@ export const Route = createFileRoute("/api/public/hooks/refresh-worker")({
               }
               if (job.kind === "classify.upsert") {
                 const error = await processClassifyJob(supabase, job);
+                return { job, error };
+              }
+              if (job.kind === "landing.analyze") {
+                const error = await processLandingAnalyzeJob(supabase, job);
                 return { job, error };
               }
               if (job.kind === "run.finalize") {
