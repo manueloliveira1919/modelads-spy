@@ -63,12 +63,21 @@ function Page() {
   // Padrão mostra tudo (inclui "testando") — a régua de escala fica como filtro opcional.
   const [scale, setScale] = useState<ScaleFilter>("todos");
   const [query, setQuery] = useState("");
+  // Faixa de preço (client-side sobre landingPrice já carregado).
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [onlyValidated, setOnlyValidated] = useState(false);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const { data } = useSuspenseQuery(offersQuery);
   const offers = data.offers;
 
+  // Filtro de preço só fica ativo com algum dos campos preenchido; ofertas sem
+  // landing_price ficam de fora enquanto ele estiver ativo.
+  const priceFilterActive = priceMin.trim() !== "" || priceMax.trim() !== "";
+  const minPrice = priceMin.trim() !== "" ? parsePriceBRL(priceMin) : null;
+  const maxPrice = priceMax.trim() !== "" ? parsePriceBRL(priceMax) : null;
 
   const activeFilterCount =
     (category !== "todas" ? 1 : 0) +
@@ -76,7 +85,9 @@ function Page() {
     (structure !== "todas" ? 1 : 0) +
     (productType !== "todos" ? 1 : 0) +
     (funnel !== "todos" ? 1 : 0) +
-    (scale !== "todos" ? 1 : 0);
+    (scale !== "todos" ? 1 : 0) +
+    (priceFilterActive ? 1 : 0) +
+    (onlyValidated ? 1 : 0);
 
   const filtered = useMemo(() => {
     const list = offers.filter((o) => {
