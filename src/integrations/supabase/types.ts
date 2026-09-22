@@ -1244,6 +1244,9 @@ export type Database = {
           description: string
           headline: string
           id: string
+          landing_price: string
+          landing_structure: string
+          landing_validated: boolean
           language: string
           link_url: string
           page_id: string
@@ -1319,6 +1322,9 @@ export type Database = {
           description: string
           headline: string
           id: string
+          landing_price: string
+          landing_structure: string
+          landing_validated: boolean
           language: string
           link_url: string
           page_id: string
