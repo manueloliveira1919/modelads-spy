@@ -159,6 +159,12 @@ export function rowToOffer(row: OfferRow): Offer {
       : null,
     adSnapshotUrl: row.ad_snapshot_url ?? null,
     adArchiveId: archiveId,
+    landingPrice: row.landing_price ?? null,
+    landingStructure:
+      row.landing_structure && LANDING_STRUCTURES.includes(row.landing_structure as LandingStructure)
+        ? (row.landing_structure as LandingStructure)
+        : null,
+    landingValidated: row.landing_validated ?? null,
   };
 }
 
