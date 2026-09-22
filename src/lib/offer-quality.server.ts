@@ -178,6 +178,7 @@ export async function applyQualityClassification(
     const { data, error } = await admin
       .from("offers")
       .select("id")
+      .or("quality_checked_at.is.null,quality_checked_at.lt.updated_at")
       .order("id")
       .range(from, from + IDS_PAGE - 1);
     if (error) throw new Error(`apply ids: ${error.message}`);
