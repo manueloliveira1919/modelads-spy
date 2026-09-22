@@ -468,7 +468,7 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
 // Visita o link de verdade de cada oferta para pegar preço e confirmar que é
 // uma oferta válida — mesma ideia das ferramentas de referência (Fusion Ads).
 // Processa só um lote por vez para não estourar o tempo do tick.
-const LANDING_ANALYZE_BATCH = 60;
+const LANDING_ANALYZE_BATCH = 100;
 const LANDING_FETCH_TIMEOUT_MS = 8000;
 
 async function fetchLandingHtml(url: string): Promise<{ finalUrl: string; html: string }> {
