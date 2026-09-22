@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
-import { Search, ListFilter, ChevronDown, Flame } from "lucide-react";
+import { Search, ListFilter, ChevronDown, Flame, BadgeCheck } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
 import { OfferCard } from "@/components/offer-card";
@@ -12,6 +12,7 @@ import {
   LANGUAGES,
   PRODUCT_TYPES,
   STRUCTURES,
+  parsePriceBRL,
   type OfferCategory,
   type OfferLanguage,
   type OfferStructure,
@@ -62,12 +63,21 @@ function Page() {
   // Padrão mostra tudo (inclui "testando") — a régua de escala fica como filtro opcional.
   const [scale, setScale] = useState<ScaleFilter>("todos");
   const [query, setQuery] = useState("");
+  // Faixa de preço (client-side sobre landingPrice já carregado).
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [onlyValidated, setOnlyValidated] = useState(false);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const { data } = useSuspenseQuery(offersQuery);
   const offers = data.offers;
 
+  // Filtro de preço só fica ativo com algum dos campos preenchido; ofertas sem
+  // landing_price ficam de fora enquanto ele estiver ativo.
+  const priceFilterActive = priceMin.trim() !== "" || priceMax.trim() !== "";
+  const minPrice = priceMin.trim() !== "" ? parsePriceBRL(priceMin) : null;
+  const maxPrice = priceMax.trim() !== "" ? parsePriceBRL(priceMax) : null;
 
   const activeFilterCount =
     (category !== "todas" ? 1 : 0) +
@@ -75,7 +85,9 @@ function Page() {
     (structure !== "todas" ? 1 : 0) +
     (productType !== "todos" ? 1 : 0) +
     (funnel !== "todos" ? 1 : 0) +
-    (scale !== "todos" ? 1 : 0);
+    (scale !== "todos" ? 1 : 0) +
+    (priceFilterActive ? 1 : 0) +
+    (onlyValidated ? 1 : 0);
 
   const filtered = useMemo(() => {
     const list = offers.filter((o) => {
@@ -91,6 +103,13 @@ function Page() {
       // "escaladissimo" mostra só o topo da régua.
       if (scale === "escalados" && o.status === "testando") return false;
       if (scale === "escaladissimo" && o.status !== "escaladissimo") return false;
+      if (priceFilterActive) {
+        const p = parsePriceBRL(o.landingPrice);
+        if (p === null) return false;
+        if (minPrice !== null && p < minPrice) return false;
+        if (maxPrice !== null && p > maxPrice) return false;
+      }
+      if (onlyValidated && o.landingValidated !== true) return false;
       if (query && !`${o.page} ${o.headline}`.toLowerCase().includes(query.toLowerCase()))
         return false;
       return true;
@@ -99,7 +118,7 @@ function Page() {
     return [...list].sort(
       (a, b) => rank[a.status] - rank[b.status] || b.activeAds - a.activeAds,
     );
-  }, [offers, category, language, structure, productType, funnel, scale, query]);
+  }, [offers, category, language, structure, productType, funnel, scale, query, priceFilterActive, minPrice, maxPrice, onlyValidated]);
 
   const escaladas = offers.filter((o) => o.status === "escaladissimo").length;
   const crescendo = offers.filter((o) => o.status === "escalado").length;
@@ -142,6 +161,18 @@ function Page() {
                 className="w-full rounded-lg border border-input bg-card py-2.5 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
               />
             </div>
+            <button
+              onClick={() => setOnlyValidated((v) => !v)}
+              className={cn(
+                "inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2.5 text-sm font-semibold transition-colors",
+                onlyValidated
+                  ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-400"
+                  : "border-border bg-card text-muted-foreground hover:border-accent hover:text-foreground",
+              )}
+            >
+              <BadgeCheck className="h-4 w-4" />
+              Só validadas
+            </button>
             <button
               onClick={() => setFiltersOpen((v) => !v)}
               className={cn(
@@ -233,6 +264,36 @@ function Page() {
               <FilterChip active={funnel === "whatsapp"} onClick={() => setFunnel("whatsapp")}>
                 Funil WhatsApp
               </FilterChip>
+            </FilterRow>
+            <FilterRow label="Faixa de Preço">
+              <div className="flex items-center gap-1.5">
+                <input
+                  value={priceMin}
+                  onChange={(e) => setPriceMin(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="de R$"
+                  className="w-24 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
+                />
+                <span className="text-xs text-muted-foreground">—</span>
+                <input
+                  value={priceMax}
+                  onChange={(e) => setPriceMax(e.target.value)}
+                  inputMode="decimal"
+                  placeholder="até R$"
+                  className="w-24 rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/30"
+                />
+                {priceFilterActive && (
+                  <button
+                    onClick={() => {
+                      setPriceMin("");
+                      setPriceMax("");
+                    }}
+                    className="ml-1 text-xs text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    limpar
+                  </button>
+                )}
+              </div>
             </FilterRow>
           </div>
         )}

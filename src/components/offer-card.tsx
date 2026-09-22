@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import {
+  BadgeCheck,
   Clock,
   ExternalLink,
   Flame,
@@ -79,7 +80,9 @@ export function CategoryBadge({
 
 export function OfferCard({ offer }: { offer: Offer }) {
   const { fav, toggle } = useFavorite(offer.id);
-  const price = extractPrice(`${offer.headline} ${offer.description}`);
+  // Preço da página de destino real quando existir (mais confiável que o texto do anúncio).
+  const price = offer.landingPrice ?? extractPrice(`${offer.headline} ${offer.description}`);
+  const structure = offer.landingStructure ?? offer.structure;
 
   return (
     <article className="group card-elevate relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm active:translate-y-0">
@@ -132,10 +135,17 @@ export function OfferCard({ offer }: { offer: Offer }) {
           <div className="flex flex-wrap gap-1.5">
             <CategoryBadge category={offer.category} />
 
-            {offer.structure && (
+            {offer.landingValidated === true && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400 ring-1 ring-inset ring-emerald-500/30">
+                <BadgeCheck className="h-3 w-3" />
+                Validada
+              </span>
+            )}
+
+            {structure && (
               <span className="inline-flex items-center gap-1 rounded-md bg-secondary px-2 py-0.5 text-[11px] font-medium text-secondary-foreground">
                 <Layers className="h-3 w-3" />
-                {offer.structure}
+                {structure}
               </span>
             )}
             {offer.isWhatsapp && (
