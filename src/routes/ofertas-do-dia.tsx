@@ -12,6 +12,7 @@ import {
   LANGUAGES,
   PRODUCT_TYPES,
   STRUCTURES,
+  parsePriceBRL,
   type OfferCategory,
   type OfferLanguage,
   type OfferStructure,
@@ -91,6 +92,13 @@ function Page() {
       // "escaladissimo" mostra só o topo da régua.
       if (scale === "escalados" && o.status === "testando") return false;
       if (scale === "escaladissimo" && o.status !== "escaladissimo") return false;
+      if (priceFilterActive) {
+        const p = parsePriceBRL(o.landingPrice);
+        if (p === null) return false;
+        if (minPrice !== null && p < minPrice) return false;
+        if (maxPrice !== null && p > maxPrice) return false;
+      }
+      if (onlyValidated && o.landingValidated !== true) return false;
       if (query && !`${o.page} ${o.headline}`.toLowerCase().includes(query.toLowerCase()))
         return false;
       return true;
@@ -99,7 +107,7 @@ function Page() {
     return [...list].sort(
       (a, b) => rank[a.status] - rank[b.status] || b.activeAds - a.activeAds,
     );
-  }, [offers, category, language, structure, productType, funnel, scale, query]);
+  }, [offers, category, language, structure, productType, funnel, scale, query, priceFilterActive, minPrice, maxPrice, onlyValidated]);
 
   const escaladas = offers.filter((o) => o.status === "escaladissimo").length;
   const crescendo = offers.filter((o) => o.status === "escalado").length;
