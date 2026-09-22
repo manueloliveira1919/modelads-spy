@@ -26,6 +26,12 @@ export type OfferLanguage = "Português" | "Espanhol" | "Inglês";
 
 
 
+// Estrutura vinda da leitura real da página de destino (mais confiável que a
+// inferida pelo texto do anúncio). "WhatsApp" só existe nesse campo.
+export type LandingStructure = "VSL" | "Quiz" | "Página de Vendas" | "WhatsApp";
+
+const LANDING_STRUCTURES: LandingStructure[] = ["VSL", "Quiz", "Página de Vendas", "WhatsApp"];
+
 export interface Offer {
   id: string;
   page: string;
@@ -47,6 +53,23 @@ export interface Offer {
   adLibraryUrl: string | null;
   adSnapshotUrl: string | null;
   adArchiveId: string | null;
+  // Dados da análise da página de destino real (landing_*), preenchidos aos
+  // poucos pelo worker — podem ser null enquanto a checagem não passa.
+  landingPrice: string | null;
+  landingStructure: LandingStructure | null;
+  landingValidated: boolean | null;
+}
+
+// Converte o texto de preço ("R$ 97", "R$ 1.997,00") em número para filtros.
+export function parsePriceBRL(text: string | null | undefined): number | null {
+  if (!text) return null;
+  const cleaned = text.replace(/[^\d,.]/g, "");
+  if (!cleaned) return null;
+  const normalized = cleaned.includes(",")
+    ? cleaned.replace(/\./g, "").replace(",", ".")
+    : cleaned;
+  const value = Number.parseFloat(normalized);
+  return Number.isFinite(value) ? value : null;
 }
 
 
@@ -84,6 +107,9 @@ interface OfferRow {
   structure: string | null;
   product_type?: string | null;
   ad_start_date?: string | null;
+  landing_price?: string | null;
+  landing_structure?: string | null;
+  landing_validated?: boolean | null;
 }
 
 
