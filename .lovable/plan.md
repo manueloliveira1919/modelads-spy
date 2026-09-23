@@ -1,45 +1,65 @@
-# Fase 2 — Gravação real da Qualidade Comercial (backfill único)
+# Fase 5 — Edição visual avançada do Modelar Quiz
 
-Gravar a classificação aprovada na Fase 1 nas ofertas existentes, preenchendo `commercial_quality`, `quality_reasons` e `quality_checked_at`. **Nenhuma regra de exibição muda** — a vitrine continua exatamente como está.
+## Escopo
 
-## O que NÃO acontece nesta fase
+Evoluir somente a edição visual do Modelar Quiz, preservando publicação, URL pública, navegação, respostas, captura de leads, CTA, analytics, UTM, templates e autosave existentes. Não haverá mudança de banco: as novas propriedades continuarão salvas no JSON `settings` de cada elemento, mantendo quizzes antigos compatíveis.
 
-- Nenhuma alteração em `visible`, `qualified`, `is_active`, ofertas, anúncios, mineração, worker, cron, blacklist ou categorias.
-- Nada é escondido da vitrine: entretenimento e suspeitas continuam aparecendo normalmente.
-- Nenhum badge/filtro de qualidade na interface (fica para fase futura, mediante aprovação).
-- Nenhuma migration de estrutura: as 3 colunas já existem (criadas na Fase 1). A gravação é operação de dados (UPDATE), feita via `run_sql`.
+## Implementação
 
-## Entregas desta fase
+### 1. Modelo visual compatível
 
-### 1. Classificação idêntica à simulação aprovada
+- Definir opções e valores seguros para fonte, tamanho, peso, estilo, alinhamento, cor, altura de linha, espaçamento entre letras e animação.
+- Manter os campos antigos (`size`, `weight`, `align`, `color`, `spacing`) e acrescentar apenas os novos campos necessários.
+- Centralizar a leitura dos estilos e animações para que editor, visualização interativa e página pública renderizem o mesmo resultado.
+- Aplicar defaults somente na leitura, sem exigir atualização manual de quizzes existentes.
 
-- Reutiliza exatamente o mesmo classificador determinístico (`src/lib/offer-commercial-quality.ts`) e os mesmos dados de evidência (RPC `offers_quality_snapshot`, somente leitura) já validados no dryRun sobre as 7.310 ofertas.
-- Como o classificador é determinístico e nada mudou na base, o resultado é o mesmo da simulação: 6.005 commercial / 1.114 entertainment / 191 suspicious / 0 não analisadas.
+### 2. Seleção e edição direta no preview
 
-### 2. Gravação no banco (somente as 3 colunas de qualidade)
+- Tornar textos selecionáveis apenas no preview de edição.
+- Exibir contorno discreto no elemento selecionado e permitir editar o conteúdo diretamente, sem modal.
+- Enviar cada alteração para o estado atual do editor, reutilizando o autosave e seus estados existentes.
+- Clicar fora remove a seleção; trocar seção também limpa a seleção.
+- A página pública e o modo de teste completo não receberão atributos editáveis, contornos ou controles do editor.
 
-- UPDATE em lotes na tabela `offers`, preenchendo por oferta:
-  - `commercial_quality` = `commercial` | `suspicious` | `entertainment`
-  - `quality_reasons` = lista de motivos encontrados (jsonb)
-  - `quality_checked_at` = timestamp da gravação
-- O UPDATE toca **apenas** essas 3 colunas — nenhum outro campo é mencionado no comando.
-- Execução via ferramenta de dados (`run_sql`), com sua aprovação.
+### 3. Propriedades contextuais
 
-### 3. Verificação pós-gravação (relatório final no chat)
+- Quando nada estiver selecionado, manter as configurações atuais da seção e da aparência.
+- Quando um texto estiver selecionado, mostrar grupos de Tipografia, Cor, Espaçamento e Animação.
+- Quando um botão estiver selecionado, manter integralmente CTA/link/WhatsApp/checkout/nova aba e acrescentar somente os controles visuais e de animação.
+- Oferecer as 12 fontes solicitadas, tamanho com campo e incremento/decremento, seis pesos, normal/negrito/itálico/sublinhado, três alinhamentos, seletor hexadecimal e atalhos para as cores do quiz.
+- Limitar duração e atraso a intervalos razoáveis e incluir um comando para reexecutar a animação no preview.
 
-Antes de gravar, capturo um retrato (somente leitura) dos contadores atuais para comparação. Depois da gravação, confirmo:
+### 4. Renderização responsiva e animações
 
-1. Quantidades finais gravadas: Commercial / Suspicious / Entertainment (conferindo com o dryRun).
-2. Que `visible`, `qualified` e `is_active` estão **idênticos** ao retrato anterior (comparação antes/depois).
-3. Que a vitrine continua com as mesmas 85 ofertas (nada sumiu).
-4. As 4 ofertas de entretenimento da vitrine, agora com seus valores gravados (motivos inclusos).
-5. As 5 ofertas suspeitas da vitrine, com motivos.
-6. Amostra de conferência de ofertas `commercial` gravadas.
+- Aplicar tamanho responsivo com limite baseado no tamanho configurado e no espaço disponível, preservando quebra de linha e largura do conteúdo em Desktop, Tablet e Mobile.
+- Implementar em CSS, sem biblioteca pesada: Nenhuma, Fade In/Up/Down/Left/Right, Zoom In/Out, Bounce e Pulse.
+- Executar uma vez quando o elemento entra em cena; no editor, reexecutar sob comando.
+- Respeitar `prefers-reduced-motion`, desabilitando efeitos não essenciais.
+- Aplicar animações a textos e botões sem alterar cliques, avanço, CTA ou estados de carregamento.
+
+### 5. Fontes
+
+- Carregar Poppins, Inter, Montserrat, Roboto, Open Sans, Lato, Nunito, Raleway, Oswald, Playfair Display, Merriweather e Bebas Neue por uma única folha otimizada com `display=swap` e preconnect já existente.
+- Preservar a fonte global atual como fallback e permitir sobrescrita individual por elemento.
+
+## Arquivos previstos
+
+- `src/lib/quiz-types.ts`: tipos/opções/defaults dos novos estilos, sem alterar o formato persistente existente.
+- Novo módulo visual compartilhado do quiz: normalização de estilos, limites e classes de animação.
+- `src/components/quiz/quiz-preview.tsx`: seleção, edição direta, contorno e reprodução de animação no editor.
+- `src/components/quiz/quiz-panels.tsx`: painel contextual de texto/botão e controles agrupados.
+- `src/components/quiz/quiz-runner.tsx`: mesma tipografia e animações no teste completo e na página pública, sem mudar a lógica funcional.
+- `src/routes/modelar-quiz.$id.tsx`: estado de elemento selecionado e integração com o autosave atual.
+- `src/styles.css`: keyframes isolados do quiz e redução de movimento.
+- `src/routes/__root.tsx`: ampliar somente a folha de fontes no cabeçalho.
 
 ## Validação
 
-1. Contadores gravados batem com o dryRun (6.005 / 191 / 1.114).
-2. Comparação antes/depois prova que visibilidade, qualificação e mineração ficaram intactas.
-3. Relatório final entregue no chat.
-
-**PARO após o relatório e aguardo sua aprovação. Nenhuma regra de remoção/ocultação de ofertas nesta fase.**
+- Verificar TypeScript e o build automático sem erros.
+- Abrir um quiz antigo e confirmar defaults, edição direta e autosave.
+- Alterar fonte, tamanho, peso, estilo, cor, alinhamento, line-height, letter-spacing, animação, duração e atraso; salvar, recarregar e confirmar persistência.
+- Testar animação de texto e botão, inclusive reexecução no editor.
+- Conferir editor nos modos Desktop, Tablet e Mobile e o layout por abas em telas menores.
+- Testar o fluxo completo no preview: respostas, voltar, captura e CTA.
+- Publicar/abrir um quiz de teste e confirmar ausência total de interface editável, animação única e preservação de CTA, leads, analytics e UTM já existentes.
+- Corrigir somente regressões diretamente ligadas à Fase 5.
