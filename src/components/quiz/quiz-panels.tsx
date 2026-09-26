@@ -1,4 +1,6 @@
-import { ChevronDown, GripVertical, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { ChevronDown, CornerDownRight, GripVertical, Plus, Trash2 } from "lucide-react";
+import { validateRule } from "@/lib/quiz-logic";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -790,9 +792,11 @@ function ElementEditor({
 export function SectionProperties({
   section,
   onChange,
+  allSections = [],
 }: {
   section: QuizSection;
   onChange: (patch: Partial<QuizSection>) => void;
+  allSections?: QuizSection[];
 }) {
   const setElement = (id: string, patch: Partial<QuizElement>) =>
     onChange({
@@ -835,6 +839,7 @@ export function SectionProperties({
             onChange={(patch) => setElement(el.id, patch)}
             onRemove={() => onChange({ elements: section.elements.filter((e) => e.id !== el.id) })}
             onMove={(dir) => moveElement(el.id, dir)}
+            allSections={allSections}
           />
         ))}
       </div>

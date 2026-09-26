@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { countRulesTo, stripRulesTo } from "@/lib/quiz-logic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowLeft,
@@ -221,9 +222,16 @@ function EditorContent() {
   };
 
   const removeSection = (sid: string) => {
+    if (
+      countRulesTo(sections, sid) > 0 &&
+      !window.confirm(
+        "Esta seção possui regras condicionais apontando para ela. Ao excluir, essas conexões serão removidas.",
+      )
+    )
+      return;
     touch();
     setSections((prev) => {
-      const next = prev.filter((s) => s.id !== sid).map((s, i) => ({ ...s, position: i }));
+      const next = stripRulesTo(prev, sid).filter((s) => s.id !== sid).map((s, i) => ({ ...s, position: i }));
       if (selectedId === sid) setSelectedId(next[0]?.id ?? null);
       return next;
     });
@@ -399,7 +407,11 @@ function EditorContent() {
           />
         )}
         {selected ? (
-          <SectionProperties section={selected} onChange={(p) => updateSection(selected.id, p)} />
+          <SectionProperties
+            section={selected}
+            allSections={sections}
+            onChange={(p) => updateSection(selected.id, p)}
+          />
         ) : (
           <p className="text-sm text-muted-foreground">Selecione uma seção para editar.</p>
         )}
