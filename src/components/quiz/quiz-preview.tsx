@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import {
   animationClass,
@@ -73,7 +73,7 @@ function EditableText({
   as?: "p" | "span";
 }) {
   const ref = useRef<HTMLElement | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const node = ref.current;
     if (node && document.activeElement !== node && node.innerText !== value) node.innerText = value;
   }, [value]);
@@ -86,9 +86,7 @@ function EditableText({
       suppressContentEditableWarning
       spellCheck={editable}
       onInput={editable ? (e) => onChange?.((e.currentTarget as HTMLElement).innerText) : undefined}
-    >
-      {value}
-    </Tag>
+    />
   );
 }
 
