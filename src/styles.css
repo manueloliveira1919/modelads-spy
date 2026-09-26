@@ -273,3 +273,34 @@
   box-shadow: 0 0 0 1px color-mix(in oklab, var(--warm) 40%, transparent),
     0 10px 40px -12px color-mix(in oklab, var(--warm) 40%, transparent);
 }
+
+/* ===== Modelar Quiz — animações por elemento (executam uma única vez) ===== */
+@keyframes quiz-fade-in { from { opacity: 0 } to { opacity: 1 } }
+@keyframes quiz-fade-up { from { opacity: 0; transform: translateY(24px) } to { opacity: 1; transform: none } }
+@keyframes quiz-fade-down { from { opacity: 0; transform: translateY(-24px) } to { opacity: 1; transform: none } }
+@keyframes quiz-fade-left { from { opacity: 0; transform: translateX(24px) } to { opacity: 1; transform: none } }
+@keyframes quiz-fade-right { from { opacity: 0; transform: translateX(-24px) } to { opacity: 1; transform: none } }
+@keyframes quiz-zoom-in { from { opacity: 0; transform: scale(.85) } to { opacity: 1; transform: none } }
+@keyframes quiz-zoom-out { from { opacity: 0; transform: scale(1.15) } to { opacity: 1; transform: none } }
+@keyframes quiz-bounce { 0% { opacity: 0; transform: translateY(-20px) } 50% { opacity: 1; transform: translateY(6px) } 75% { transform: translateY(-3px) } 100% { transform: none } }
+@keyframes quiz-pulse { 0%, 100% { transform: scale(1) } 50% { transform: scale(1.06) } }
+.quiz-animation-fade-in, .quiz-animation-fade-up, .quiz-animation-fade-down, .quiz-animation-fade-left,
+.quiz-animation-fade-right, .quiz-animation-zoom-in, .quiz-animation-zoom-out, .quiz-animation-bounce, .quiz-animation-pulse {
+  animation-duration: var(--quiz-animation-duration, .6s);
+  animation-delay: var(--quiz-animation-delay, 0s);
+  animation-timing-function: cubic-bezier(.2, .7, .2, 1);
+  animation-fill-mode: both;
+  animation-iteration-count: 1;
+}
+.quiz-animation-fade-in { animation-name: quiz-fade-in }
+.quiz-animation-fade-up { animation-name: quiz-fade-up }
+.quiz-animation-fade-down { animation-name: quiz-fade-down }
+.quiz-animation-fade-left { animation-name: quiz-fade-left }
+.quiz-animation-fade-right { animation-name: quiz-fade-right }
+.quiz-animation-zoom-in { animation-name: quiz-zoom-in }
+.quiz-animation-zoom-out { animation-name: quiz-zoom-out }
+.quiz-animation-bounce { animation-name: quiz-bounce }
+.quiz-animation-pulse { animation-name: quiz-pulse }
+@media (prefers-reduced-motion: reduce) {
+  [class*="quiz-animation-"] { animation: none !important; }
+}
