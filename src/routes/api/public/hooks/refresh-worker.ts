@@ -554,6 +554,16 @@ async function analyzeLandingBatch(
         offer_id: offer.id,
         error: upErr.message,
       });
+    } else {
+      // Recalcula visibilidade na hora: landing_validated novo não pode ficar
+      // desatualizado até o próximo recompute geral.
+      const { error: recalcErr } = await supabase.rpc("offers_recompute", { p_ids: [offer.id] });
+      if (recalcErr) {
+        await jobLog(supabase, runId, "landing.analyze", `falha ao recalcular oferta ${offer.id}`, {
+          offer_id: offer.id,
+          error: recalcErr.message,
+        });
+      }
     }
   });
 
