@@ -20,6 +20,13 @@ import {
   storablePhone,
 } from "@/lib/quiz-conversion";
 import { submitQuizLead } from "@/lib/quiz-public";
+import {
+  animationClass,
+  animationStyle,
+  buttonTextVisualStyle,
+  textVisualStyle,
+} from "@/lib/quiz-visual";
+import { QuizFonts } from "@/components/quiz/quiz-preview";
 import type { QuizElement, QuizSection, QuizSettings, OptionItem } from "@/lib/quiz-types";
 
 
@@ -106,22 +113,26 @@ function PrimaryButton({
 }) {
   const s = st ?? {};
   const full = (s.width || settings.button.width) === "full";
+  const txt = buttonTextVisualStyle(s, settings);
   return (
-    <div style={{ textAlign: (s.align as React.CSSProperties["textAlign"]) || "center" }}>
+    <div
+      className={animationClass(s)}
+      style={{ ...animationStyle(s), textAlign: (s.align as React.CSSProperties["textAlign"]) || "center" }}
+    >
       <button
         type="button"
         onClick={onClick}
         disabled={loading}
         className="inline-flex items-center justify-center gap-2 transition-transform active:scale-[.98] disabled:opacity-70"
         style={{
+          ...txt,
+          textAlign: "center",
           backgroundColor: (s.bg as string) || settings.colors.button,
-          color: (s.color as string) || settings.colors.buttonText,
           borderRadius: Number(s.radius ?? settings.button.radius),
           minHeight: Math.max(48, settings.button.height),
-          fontSize: Number(s.size) || 16,
-          fontWeight: 700,
           width: full ? "100%" : undefined,
-          padding: full ? "0 16px" : "0 28px",
+          maxWidth: "100%",
+          padding: full ? "8px 16px" : "8px 28px",
         }}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -323,19 +334,13 @@ export function QuizRunner({
     switch (el.type) {
       case "text":
         return (
-          <p
+          <div
             key={el.id}
-            style={{
-              fontSize: Number(st.size) || 16,
-              fontWeight: Number(st.weight) || 400,
-              textAlign: (st.align as React.CSSProperties["textAlign"]) || "center",
-              color: (st.color as string) || settings.colors.text,
-              marginBottom: Number(st.spacing) || 0,
-              lineHeight: 1.35,
-            }}
+            className={animationClass(st)}
+            style={{ ...animationStyle(st), marginBottom: Number(st.spacing) || 0 }}
           >
-            {String(ct.text ?? "")}
-          </p>
+            <p style={textVisualStyle(st, settings, 16, 400)}>{String(ct.text ?? "")}</p>
+          </div>
         );
       case "image":
         return ct.url ? (
@@ -560,6 +565,7 @@ export function QuizRunner({
             </div>
           )}
 
+          <QuizFonts settings={settings} elements={section.elements} />
           <div
             key={section.id}
             className={cn(
