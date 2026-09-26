@@ -22,6 +22,8 @@ export interface QuizSessionState {
   /** chave: `${sectionId}:${elementId}` */
   answers: Record<string, QuizAnswer>;
   current_section: number;
+  /** Fase 6: seções realmente visitadas antes da atual (para o Voltar). */
+  history: number[];
   started_at: string;
 }
 
@@ -35,6 +37,7 @@ export function newSession(quizId: string): QuizSessionState {
     session_id: uid(),
     answers: {},
     current_section: 0,
+    history: [],
     started_at: new Date().toISOString(),
   };
 }

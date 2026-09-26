@@ -79,6 +79,8 @@ export interface OptionItem {
   id: string;
   label: string;
   image?: string;
+  /** Fase 6: id da seção de destino. Ausente = próxima seção normal. */
+  next?: string;
 }
 export interface OptionsContent {
   description?: string;
