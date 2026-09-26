@@ -271,16 +271,20 @@ function ElementEditor({
   onChange,
   onRemove,
   onMove,
+  allSections = [],
 }: {
   el: QuizElement;
   onChange: (patch: Partial<QuizElement>) => void;
   onRemove: () => void;
   onMove: (dir: -1 | 1) => void;
+  allSections?: QuizSection[];
 }) {
   const st = el.settings as Record<string, any>;
   const ct = el.content as Record<string, any>;
   const setSt = (patch: Record<string, unknown>) => onChange({ settings: { ...st, ...patch } });
   const setCt = (patch: Record<string, unknown>) => onChange({ content: { ...ct, ...patch } });
+  const [ruleErrors, setRuleErrors] = useState<Record<string, string>>({});
+  const sectionTitle = (id?: string) => allSections.find((s) => s.id === id)?.title;
 
   return (
     <details className="group rounded-xl border border-border bg-card/60" open>
@@ -628,6 +632,45 @@ function ElementEditor({
                         onChange={(e) => update({ image: e.target.value })}
                         className="h-8 text-xs"
                       />
+                      {allSections.length > 1 && (
+                        <div className="space-y-1">
+                          <Select
+                            value={o.next && sectionTitle(o.next) !== undefined ? o.next : "__default"}
+                            onValueChange={(v) => {
+                              const target = v === "__default" ? null : v;
+                              const err = validateRule(allSections, el.section_id, el.id, o.id, target);
+                              setRuleErrors((m) => ({ ...m, [o.id]: err ?? "" }));
+                              if (err) return;
+                              const next = [...arr];
+                              const { next: _n, ...rest } = o as typeof o & { next?: string };
+                              next[i] = target ? { ...rest, next: target } : rest;
+                              setCt({ options: next });
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <span className="flex min-w-0 items-center gap-1.5 truncate">
+                                <CornerDownRight className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                                {o.next && sectionTitle(o.next) !== undefined
+                                  ? `Ir para: ${sectionTitle(o.next)}`
+                                  : "Próxima seção padrão"}
+                              </span>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="__default">Próxima seção padrão</SelectItem>
+                              {allSections
+                                .filter((s) => s.id !== el.section_id)
+                                .map((s, si) => (
+                                  <SelectItem key={s.id} value={s.id}>
+                                    {s.title || `Seção ${si + 1}`}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                          {ruleErrors[o.id] && (
+                            <p className="text-[11px] text-destructive">{ruleErrors[o.id]}</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 },

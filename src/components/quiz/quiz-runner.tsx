@@ -20,6 +20,7 @@ import {
   storablePhone,
 } from "@/lib/quiz-conversion";
 import { submitQuizLead } from "@/lib/quiz-public";
+import { resolveNextIndex } from "@/lib/quiz-logic";
 import {
   animationClass,
   animationStyle,
