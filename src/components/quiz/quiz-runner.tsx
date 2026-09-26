@@ -179,14 +179,25 @@ export function QuizRunner({
       setError(null);
       setAnim("out");
       window.setTimeout(() => {
-        setSession((s) => ({
-          ...s,
-          current_section: Math.min(Math.max(s.current_section + delta, 0), Math.max(0, total - 1)),
-        }));
+        setSession((s) => {
+          const last = Math.max(0, total - 1);
+          const cur = Math.min(s.current_section, last);
+          const history = s.history ?? [];
+          if (delta === -1) {
+            // Volta para a seção realmente visitada antes (histórico real).
+            if (history.length) {
+              return { ...s, current_section: history[history.length - 1], history: history.slice(0, -1) };
+            }
+            return { ...s, current_section: Math.max(cur - 1, 0) };
+          }
+          const target = Math.min(Math.max(resolveNextIndex(sections, cur, s.answers), 0), last);
+          if (target === cur) return s;
+          return { ...s, current_section: target, history: [...history, cur] };
+        });
         setAnim("in");
       }, 120);
     },
-    [total],
+    [total, sections],
   );
 
   const restart = useCallback(() => {
