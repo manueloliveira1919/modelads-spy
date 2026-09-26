@@ -498,14 +498,21 @@ interface LandingBatchStats {
 }
 
 // Seleciona até LANDING_ANALYZE_BATCH ofertas com landing_key nunca verificadas
-// e grava o resultado em public.offers. Retorna contagens para o log.
-async function analyzeLandingBatch(supabase: any, runId: string): Promise<LandingBatchStats> {
-  const { data: offers, error } = await supabase
+// (opcionalmente restritas a pageIds específicos) e grava o resultado em
+// public.offers. Retorna contagens para o log.
+async function analyzeLandingBatch(
+  supabase: any,
+  runId: string,
+  pageIds?: string[],
+  limit: number = LANDING_ANALYZE_BATCH,
+): Promise<LandingBatchStats> {
+  let query = supabase
     .from("offers")
     .select("id, landing_key")
     .not("landing_key", "is", null)
-    .is("landing_checked_at", null)
-    .limit(LANDING_ANALYZE_BATCH);
+    .is("landing_checked_at", null);
+  if (pageIds && pageIds.length) query = query.in("page_id", pageIds);
+  const { data: offers, error } = await query.limit(limit);
   if (error) throw new Error(`selecionar ofertas: ${error.message}`);
 
   const stats: LandingBatchStats = { analyzed: 0, validated: 0, failed: 0 };
