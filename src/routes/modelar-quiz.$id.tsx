@@ -40,7 +40,7 @@ import {
 import { cn } from "@/lib/utils";
 import { QuizPreview, type PreviewDevice } from "@/components/quiz/quiz-preview";
 import { QuizRunner } from "@/components/quiz/quiz-runner";
-import { AppearancePanel, SectionProperties } from "@/components/quiz/quiz-panels";
+import { AppearancePanel, ElementVisualPanel, SectionProperties } from "@/components/quiz/quiz-panels";
 import { isSlugAvailable, loadQuiz, saveQuiz, SlugTakenError } from "@/lib/quiz-api";
 import { useSlugAvailability } from "@/lib/use-slug-availability";
 import {
