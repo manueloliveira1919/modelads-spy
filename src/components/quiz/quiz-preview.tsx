@@ -183,8 +183,8 @@ function ElementView({
       const txt = buttonTextVisualStyle(st, settings);
       return (
         <div className={animationClass(st)} style={{ ...animationStyle(st), textAlign: st.align || "center" }}>
-          <button
-            type="button"
+          <div
+            className="inline-flex items-center justify-center"
             style={{
               ...txt,
               textAlign: "center",
@@ -202,7 +202,7 @@ function ElementView({
               editable={selected && !!onTextChange}
               onChange={(v) => onTextChange?.({ label: v })}
             />
-          </button>
+          </div>
         </div>
       );
     }
