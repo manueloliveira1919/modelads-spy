@@ -580,7 +580,7 @@ function ElementEditor({
             </Field>
 
             <div className="space-y-2">
-              {((ct.options ?? []) as { id: string; label: string; image?: string }[]).map(
+              {((ct.options ?? []) as { id: string; label: string; image?: string; next?: string }[]).map(
                 (o, i, arr) => {
                   const update = (patch: Record<string, unknown>) => {
                     const next = [...arr];
