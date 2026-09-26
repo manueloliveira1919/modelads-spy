@@ -19,6 +19,7 @@ import {
   type QuizSection,
   type QuizSettings,
 } from "@/lib/quiz-types";
+import { QUIZ_ANIMATIONS, QUIZ_FONTS } from "@/lib/quiz-visual";
 
 const ELEMENT_LABEL: Record<ElementType, string> = {
   text: "Texto",
@@ -132,6 +133,138 @@ const ALIGN_OPTIONS = [
   { value: "center", label: "Centro" },
   { value: "right", label: "Direita" },
 ];
+
+const WEIGHT_OPTIONS = [
+  { value: "300", label: "Light" },
+  { value: "400", label: "Regular" },
+  { value: "500", label: "Medium" },
+  { value: "600", label: "Semibold" },
+  { value: "700", label: "Bold" },
+  { value: "800", label: "Extra Bold" },
+];
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3 rounded-xl border border-border p-3">
+      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+/** Painel contextual de estilo visual para texto ou botão selecionado no preview. */
+export function ElementVisualPanel({
+  element,
+  settings,
+  onChange,
+  onReplay,
+  onClose,
+}: {
+  element: QuizElement;
+  settings: QuizSettings;
+  onChange: (patch: Record<string, unknown>) => void;
+  onReplay: () => void;
+  onClose: () => void;
+}) {
+  const st = element.settings as Record<string, any>;
+  const isButton = element.type === "button";
+  const size = Number(st.size) || 16;
+  const defColor = isButton ? settings.colors.buttonText : settings.colors.text;
+  const style = st.fontStyle === "italic" ? "italic" : st.textDecoration === "underline" ? "underline" : "normal";
+  const bold = Number(st.weight) >= 700;
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-sm font-semibold">{isButton ? "Botão selecionado" : "Texto selecionado"}</div>
+        <Button size="sm" variant="ghost" onClick={onClose}>
+          Fechar
+        </Button>
+      </div>
+      <Group title="Tipografia">
+        <SelectField
+          label="Fonte"
+          value={String(st.fontFamily || "__global")}
+          options={[{ value: "__global", label: `Padrão do quiz (${settings.font})` }, ...QUIZ_FONTS.map((f) => ({ value: f, label: f }))]}
+          onChange={(v) => onChange({ fontFamily: v === "__global" ? "" : v })}
+        />
+        <Field label="Tamanho (px)">
+          <div className="flex items-center gap-1">
+            <Button size="sm" variant="outline" onClick={() => onChange({ size: Math.max(10, size - 1) })}>−</Button>
+            <Input type="number" min={10} max={120} value={size} onChange={(e) => onChange({ size: Number(e.target.value) })} className="h-9" />
+            <Button size="sm" variant="outline" onClick={() => onChange({ size: Math.min(120, size + 1) })}>+</Button>
+          </div>
+        </Field>
+        <SelectField
+          label="Peso"
+          value={String(st.weight ?? (isButton ? 700 : 400))}
+          options={WEIGHT_OPTIONS}
+          onChange={(v) => onChange({ weight: Number(v) })}
+        />
+        <Field label="Estilo">
+          <div className="grid grid-cols-4 gap-1">
+            {[
+              { k: "normal", l: "Normal", p: { fontStyle: "normal", textDecoration: "none" } },
+              { k: "bold", l: "B", p: { weight: bold ? 400 : 700 } },
+              { k: "italic", l: "I", p: { fontStyle: st.fontStyle === "italic" ? "normal" : "italic" } },
+              { k: "underline", l: "U", p: { textDecoration: st.textDecoration === "underline" ? "none" : "underline" } },
+            ].map((o) => {
+              const active = o.k === "bold" ? bold : o.k === "italic" ? st.fontStyle === "italic" : o.k === "underline" ? st.textDecoration === "underline" : style === "normal";
+              return (
+                <Button key={o.k} size="sm" variant={active ? "default" : "outline"} onClick={() => onChange(o.p)}>
+                  {o.l}
+                </Button>
+              );
+            })}
+          </div>
+        </Field>
+        <SelectField label="Alinhamento" value={String(st.align ?? "center")} options={ALIGN_OPTIONS} onChange={(v) => onChange({ align: v })} />
+      </Group>
+      <Group title="Cor">
+        <ColorField label="Cor do texto" value={String(st.color ?? "")} fallback={defColor} onChange={(v) => onChange({ color: v })} />
+        <div className="flex flex-wrap gap-1.5">
+          {[settings.colors.primary, settings.colors.secondary, settings.colors.text, settings.colors.button, settings.colors.buttonText].map((c, i) => (
+            <button
+              key={`${c}-${i}`}
+              type="button"
+              aria-label={`Usar cor ${c}`}
+              onClick={() => onChange({ color: c })}
+              className="h-7 w-7 rounded-md border border-border"
+              style={{ backgroundColor: c }}
+            />
+          ))}
+        </div>
+      </Group>
+      <Group title="Espaçamento">
+        <NumberField label="Altura da linha" value={Number(st.lineHeight ?? 1.35)} min={1} max={2.2} onChange={(v) => onChange({ lineHeight: v })} />
+        <NumberField label="Espaço entre letras (px)" value={Number(st.letterSpacing ?? 0)} min={0} max={12} onChange={(v) => onChange({ letterSpacing: v })} />
+      </Group>
+      <Group title="Animação">
+        <SelectField
+          label="Efeito"
+          value={String(st.animation ?? "none")}
+          options={QUIZ_ANIMATIONS.map((a) => ({ value: a.value, label: a.label }))}
+          onChange={(v) => {
+            onChange({ animation: v });
+            setTimeout(onReplay, 0);
+          }}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <NumberField label="Duração (s)" value={Number(st.animationDuration ?? 0.6)} min={0.2} max={3} onChange={(v) => onChange({ animationDuration: v })} />
+          <NumberField label="Atraso (s)" value={Number(st.animationDelay ?? 0)} min={0} max={2} onChange={(v) => onChange({ animationDelay: v })} />
+        </div>
+        <Button size="sm" variant="outline" className="w-full" onClick={onReplay}>
+          Reexecutar animação
+        </Button>
+      </Group>
+      {isButton && (
+        <p className="text-xs text-muted-foreground">
+          A ação do botão (avançar, link, WhatsApp, checkout, nova aba) continua em "Elementos da seção", abaixo.
+        </p>
+      )}
+    </div>
+  );
+}
+
 
 function ElementEditor({
   el,
@@ -694,9 +827,7 @@ export function AppearancePanel({
         label="Fonte"
         value={settings.font}
         options={[
-          { value: "Poppins", label: "Poppins" },
-          { value: "Inter", label: "Inter" },
-          { value: "Montserrat", label: "Montserrat" },
+          ...QUIZ_FONTS.map((f) => ({ value: f, label: f })),
           { value: "system-ui", label: "Sistema" },
         ]}
         onChange={(v) => onChange({ font: v })}
