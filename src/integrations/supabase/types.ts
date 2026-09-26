@@ -1360,6 +1360,7 @@ export type Database = {
             Returns: number
           }
       mining_enqueue_jobs: { Args: { p_jobs: Json }; Returns: undefined }
+      mining_enqueue_landing_maintenance: { Args: never; Returns: undefined }
       mining_ensure_classify_jobs: {
         Args: { p_run_id: string }
         Returns: undefined
