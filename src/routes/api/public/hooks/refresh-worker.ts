@@ -445,6 +445,18 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
     });
     if (attachError) dbError = `agrupar ofertas: ${attachError.message}`;
     else if (attached) offerStats = attached as typeof offerStats;
+
+    // Landing em linha: valida já as ofertas que este próprio job descobriu,
+    // ao longo do run inteiro — não só no finalize.
+    if (!attachError && rowsToUpsert.length) {
+      try {
+        await analyzeLandingBatch(supabase, job.run_id, [
+          ...new Set(rowsToUpsert.map((r) => r.page_id as string)),
+        ]);
+      } catch (err) {
+        console.error("analyzeLandingBatch (classify) error", (err as Error).message);
+      }
+    }
   }
 
   await jobLog(
@@ -498,14 +510,21 @@ interface LandingBatchStats {
 }
 
 // Seleciona até LANDING_ANALYZE_BATCH ofertas com landing_key nunca verificadas
-// e grava o resultado em public.offers. Retorna contagens para o log.
-async function analyzeLandingBatch(supabase: any, runId: string): Promise<LandingBatchStats> {
-  const { data: offers, error } = await supabase
+// (opcionalmente restritas a pageIds específicos) e grava o resultado em
+// public.offers. Retorna contagens para o log.
+async function analyzeLandingBatch(
+  supabase: any,
+  runId: string,
+  pageIds?: string[],
+  limit: number = LANDING_ANALYZE_BATCH,
+): Promise<LandingBatchStats> {
+  let query = supabase
     .from("offers")
     .select("id, landing_key")
     .not("landing_key", "is", null)
-    .is("landing_checked_at", null)
-    .limit(LANDING_ANALYZE_BATCH);
+    .is("landing_checked_at", null);
+  if (pageIds && pageIds.length) query = query.in("page_id", pageIds);
+  const { data: offers, error } = await query.limit(limit);
   if (error) throw new Error(`selecionar ofertas: ${error.message}`);
 
   const stats: LandingBatchStats = { analyzed: 0, validated: 0, failed: 0 };
@@ -547,6 +566,16 @@ async function analyzeLandingBatch(supabase: any, runId: string): Promise<Landin
         offer_id: offer.id,
         error: upErr.message,
       });
+    } else {
+      // Recalcula visibilidade na hora: landing_validated novo não pode ficar
+      // desatualizado até o próximo recompute geral.
+      const { error: recalcErr } = await supabase.rpc("offers_recompute", { p_ids: [offer.id] });
+      if (recalcErr) {
+        await jobLog(supabase, runId, "landing.analyze", `falha ao recalcular oferta ${offer.id}`, {
+          offer_id: offer.id,
+          error: recalcErr.message,
+        });
+      }
     }
   });
 
@@ -610,7 +639,8 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   // mesmo lugar da fusão de duplicadas. Erro aqui nunca derruba o finalize.
   let landingStats: LandingBatchStats | null = null;
   try {
-    landingStats = await analyzeLandingBatch(supabase, job.run_id);
+    // Rede de segurança (sem pageIds): pega sobras de outras fontes.
+    landingStats = await analyzeLandingBatch(supabase, job.run_id, undefined, 150);
     if (landingStats.analyzed > 0) {
       await jobLog(
         supabase,
