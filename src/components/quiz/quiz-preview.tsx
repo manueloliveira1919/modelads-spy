@@ -311,6 +311,7 @@ export function QuizPreview({
   onSelectElement,
   onElementContentChange,
   replayKey = 0,
+  replayTarget = null,
 }: {
   section: QuizSection | null;
   settings: QuizSettings;
@@ -322,6 +323,7 @@ export function QuizPreview({
   onSelectElement?: (id: string | null) => void;
   onElementContentChange?: (id: string, patch: Record<string, unknown>) => void;
   replayKey?: number;
+  replayTarget?: string | null;
 }) {
   const percent = total > 0 ? Math.round(((index + 1) / total) * 100) : 0;
 
@@ -369,7 +371,7 @@ export function QuizPreview({
                 const isSel = selectable && selectedElementId === el.id;
                 return (
                   <div
-                    key={`${el.id}-${replayKey}`}
+                    key={`${el.id}-${replayTarget === el.id ? replayKey : 0}`}
                     data-quiz-element={el.type}
                     className={cn(
                       "min-w-0 rounded-md",

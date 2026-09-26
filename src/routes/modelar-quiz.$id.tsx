@@ -109,6 +109,13 @@ function EditorContent() {
   const [previewMode, setPreviewMode] = useState(search.preview === 1);
   const [runKey, setRunKey] = useState(0);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+  const [replay, setReplay] = useState<{ id: string | null; n: number }>({ id: null, n: 0 });
+
+  // Trocar de seção limpa a seleção de elemento.
+  useEffect(() => {
+    setSelectedElementId(null);
+  }, [selectedId]);
 
   const slugCheck = useSlugAvailability(quiz?.slug ?? "", id);
   const slugBlocked = slugCheck.status === "taken" || slugCheck.status === "empty";
@@ -173,6 +180,18 @@ function EditorContent() {
     touch();
     setSections((prev) => prev.map((s) => (s.id === sid ? { ...s, ...patch } : s)));
   };
+  // Atualiza content/settings (JSON existente) de um elemento; reutiliza o autosave.
+  const updateElement = (eid: string, key: "content" | "settings", patch: Record<string, unknown>) => {
+    touch();
+    setSections((prev) =>
+      prev.map((s) => ({
+        ...s,
+        elements: s.elements.map((e) =>
+          e.id === eid ? { ...e, [key]: { ...(e[key] as Record<string, unknown>), ...patch } } : e,
+        ),
+      })),
+    );
+  };
 
   const addSection = (type: SectionType) => {
     if (!quiz) return;
@@ -232,6 +251,10 @@ function EditorContent() {
     0,
     sections.findIndex((s) => s.id === selectedId),
   );
+  const selectedElement =
+    selected?.elements.find(
+      (e) => e.id === selectedElementId && (e.type === "text" || e.type === "button"),
+    ) ?? null;
 
   if (loadError) {
     return (
@@ -365,7 +388,16 @@ function EditorContent() {
         <TabsTrigger value="secao">Seção</TabsTrigger>
         <TabsTrigger value="aparencia">Aparência</TabsTrigger>
       </TabsList>
-      <TabsContent value="secao" className="mt-3">
+      <TabsContent value="secao" className="mt-3 space-y-4">
+        {selected && selectedElement && (
+          <ElementVisualPanel
+            element={selectedElement}
+            settings={quiz.settings}
+            onChange={(p) => updateElement(selectedElement.id, "settings", p)}
+            onReplay={() => setReplay((r) => ({ id: selectedElement.id, n: r.n + 1 }))}
+            onClose={() => setSelectedElementId(null)}
+          />
+        )}
         {selected ? (
           <SectionProperties section={selected} onChange={(p) => updateSection(selected.id, p)} />
         ) : (
@@ -389,6 +421,11 @@ function EditorContent() {
         device={device}
         index={selectedIndex}
         total={sections.length}
+        selectedElementId={selectedElementId}
+        onSelectElement={setSelectedElementId}
+        onElementContentChange={(eid, p) => updateElement(eid, "content", p)}
+        replayKey={replay.n}
+        replayTarget={replay.id}
       />
     </div>
   );
