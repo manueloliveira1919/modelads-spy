@@ -1,4 +1,13 @@
+import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import {
+  animationClass,
+  animationStyle,
+  buttonTextVisualStyle,
+  collectQuizFonts,
+  quizFontsHref,
+  textVisualStyle,
+} from "@/lib/quiz-visual";
 import type { QuizElement, QuizSection, QuizSettings } from "@/lib/quiz-types";
 
 export type PreviewDevice = "desktop" | "tablet" | "mobile";
@@ -33,14 +42,68 @@ function embedUrl(url: string): string | null {
   return url;
 }
 
+/** Carrega sob demanda as fontes usadas no quiz (display=swap). */
+export function QuizFonts({
+  settings,
+  elements,
+}: {
+  settings: QuizSettings;
+  elements: { settings: Record<string, unknown> }[];
+}) {
+  const href = quizFontsHref(collectQuizFonts(settings, elements));
+  if (!href) return null;
+  return <link rel="stylesheet" href={href} precedence="default" />;
+}
+
+/** Texto editável direto no preview (somente editor). Não re-renderiza o conteúdo
+ *  enquanto está em foco, para o cursor não pular. */
+function EditableText({
+  value,
+  editable,
+  onChange,
+  className,
+  style,
+  as: Tag = "p",
+}: {
+  value: string;
+  editable: boolean;
+  onChange?: (v: string) => void;
+  className?: string;
+  style?: React.CSSProperties;
+  as?: "p" | "span";
+}) {
+  const ref = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const node = ref.current;
+    if (node && document.activeElement !== node && node.innerText !== value) node.innerText = value;
+  }, [value]);
+  return (
+    <Tag
+      ref={ref as never}
+      className={cn(className, editable && "cursor-text outline-none")}
+      style={style}
+      contentEditable={editable || undefined}
+      suppressContentEditableWarning
+      spellCheck={editable}
+      onInput={editable ? (e) => onChange?.((e.currentTarget as HTMLElement).innerText) : undefined}
+    >
+      {value}
+    </Tag>
+  );
+}
+
 function ElementView({
   el,
   settings,
   percent,
+  selected = false,
+  onTextChange,
 }: {
   el: QuizElement;
   settings: QuizSettings;
   percent: number;
+  selected?: boolean;
+  onTextChange?: (patch: Record<string, unknown>) => void;
 }) {
   const st = el.settings as Record<string, any>;
   const ct = el.content as Record<string, any>;
@@ -48,18 +111,17 @@ function ElementView({
   switch (el.type) {
     case "text":
       return (
-        <p
-          style={{
-            fontSize: Number(st.size) || 16,
-            fontWeight: Number(st.weight) || 400,
-            textAlign: st.align || "center",
-            color: st.color || settings.colors.text,
-            marginBottom: Number(st.spacing) || 0,
-            lineHeight: 1.35,
-          }}
+        <div
+          className={animationClass(st)}
+          style={{ ...animationStyle(st), marginBottom: Number(st.spacing) || 0 }}
         >
-          {ct.text || "Texto"}
-        </p>
+          <EditableText
+            value={String(ct.text ?? "")}
+            editable={selected && !!onTextChange}
+            onChange={(v) => onTextChange?.({ text: v })}
+            style={textVisualStyle(st, settings, 16, 400)}
+          />
+        </div>
       );
     case "image":
       return ct.url ? (
@@ -120,22 +182,28 @@ function ElementView({
     }
     case "button": {
       const full = (st.width || settings.button.width) === "full";
+      const txt = buttonTextVisualStyle(st, settings);
       return (
-        <div style={{ textAlign: st.align || "center" }}>
+        <div className={animationClass(st)} style={{ ...animationStyle(st), textAlign: st.align || "center" }}>
           <button
             type="button"
             style={{
+              ...txt,
+              textAlign: "center",
               backgroundColor: st.bg || settings.colors.button,
-              color: st.color || settings.colors.buttonText,
               borderRadius: Number(st.radius ?? settings.button.radius),
-              height: settings.button.height,
-              fontSize: Number(st.size) || 16,
-              fontWeight: 700,
+              minHeight: settings.button.height,
               width: full ? "100%" : undefined,
-              padding: full ? undefined : "0 28px",
+              maxWidth: "100%",
+              padding: full ? "8px 16px" : "8px 28px",
             }}
           >
-            {ct.label || "Botão"}
+            <EditableText
+              as="span"
+              value={String(ct.label ?? "Botão")}
+              editable={selected && !!onTextChange}
+              onChange={(v) => onTextChange?.({ label: v })}
+            />
           </button>
         </div>
       );
@@ -241,6 +309,10 @@ export function QuizPreview({
   index,
   total,
   className,
+  selectedElementId = null,
+  onSelectElement,
+  onElementContentChange,
+  replayKey = 0,
 }: {
   section: QuizSection | null;
   settings: QuizSettings;
@@ -248,11 +320,19 @@ export function QuizPreview({
   index: number;
   total: number;
   className?: string;
+  selectedElementId?: string | null;
+  onSelectElement?: (id: string | null) => void;
+  onElementContentChange?: (id: string, patch: Record<string, unknown>) => void;
+  replayKey?: number;
 }) {
   const percent = total > 0 ? Math.round(((index + 1) / total) * 100) : 0;
 
   return (
-    <div className={cn("flex w-full justify-center", className)}>
+    <div
+      className={cn("flex w-full justify-center", className)}
+      onClick={onSelectElement ? () => onSelectElement(null) : undefined}
+    >
+      <QuizFonts settings={settings} elements={section?.elements ?? []} />
       <div
         className="w-full overflow-hidden rounded-2xl border border-border shadow-2xl transition-all"
         style={{ maxWidth: DEVICE_WIDTH[device], ...backgroundStyle(settings) }}
@@ -286,9 +366,41 @@ export function QuizPreview({
               className="flex w-full flex-1 flex-col justify-center"
               style={{ gap: settings.layout.spacing }}
             >
-              {section.elements.map((el) => (
-                <ElementView key={el.id} el={el} settings={settings} percent={percent} />
-              ))}
+              {section.elements.map((el) => {
+                const selectable = !!onSelectElement && (el.type === "text" || el.type === "button");
+                const isSel = selectable && selectedElementId === el.id;
+                return (
+                  <div
+                    key={`${el.id}-${replayKey}`}
+                    data-quiz-element={el.type}
+                    className={cn(
+                      "min-w-0 rounded-md",
+                      selectable && "cursor-pointer outline-offset-4 hover:outline hover:outline-1 hover:outline-primary/40",
+                      isSel && "outline outline-2 outline-primary hover:outline-2 hover:outline-primary",
+                    )}
+                    onClick={
+                      selectable
+                        ? (e) => {
+                            e.stopPropagation();
+                            if (!isSel) onSelectElement?.(el.id);
+                          }
+                        : undefined
+                    }
+                  >
+                    <ElementView
+                      el={el}
+                      settings={settings}
+                      percent={percent}
+                      selected={isSel}
+                      onTextChange={
+                        onElementContentChange
+                          ? (patch) => onElementContentChange(el.id, patch)
+                          : undefined
+                      }
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
