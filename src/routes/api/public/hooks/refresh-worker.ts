@@ -445,6 +445,18 @@ async function processClassifyJob(supabase: any, job: MetaRefreshJob) {
     });
     if (attachError) dbError = `agrupar ofertas: ${attachError.message}`;
     else if (attached) offerStats = attached as typeof offerStats;
+
+    // Landing em linha: valida já as ofertas que este próprio job descobriu,
+    // ao longo do run inteiro — não só no finalize.
+    if (!attachError && rowsToUpsert.length) {
+      try {
+        await analyzeLandingBatch(supabase, job.run_id, [
+          ...new Set(rowsToUpsert.map((r) => r.page_id as string)),
+        ]);
+      } catch (err) {
+        console.error("analyzeLandingBatch (classify) error", (err as Error).message);
+      }
+    }
   }
 
   await jobLog(
@@ -627,7 +639,8 @@ async function processFinalizeJob(supabase: any, job: MetaRefreshJob) {
   // mesmo lugar da fusão de duplicadas. Erro aqui nunca derruba o finalize.
   let landingStats: LandingBatchStats | null = null;
   try {
-    landingStats = await analyzeLandingBatch(supabase, job.run_id);
+    // Rede de segurança (sem pageIds): pega sobras de outras fontes.
+    landingStats = await analyzeLandingBatch(supabase, job.run_id, undefined, 150);
     if (landingStats.analyzed > 0) {
       await jobLog(
         supabase,
