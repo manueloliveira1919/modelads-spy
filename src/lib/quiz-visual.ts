@@ -89,3 +89,28 @@ export function buttonTextVisualStyle(settings: VisualSettings, quiz: QuizSettin
     color: String(settings.color || quiz.colors.buttonText),
   };
 }
+
+/** Coleta as fontes usadas (global + por elemento) para carregar sob demanda. */
+export function collectQuizFonts(
+  quiz: QuizSettings,
+  elements: { settings: Record<string, unknown> }[],
+): string[] {
+  const set = new Set<string>();
+  const known = new Set<string>(QUIZ_FONTS);
+  if (known.has(quiz.font)) set.add(quiz.font);
+  for (const el of elements) {
+    const f = String(el.settings?.fontFamily ?? "");
+    if (known.has(f)) set.add(f);
+  }
+  return [...set].sort();
+}
+
+export function quizFontsHref(fonts: string[]): string | null {
+  if (!fonts.length) return null;
+  const families = fonts
+    .map((f) =>
+      f === "Bebas Neue" ? "family=Bebas+Neue" : `family=${f.replace(/ /g, "+")}:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,700`,
+    )
+    .join("&");
+  return `https://fonts.googleapis.com/css2?${families}&display=swap`;
+}
