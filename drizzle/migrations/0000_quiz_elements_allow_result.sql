@@ -1,0 +1,2 @@
+ALTER TABLE public.quiz_elements DROP CONSTRAINT IF EXISTS quiz_elements_type_check;
+ALTER TABLE public.quiz_elements ADD CONSTRAINT quiz_elements_type_check CHECK (type IN ('text','image','video','button','options','progress','percentage','fields','result'));
