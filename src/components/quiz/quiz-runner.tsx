@@ -28,6 +28,8 @@ import {
   textVisualStyle,
 } from "@/lib/quiz-visual";
 import { QuizFonts } from "@/components/quiz/quiz-preview";
+import { Confetti, ResultBlockView } from "@/components/quiz/quiz-result-view";
+import { computeMaxScore, computePercent, computeScore } from "@/lib/quiz-result";
 import type { QuizElement, QuizSection, QuizSettings, OptionItem } from "@/lib/quiz-types";
 
 
@@ -328,6 +330,13 @@ export function QuizRunner({
     [advance, mode],
   );
 
+  const maxScore = useMemo(() => computeMaxScore(sections), [sections]);
+  const score = useMemo(() => computeScore(sections, session.answers), [sections, session.answers]);
+  const resultPercent = computePercent(score, maxScore);
+  const showConfetti = !!section?.elements.some(
+    (e) => e.type === "result" && (e.settings as Sx).confetti !== false,
+  );
+
   const hasButton = useMemo(() => !!section?.elements.some((e) => e.type === "button"), [section]);
 
   if (!section) {
@@ -535,6 +544,17 @@ export function QuizRunner({
         );
       case "progress":
         return <ProgressBar key={el.id} settings={settings} percent={percent} />;
+      case "result":
+        return (
+          <ResultBlockView
+            key={el.id}
+            el={el}
+            settings={settings}
+            score={score}
+            percent={resultPercent}
+            hasScoring={maxScore > 0}
+          />
+        );
       default:
         return null;
     }
@@ -555,6 +575,7 @@ export function QuizRunner({
           fullScreen
             ? "min-h-[100dvh]"
             : "overflow-hidden rounded-2xl border border-border shadow-2xl",
+          "relative",
         )}
         style={
           fullScreen
@@ -562,6 +583,12 @@ export function QuizRunner({
             : { maxWidth: DEVICE_WIDTH[device], ...backgroundStyle(settings) }
         }
       >
+        {showConfetti && (
+          <Confetti
+            key={`${session.session_id}-${section.id}`}
+            colors={[settings.colors.primary, settings.colors.secondary, "#FFD166", "#EF476F", "#06D6A0"]}
+          />
+        )}
         <div
           className="mx-auto flex min-h-[460px] w-full flex-col px-5 py-7 sm:px-6"
           style={{

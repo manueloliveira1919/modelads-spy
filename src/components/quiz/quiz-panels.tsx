@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { ChevronDown, CornerDownRight, GripVertical, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, Copy, CornerDownRight, GripVertical, Plus, Trash2 } from "lucide-react";
 import { validateRule } from "@/lib/quiz-logic";
+import { rangeError, type ResultRange } from "@/lib/quiz-result";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +33,7 @@ const ELEMENT_LABEL: Record<ElementType, string> = {
   progress: "Barra de progresso",
   percentage: "Porcentagem",
   fields: "Campos de captura",
+  result: "Resultado (gráfico e confete)",
 };
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -580,7 +582,7 @@ function ElementEditor({
             </Field>
 
             <div className="space-y-2">
-              {((ct.options ?? []) as { id: string; label: string; image?: string; next?: string }[]).map(
+              {((ct.options ?? []) as { id: string; label: string; image?: string; next?: string; value?: number }[]).map(
                 (o, i, arr) => {
                   const update = (patch: Record<string, unknown>) => {
                     const next = [...arr];
@@ -627,6 +629,29 @@ function ElementEditor({
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="shrink-0 text-[11px] text-muted-foreground">Valor do resultado</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={1}
+                          inputMode="numeric"
+                          value={o.value ?? ""}
+                          placeholder="0"
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === "") {
+                              const { value: _v, ...rest } = o as typeof o & { value?: number };
+                              const next = [...arr];
+                              next[i] = rest;
+                              setCt({ options: next });
+                              return;
+                            }
+                            update({ value: Math.max(0, Math.trunc(Number(raw) || 0)) });
+                          }}
+                          className="h-8 w-24 text-xs"
+                        />
                       </div>
                       <Input
                         value={o.image ?? ""}
@@ -778,6 +803,8 @@ function ElementEditor({
           </div>
         )}
 
+        {el.type === "result" && <ResultEditor ct={ct} st={st} setCt={setCt} setSt={setSt} />}
+
         {el.type === "progress" && (
           <p className="text-[11px] text-muted-foreground">
             O estilo da barra é definido no painel Aparência. O percentual é calculado pela posição
@@ -786,6 +813,148 @@ function ElementEditor({
         )}
       </div>
     </details>
+  );
+}
+
+function ResultEditor({
+  ct,
+  st,
+  setCt,
+  setSt,
+}: {
+  ct: Record<string, any>;
+  st: Record<string, any>;
+  setCt: (p: Record<string, unknown>) => void;
+  setSt: (p: Record<string, unknown>) => void;
+}) {
+  const ranges = (ct.ranges ?? []) as ResultRange[];
+  const setRanges = (r: ResultRange[]) => setCt({ ranges: r });
+  const upd = (i: number, patch: Partial<ResultRange>) =>
+    setRanges(ranges.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const num = (v: string): number | null => (v === "" ? null : Math.trunc(Number(v) || 0));
+  const move = (i: number, d: -1 | 1) => {
+    const t = i + d;
+    if (t < 0 || t >= ranges.length) return;
+    const n = [...ranges];
+    const [x] = n.splice(i, 1);
+    n.splice(t, 0, x);
+    setRanges(n);
+  };
+  return (
+    <div className="space-y-3">
+      <Field label="Título">
+        <Input value={ct.title ?? ""} onChange={(e) => setCt({ title: e.target.value })} className="h-9" />
+      </Field>
+      <Field label="Subtítulo">
+        <Input value={ct.subtitle ?? ""} onChange={(e) => setCt({ subtitle: e.target.value })} className="h-9" />
+      </Field>
+      <Field label="Descrição">
+        <Textarea value={ct.description ?? ""} onChange={(e) => setCt({ description: e.target.value })} rows={3} />
+      </Field>
+      <Field label="Imagem (URL, opcional)">
+        <Input value={ct.image ?? ""} onChange={(e) => setCt({ image: e.target.value })} className="h-9" />
+      </Field>
+      <p className="text-[11px] text-muted-foreground">
+        Use {"{pontos}"} e {"{percentual}"} nos textos para mostrar os valores.
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        <SelectField
+          label="Gráfico"
+          value={String(st.chart ?? "bar")}
+          options={[
+            { value: "bar", label: "Barra" },
+            { value: "circle", label: "Circular" },
+            { value: "none", label: "Nenhum" },
+          ]}
+          onChange={(v) => setSt({ chart: v })}
+        />
+        <Field label="Sufixo da pontuação">
+          <Input value={st.scoreSuffix ?? "pontos"} onChange={(e) => setSt({ scoreSuffix: e.target.value })} className="h-9" />
+        </Field>
+      </div>
+      {(
+        [
+          ["showScore", "Mostrar resultado numérico"],
+          ["showPercent", "Mostrar percentual"],
+          ["confetti", "Confete ao concluir"],
+        ] as const
+      ).map(([k, label]) => (
+        <div key={k} className="flex items-center justify-between">
+          <Label className="text-xs">{label}</Label>
+          <Switch checked={st[k] !== false} onCheckedChange={(v) => setSt({ [k]: v })} />
+        </div>
+      ))}
+
+      <div className="space-y-2 border-t border-border pt-3">
+        <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Faixas de resultado
+        </div>
+        {ranges.length === 0 && (
+          <p className="text-[11px] text-muted-foreground">
+            Sem faixas, o resultado padrão é exibido com a pontuação total.
+          </p>
+        )}
+        {ranges.map((r, i) => {
+          const err = rangeError(r);
+          return (
+            <div key={r.id} className="space-y-2 rounded-lg border border-border p-2">
+              <div className="flex items-center gap-1">
+                <span className="flex-1 text-xs font-medium">Faixa {i + 1}</span>
+                <button type="button" aria-label="Mover faixa para cima" onClick={() => move(i, -1)} className="rounded p-1 text-muted-foreground hover:text-foreground">↑</button>
+                <button type="button" aria-label="Mover faixa para baixo" onClick={() => move(i, 1)} className="rounded p-1 text-muted-foreground hover:text-foreground">↓</button>
+                <button
+                  type="button"
+                  aria-label="Duplicar faixa"
+                  onClick={() => {
+                    const n = [...ranges];
+                    n.splice(i + 1, 0, { ...r, id: uid() });
+                    setRanges(n);
+                  }}
+                  className="rounded p-1 text-muted-foreground hover:text-foreground"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </button>
+                <button type="button" aria-label="Excluir faixa" onClick={() => setRanges(ranges.filter((x) => x.id !== r.id))} className="rounded p-1 text-muted-foreground hover:text-destructive">
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <Input type="number" placeholder="Mín." value={r.min ?? ""} onChange={(e) => upd(i, { min: num(e.target.value) })} className="h-8 text-xs" />
+                <Input type="number" placeholder="Máx." value={r.max ?? ""} onChange={(e) => upd(i, { max: num(e.target.value) })} className="h-8 text-xs" />
+                <Input
+                  type="number"
+                  placeholder="% (opc.)"
+                  min={0}
+                  max={100}
+                  value={r.percent ?? ""}
+                  onChange={(e) => {
+                    const v = num(e.target.value);
+                    upd(i, { percent: v === null ? null : Math.min(100, Math.max(0, v)) });
+                  }}
+                  className="h-8 text-xs"
+                />
+              </div>
+              {err && <p className="text-[11px] text-destructive">{err}</p>}
+              <Input placeholder="Título" value={r.title} onChange={(e) => upd(i, { title: e.target.value })} className="h-8 text-xs" />
+              <Textarea placeholder="Descrição" value={r.description} onChange={(e) => upd(i, { description: e.target.value })} rows={2} className="text-xs" />
+              <Input placeholder="URL da imagem (opcional)" value={r.image ?? ""} onChange={(e) => upd(i, { image: e.target.value })} className="h-8 text-xs" />
+            </div>
+          );
+        })}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            const last = ranges[ranges.length - 1];
+            const min = last && last.max !== null ? last.max + 1 : 0;
+            setRanges([...ranges, { id: uid(), min, max: min + 20, title: "", description: "", image: "", percent: null }]);
+          }}
+        >
+          <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar faixa
+        </Button>
+      </div>
+    </div>
   );
 }
 
