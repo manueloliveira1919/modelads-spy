@@ -331,11 +331,28 @@ export function QuizRunner({
   );
 
   const maxScore = useMemo(() => computeMaxScore(sections), [sections]);
-  const score = useMemo(() => computeScore(sections, session.answers), [sections, session.answers]);
+  // Fase 7: soma somente seções efetivamente visitadas (histórico + atual).
+  const score = useMemo(() => {
+    const visited = new Set([...(session.history ?? []), session.current_section]);
+    return computeScore(sections.filter((_, i) => visited.has(i)), session.answers);
+  }, [sections, session.answers, session.history, session.current_section]);
   const resultPercent = computePercent(score, maxScore);
   const showConfetti = !!section?.elements.some(
     (e) => e.type === "result" && (e.settings as Sx).confetti !== false,
   );
+
+  // Confete uma única vez por conclusão (sessão); Voltar/avançar de novo não repete.
+  const confettiFiredRef = useRef<Set<string>>(new Set());
+  const [confettiKey, setConfettiKey] = useState<string | null>(null);
+  useEffect(() => {
+    if (!showConfetti || !section) {
+      setConfettiKey(null);
+      return;
+    }
+    if (confettiFiredRef.current.has(session.session_id)) return;
+    confettiFiredRef.current.add(session.session_id);
+    setConfettiKey(`${session.session_id}-${section.id}`);
+  }, [showConfetti, section, session.session_id]);
 
   const hasButton = useMemo(() => !!section?.elements.some((e) => e.type === "button"), [section]);
 
@@ -583,9 +600,9 @@ export function QuizRunner({
             : { maxWidth: DEVICE_WIDTH[device], ...backgroundStyle(settings) }
         }
       >
-        {showConfetti && (
+        {showConfetti && confettiKey === `${session.session_id}-${section.id}` && (
           <Confetti
-            key={`${session.session_id}-${section.id}`}
+            key={confettiKey}
             colors={[settings.colors.primary, settings.colors.secondary, "#FFD166", "#EF476F", "#06D6A0"]}
           />
         )}
