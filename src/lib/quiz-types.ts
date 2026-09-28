@@ -13,7 +13,8 @@ export type ElementType =
   | "options"
   | "progress"
   | "percentage"
-  | "fields";
+  | "fields"
+  | "result";
 
 export interface QuizSettings {
   font: string;
@@ -81,6 +82,8 @@ export interface OptionItem {
   image?: string;
   /** Fase 6: id da seção de destino. Ausente = próxima seção normal. */
   next?: string;
+  /** Fase 7: valor de resultado (inteiro ≥ 0). Ausente = 0. */
+  value?: number;
 }
 export interface OptionsContent {
   description?: string;
@@ -220,6 +223,16 @@ export function makeElement(
         ],
       },
       settings: {},
+    },
+    result: {
+      content: {
+        title: "Seu resultado",
+        subtitle: "Com base nas suas respostas...",
+        description: "Confira abaixo o resultado do seu quiz.",
+        image: "",
+        ranges: [],
+      },
+      settings: { showScore: true, showPercent: true, chart: "bar", confetti: true, scoreSuffix: "pontos" },
     },
   };
   const d = base[type];

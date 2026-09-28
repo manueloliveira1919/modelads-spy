@@ -8,6 +8,7 @@ import {
   quizFontsHref,
   textVisualStyle,
 } from "@/lib/quiz-visual";
+import { ResultBlockView } from "@/components/quiz/quiz-result-view";
 import type { QuizElement, QuizSection, QuizSettings } from "@/lib/quiz-types";
 
 export type PreviewDevice = "desktop" | "tablet" | "mobile";
@@ -261,6 +262,9 @@ function ElementView({
       );
     case "progress":
       return <ProgressBar settings={settings} percent={percent} />;
+    case "result":
+      // Editor: exemplo visual (75 pontos / 75%) — não é um resultado real.
+      return <ResultBlockView el={el} settings={settings} score={75} percent={75} hasScoring />;
     default:
       return null;
   }
