@@ -101,6 +101,12 @@ export function collectQuizFonts(
   for (const el of elements) {
     const f = String(el.settings?.fontFamily ?? "");
     if (known.has(f)) set.add(f);
+    // Fase 7: estilos por parte do bloco Resultado (settings.styles[parte]).
+    const styles = (el.settings?.styles ?? {}) as Record<string, { fontFamily?: unknown }>;
+    for (const ps of Object.values(styles)) {
+      const pf = String(ps?.fontFamily ?? "");
+      if (known.has(pf)) set.add(pf);
+    }
   }
   return [...set].sort();
 }

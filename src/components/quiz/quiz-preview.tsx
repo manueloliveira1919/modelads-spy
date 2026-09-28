@@ -1,4 +1,3 @@
-import { useLayoutEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import {
   animationClass,
@@ -9,6 +8,7 @@ import {
   textVisualStyle,
 } from "@/lib/quiz-visual";
 import { ResultBlockView } from "@/components/quiz/quiz-result-view";
+import { EditableText } from "@/components/quiz/quiz-editable-text";
 import type { QuizElement, QuizSection, QuizSettings } from "@/lib/quiz-types";
 
 export type PreviewDevice = "desktop" | "tablet" | "mobile";
@@ -56,53 +56,22 @@ export function QuizFonts({
   return <link rel="stylesheet" href={href} precedence="default" />;
 }
 
-/** Texto editável direto no preview (somente editor). Não re-renderiza o conteúdo
- *  enquanto está em foco, para o cursor não pular. */
-function EditableText({
-  value,
-  editable,
-  onChange,
-  className,
-  style,
-  as: Tag = "p",
-}: {
-  value: string;
-  editable: boolean;
-  onChange?: (v: string) => void;
-  className?: string;
-  style?: React.CSSProperties;
-  as?: "p" | "span";
-}) {
-  const ref = useRef<HTMLElement | null>(null);
-  useLayoutEffect(() => {
-    const node = ref.current;
-    if (node && document.activeElement !== node && node.innerText !== value) node.innerText = value;
-  }, [value]);
-  return (
-    <Tag
-      ref={ref as never}
-      className={cn(className, editable && "cursor-text outline-none")}
-      style={style}
-      contentEditable={editable || undefined}
-      suppressContentEditableWarning
-      spellCheck={editable}
-      onInput={editable ? (e) => onChange?.((e.currentTarget as HTMLElement).innerText) : undefined}
-    />
-  );
-}
-
 function ElementView({
   el,
   settings,
   percent,
   selected = false,
   onTextChange,
+  selectedPart = null,
+  onSelectPart,
 }: {
   el: QuizElement;
   settings: QuizSettings;
   percent: number;
   selected?: boolean;
   onTextChange?: (patch: Record<string, unknown>) => void;
+  selectedPart?: string | null;
+  onSelectPart?: (part: string) => void;
 }) {
   const st = el.settings as Record<string, any>;
   const ct = el.content as Record<string, any>;
@@ -264,7 +233,16 @@ function ElementView({
       return <ProgressBar settings={settings} percent={percent} />;
     case "result":
       // Editor: exemplo visual (75 pontos / 75%) — não é um resultado real.
-      return <ResultBlockView el={el} settings={settings} score={75} percent={75} hasScoring />;
+      return (
+        <ResultBlockView
+          el={el}
+          settings={settings}
+          score={75}
+          percent={75}
+          hasScoring
+          editor={onSelectPart ? { selectedPart, onSelectPart, onTextChange } : undefined}
+        />
+      );
     default:
       return null;
   }
@@ -373,6 +351,10 @@ export function QuizPreview({
               {section.elements.map((el) => {
                 const selectable = !!onSelectElement && (el.type === "text" || el.type === "button");
                 const isSel = selectable && selectedElementId === el.id;
+                const partSel =
+                  el.type === "result" && selectedElementId?.startsWith(`${el.id}::`)
+                    ? selectedElementId.slice(el.id.length + 2)
+                    : null;
                 return (
                   <div
                     key={`${el.id}-${replayTarget === el.id ? replayKey : 0}`}
@@ -396,6 +378,12 @@ export function QuizPreview({
                       settings={settings}
                       percent={percent}
                       selected={isSel}
+                      selectedPart={partSel}
+                      onSelectPart={
+                        onSelectElement && el.type === "result"
+                          ? (part) => onSelectElement(`${el.id}::${part}`)
+                          : undefined
+                      }
                       onTextChange={
                         onElementContentChange
                           ? (patch) => onElementContentChange(el.id, patch)
