@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { RESULT_TEXT_PARTS, resultPartSettings, type ResultTextPart } from "@/components/quiz/quiz-result-view";
 import { countRulesTo, stripRulesTo } from "@/lib/quiz-logic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -259,10 +260,27 @@ function EditorContent() {
     0,
     sections.findIndex((s) => s.id === selectedId),
   );
-  const selectedElement =
+  // Fase 7: "elementId::parte" seleciona um texto do bloco Resultado; o painel da Fase 5
+  // edita settings.styles[parte] desse bloco.
+  const [selElId, selPart] = (selectedElementId ?? "").split("::");
+  const selectedRaw =
     selected?.elements.find(
-      (e) => e.id === selectedElementId && (e.type === "text" || e.type === "button"),
+      (e) =>
+        e.id === selElId &&
+        (selPart ? e.type === "result" : e.type === "text" || e.type === "button"),
     ) ?? null;
+  const selectedElement =
+    selectedRaw && selPart
+      ? { ...selectedRaw, type: "text" as const, settings: resultPartSettings(selectedRaw.settings as Record<string, any>, selPart) }
+      : selectedRaw;
+  const onVisualChange = (p: Record<string, unknown>) => {
+    if (!selectedRaw) return;
+    if (!selPart) return updateElement(selectedRaw.id, "settings", p);
+    const styles = ((selectedRaw.settings as Record<string, any>).styles ?? {}) as Record<string, Record<string, unknown>>;
+    updateElement(selectedRaw.id, "settings", {
+      styles: { ...styles, [selPart]: { ...(styles[selPart] ?? {}), ...p } },
+    });
+  };
 
   if (loadError) {
     return (
@@ -401,7 +419,8 @@ function EditorContent() {
           <ElementVisualPanel
             element={selectedElement}
             settings={quiz.settings}
-            onChange={(p) => updateElement(selectedElement.id, "settings", p)}
+            title={selPart ? RESULT_TEXT_PARTS[selPart as ResultTextPart]?.label : undefined}
+            onChange={onVisualChange}
             onReplay={() => setReplay((r) => ({ id: selectedElement.id, n: r.n + 1 }))}
             onClose={() => setSelectedElementId(null)}
           />

@@ -163,7 +163,9 @@ export function ElementVisualPanel({
   onChange,
   onReplay,
   onClose,
+  title,
 }: {
+  title?: string;
   element: QuizElement;
   settings: QuizSettings;
   onChange: (patch: Record<string, unknown>) => void;
@@ -179,7 +181,7 @@ export function ElementVisualPanel({
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <div className="text-sm font-semibold">{isButton ? "Botão selecionado" : "Texto selecionado"}</div>
+        <div className="text-sm font-semibold">{title ?? (isButton ? "Botão selecionado" : "Texto selecionado")}</div>
         <Button size="sm" variant="ghost" onClick={onClose}>
           Fechar
         </Button>

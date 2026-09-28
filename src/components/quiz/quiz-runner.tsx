@@ -2,7 +2,7 @@
 // Renderiza uma seção por vez, guarda respostas na sessão local, controla a navegação
 // e — no modo "live" — grava o lead da seção de captura e executa o CTA do resultado.
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, Loader2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
