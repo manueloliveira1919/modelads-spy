@@ -39,7 +39,7 @@ export const Route = createFileRoute("/")({
   errorComponent: ({ error }) => (
     <AppShell>
       <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
-        Erro ao carregar ofertas: {error.message}
+        Erro ao carregar ofertas: {error instanceof Error ? error.message : String(error)}
       </div>
     </AppShell>
   ),
