@@ -18,13 +18,52 @@ const QUIZ_SIGNS = /(typeform|outgrow|involve\.me|quizell|leadquizzes|quiz-conta
 const WHATSAPP_SIGNS = /(wa\.me\/|api\.whatsapp\.com)/i;
 const BUY_SIGNS = /(comprar agora|adicionar ao carrinho|finalizar compra|garantir minha vaga|quero garantir|inscreva-se agora|r\$\s?\d)/i;
 
+function parseBRLNumber(raw: string): number | null {
+  const digits = raw.replace(/R\$\s?/i, "").trim();
+  const normalized = digits.replace(/\./g, "").replace(",", ".");
+  const n = Number(normalized);
+  return Number.isFinite(n) ? n : null;
+}
+
+function extractPrice(html: string): string | null {
+  // 1) Prioridade máxima: preço junto de sinal explícito de venda ("por apenas
+  // R$47", "por só R$29,90", "à vista R$97") — é o preço de venda real, não o
+  // riscado/âncora.
+  const soldSignal = html.match(
+    /(?:por\s+(?:apenas\s+|s[óo]\s+)?|[àa]\s+vista\s+(?:de\s+)?)R\$\s?\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?/i,
+  );
+  if (soldSignal) {
+    const priceOnly = soldSignal[0].match(/R\$\s?\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?/i);
+    if (priceOnly) return priceOnly[0].replace(/R\$\s?/i, "R$ ").trim();
+  }
+
+  // 2) Remove preço riscado/âncora (tags <s>, <del>, ou classes comuns de
+  // "de/riscado/preço antigo") antes de procurar de forma genérica.
+  const cleaned = html
+    .replace(/<(s|del)\b[^>]*>[\s\S]*?<\/\1>/gi, "")
+    .replace(
+      /<[^>]+class="[^"]*(line-through|riscado|old-price|de-price|strikethrough)[^"]*"[^>]*>[\s\S]*?<\/[a-zA-Z0-9]+>/gi,
+      "",
+    );
+
+  // 3) Entre os preços restantes, pega o menor plausível — convenção de página
+  // de vendas é sempre "menor valor = o que a pessoa realmente paga".
+  const matches = [...cleaned.matchAll(/R\$\s?\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?/gi)].map((m) => m[0]);
+  if (!matches.length) return null;
+  const numeric = matches
+    .map((raw) => ({ raw, value: parseBRLNumber(raw) }))
+    .filter((x): x is { raw: string; value: number } => x.value !== null && x.value > 0);
+  if (!numeric.length) return null;
+  numeric.sort((a, b) => a.value - b.value);
+  return numeric[0].raw.replace(/R\$\s?/i, "R$ ").trim();
+}
+
 export function analyzeLandingHtml(finalUrl: string, html: string): LandingAnalysis {
   const isWhatsapp = WHATSAPP_SIGNS.test(finalUrl);
   if (isWhatsapp) {
     return { price: null, structure: "WhatsApp", destination: "whatsapp", validated: true };
   }
-  const priceMatch = html.match(/R\$\s?\d{1,3}(?:\.\d{3})*(?:,\d{1,2})?|R\$\s?\d+(?:,\d{1,2})?/);
-  const price = priceMatch ? priceMatch[0].replace(/R\$\s?/i, "R$ ").trim() : null;
+  const price = extractPrice(html);
   const hasCheckoutDomain = CHECKOUT_DOMAINS.test(finalUrl) || CHECKOUT_DOMAINS.test(html);
   const hasBuySignal = BUY_SIGNS.test(html);
   let structure: LandingAnalysis["structure"] = "Página de Vendas";
