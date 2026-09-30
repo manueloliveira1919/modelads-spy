@@ -66,7 +66,7 @@ export function analyzeLandingHtml(finalUrl: string, html: string): LandingAnaly
   if (isWhatsapp) {
     return { price: null, structure: "WhatsApp", destination: "whatsapp", validated: true };
   }
-  const price = extractPrice(html);
+  const price = extractBestPrice(html);
   const hasCheckoutDomain = CHECKOUT_DOMAINS.test(finalUrl) || CHECKOUT_DOMAINS.test(html);
   const hasBuySignal = BUY_SIGNS.test(html);
   let structure: LandingAnalysis["structure"] = "Página de Vendas";
