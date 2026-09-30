@@ -73,7 +73,7 @@ export const Route = createFileRoute("/oferta/$id")({
   errorComponent: ({ error }) => (
     <AppShell>
       <div className="py-20 text-center text-sm text-muted-foreground">
-        Erro ao carregar oferta: {error.message}
+        Erro ao carregar oferta: {error instanceof Error ? error.message : String(error)}
       </div>
     </AppShell>
   ),
