@@ -107,7 +107,6 @@ function Page() {
         if (minPrice !== null && p < minPrice) return false;
         if (maxPrice !== null && p > maxPrice) return false;
       }
-      if (onlyValidated && o.landingValidated !== true) return false;
       if (query && !`${o.page} ${o.headline}`.toLowerCase().includes(query.toLowerCase()))
         return false;
       return true;
@@ -116,7 +115,7 @@ function Page() {
     return [...list].sort(
       (a, b) => rank[a.status] - rank[b.status] || b.activeAds - a.activeAds,
     );
-  }, [offers, category, language, structure, productType, funnel, scale, query, priceFilterActive, minPrice, maxPrice, onlyValidated]);
+  }, [offers, category, language, structure, productType, funnel, scale, query, priceFilterActive, minPrice, maxPrice]);
 
   const escaladas = offers.filter((o) => o.status === "escaladissimo").length;
   const crescendo = offers.filter((o) => o.status === "escalado").length;
