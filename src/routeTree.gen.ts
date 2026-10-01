@@ -53,6 +53,7 @@ import { Route as AdminBlacklistRouteImport } from './routes/admin.blacklist'
 import { Route as ModelarQuizLeadsIdRouteImport } from './routes/modelar-quiz.leads.$id'
 import { Route as ApiPublicHooksRefreshWorkerRouteImport } from './routes/api/public/hooks/refresh-worker'
 import { Route as ApiPublicHooksRefreshOffersRouteImport } from './routes/api/public/hooks/refresh-offers'
+import { Route as ApiPublicExtensionValidateRouteImport } from './routes/api/public/extension/validate'
 
 const UtmRoute = UtmRouteImport.update({
   id: '/utm',
@@ -276,6 +277,12 @@ const ApiPublicHooksRefreshOffersRoute =
     path: '/api/public/hooks/refresh-offers',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicExtensionValidateRoute =
+  ApiPublicExtensionValidateRouteImport.update({
+    id: '/api/public/extension/validate',
+    path: '/api/public/extension/validate',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
+  '/api/public/extension/validate': typeof ApiPublicExtensionValidateRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
   '/api/public/hooks/refresh-worker': typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -364,6 +372,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/modelar-quiz': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
+  '/api/public/extension/validate': typeof ApiPublicExtensionValidateRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
   '/api/public/hooks/refresh-worker': typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -411,6 +420,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
+  '/api/public/extension/validate': typeof ApiPublicExtensionValidateRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
   '/api/public/hooks/refresh-worker': typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/modelar-quiz/'
     | '/modelar-quiz/leads/$id'
+    | '/api/public/extension/validate'
     | '/api/public/hooks/refresh-offers'
     | '/api/public/hooks/refresh-worker'
   fileRoutesByTo: FileRoutesByTo
@@ -503,6 +514,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/modelar-quiz'
     | '/modelar-quiz/leads/$id'
+    | '/api/public/extension/validate'
     | '/api/public/hooks/refresh-offers'
     | '/api/public/hooks/refresh-worker'
   id:
@@ -549,6 +561,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/modelar-quiz/'
     | '/modelar-quiz/leads/$id'
+    | '/api/public/extension/validate'
     | '/api/public/hooks/refresh-offers'
     | '/api/public/hooks/refresh-worker'
   fileRoutesById: FileRoutesById
@@ -583,6 +596,7 @@ export interface RootRouteChildren {
   UtmRoute: typeof UtmRoute
   OfertaIdRoute: typeof OfertaIdRoute
   QuizSlugRoute: typeof QuizSlugRoute
+  ApiPublicExtensionValidateRoute: typeof ApiPublicExtensionValidateRoute
   ApiPublicHooksRefreshOffersRoute: typeof ApiPublicHooksRefreshOffersRoute
   ApiPublicHooksRefreshWorkerRoute: typeof ApiPublicHooksRefreshWorkerRoute
 }
@@ -897,6 +911,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRefreshOffersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/extension/validate': {
+      id: '/api/public/extension/validate'
+      path: '/api/public/extension/validate'
+      fullPath: '/api/public/extension/validate'
+      preLoaderRoute: typeof ApiPublicExtensionValidateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -974,6 +995,7 @@ const rootRouteChildren: RootRouteChildren = {
   UtmRoute: UtmRoute,
   OfertaIdRoute: OfertaIdRoute,
   QuizSlugRoute: QuizSlugRoute,
+  ApiPublicExtensionValidateRoute: ApiPublicExtensionValidateRoute,
   ApiPublicHooksRefreshOffersRoute: ApiPublicHooksRefreshOffersRoute,
   ApiPublicHooksRefreshWorkerRoute: ApiPublicHooksRefreshWorkerRoute,
 }
