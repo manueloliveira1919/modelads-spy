@@ -9,175 +9,55 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AdminRouteImport } from './routes/admin'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as BuscarRouteImport } from './routes/buscar'
-import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
-import { Route as CriadorAudiosRouteImport } from './routes/criador-audios'
-import { Route as CriadorCriativosRouteImport } from './routes/criador-criativos'
-import { Route as CriadorVslRouteImport } from './routes/criador-vsl'
-import { Route as EmBreveRouteImport } from './routes/em-breve'
-import { Route as ExclusaoDeDadosRouteImport } from './routes/exclusao-de-dados'
-import { Route as FavoritosRouteImport } from './routes/favoritos'
-import { Route as FerramentasRouteImport } from './routes/ferramentas'
-import { Route as MinhaContaRouteImport } from './routes/minha-conta'
-import { Route as ModelaSpyAiRouteImport } from './routes/modela-spy-ai'
-import { Route as ModelarOfertaRouteImport } from './routes/modelar-oferta'
-import { Route as ModelarQuizRouteImport } from './routes/modelar-quiz'
-import { Route as ModelarWhatsappRouteImport } from './routes/modelar-whatsapp'
-import { Route as OfertasRouteImport } from './routes/ofertas'
-import { Route as OfertasDoDiaRouteImport } from './routes/ofertas-do-dia'
-import { Route as PalavrasBloqueadasRouteImport } from './routes/palavras-bloqueadas'
-import { Route as PrivacidadeRouteImport } from './routes/privacidade'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
-import { Route as SuporteRouteImport } from './routes/suporte'
-import { Route as TermosRouteImport } from './routes/termos'
-import { Route as UpgradeRouteImport } from './routes/upgrade'
 import { Route as UtmRouteImport } from './routes/utm'
-import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminBlacklistRouteImport } from './routes/admin.blacklist'
-import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
-import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
-import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
-import { Route as AdminLogsRouteImport } from './routes/admin.logs'
-import { Route as AdminMineracaoRouteImport } from './routes/admin.mineracao'
-import { Route as AdminPalavrasChaveRouteImport } from './routes/admin.palavras-chave'
-import { Route as AdminQualidadeRouteImport } from './routes/admin.qualidade'
-import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
+import { Route as UpgradeRouteImport } from './routes/upgrade'
+import { Route as TermosRouteImport } from './routes/termos'
+import { Route as SuporteRouteImport } from './routes/suporte'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as PrivacidadeRouteImport } from './routes/privacidade'
+import { Route as PalavrasBloqueadasRouteImport } from './routes/palavras-bloqueadas'
+import { Route as OfertasDoDiaRouteImport } from './routes/ofertas-do-dia'
+import { Route as OfertasRouteImport } from './routes/ofertas'
+import { Route as ModelarWhatsappRouteImport } from './routes/modelar-whatsapp'
+import { Route as ModelarQuizRouteImport } from './routes/modelar-quiz'
+import { Route as ModelarOfertaRouteImport } from './routes/modelar-oferta'
+import { Route as ModelaSpyAiRouteImport } from './routes/modela-spy-ai'
+import { Route as MinhaContaRouteImport } from './routes/minha-conta'
+import { Route as FerramentasRouteImport } from './routes/ferramentas'
+import { Route as FavoritosRouteImport } from './routes/favoritos'
+import { Route as ExclusaoDeDadosRouteImport } from './routes/exclusao-de-dados'
+import { Route as EmBreveRouteImport } from './routes/em-breve'
+import { Route as CriadorVslRouteImport } from './routes/criador-vsl'
+import { Route as CriadorCriativosRouteImport } from './routes/criador-criativos'
+import { Route as CriadorAudiosRouteImport } from './routes/criador-audios'
+import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
+import { Route as BuscarRouteImport } from './routes/buscar'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
-import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
-import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as QuizSlugRouteImport } from './routes/quiz.$slug'
+import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
+import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
+import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
+import { Route as AdminQualidadeRouteImport } from './routes/admin.qualidade'
+import { Route as AdminPalavrasChaveRouteImport } from './routes/admin.palavras-chave'
+import { Route as AdminMineracaoRouteImport } from './routes/admin.mineracao'
+import { Route as AdminLogsRouteImport } from './routes/admin.logs'
+import { Route as AdminConfiguracoesRouteImport } from './routes/admin.configuracoes'
+import { Route as AdminClientesRouteImport } from './routes/admin.clientes'
+import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
+import { Route as AdminBlacklistRouteImport } from './routes/admin.blacklist'
 import { Route as ModelarQuizLeadsIdRouteImport } from './routes/modelar-quiz.leads.$id'
-import { Route as ApiPublicExtensionValidateRouteImport } from './routes/api/public/extension/validate'
-import { Route as ApiPublicHooksRefreshOffersRouteImport } from './routes/api/public/hooks/refresh-offers'
 import { Route as ApiPublicHooksRefreshWorkerRouteImport } from './routes/api/public/hooks/refresh-worker'
+import { Route as ApiPublicHooksRefreshOffersRouteImport } from './routes/api/public/hooks/refresh-offers'
+import { Route as ApiPublicExtensionValidateRouteImport } from './routes/api/public/extension/validate'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BuscarRoute = BuscarRouteImport.update({
-  id: '/buscar',
-  path: '/buscar',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
-  id: '/configuracoes',
-  path: '/configuracoes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CriadorAudiosRoute = CriadorAudiosRouteImport.update({
-  id: '/criador-audios',
-  path: '/criador-audios',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CriadorCriativosRoute = CriadorCriativosRouteImport.update({
-  id: '/criador-criativos',
-  path: '/criador-criativos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CriadorVslRoute = CriadorVslRouteImport.update({
-  id: '/criador-vsl',
-  path: '/criador-vsl',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const EmBreveRoute = EmBreveRouteImport.update({
-  id: '/em-breve',
-  path: '/em-breve',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ExclusaoDeDadosRoute = ExclusaoDeDadosRouteImport.update({
-  id: '/exclusao-de-dados',
-  path: '/exclusao-de-dados',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FavoritosRoute = FavoritosRouteImport.update({
-  id: '/favoritos',
-  path: '/favoritos',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FerramentasRoute = FerramentasRouteImport.update({
-  id: '/ferramentas',
-  path: '/ferramentas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const MinhaContaRoute = MinhaContaRouteImport.update({
-  id: '/minha-conta',
-  path: '/minha-conta',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ModelaSpyAiRoute = ModelaSpyAiRouteImport.update({
-  id: '/modela-spy-ai',
-  path: '/modela-spy-ai',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ModelarOfertaRoute = ModelarOfertaRouteImport.update({
-  id: '/modelar-oferta',
-  path: '/modelar-oferta',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ModelarQuizRoute = ModelarQuizRouteImport.update({
-  id: '/modelar-quiz',
-  path: '/modelar-quiz',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ModelarWhatsappRoute = ModelarWhatsappRouteImport.update({
-  id: '/modelar-whatsapp',
-  path: '/modelar-whatsapp',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OfertasRoute = OfertasRouteImport.update({
-  id: '/ofertas',
-  path: '/ofertas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const OfertasDoDiaRoute = OfertasDoDiaRouteImport.update({
-  id: '/ofertas-do-dia',
-  path: '/ofertas-do-dia',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PalavrasBloqueadasRoute = PalavrasBloqueadasRouteImport.update({
-  id: '/palavras-bloqueadas',
-  path: '/palavras-bloqueadas',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacidadeRoute = PrivacidadeRouteImport.update({
-  id: '/privacidade',
-  path: '/privacidade',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
-  id: '/sitemap.xml',
-  path: '/sitemap.xml',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SuporteRoute = SuporteRouteImport.update({
-  id: '/suporte',
-  path: '/suporte',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermosRoute = TermosRouteImport.update({
-  id: '/termos',
-  path: '/termos',
+const UtmRoute = UtmRouteImport.update({
+  id: '/utm',
+  path: '/utm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const UpgradeRoute = UpgradeRouteImport.update({
@@ -185,49 +65,159 @@ const UpgradeRoute = UpgradeRouteImport.update({
   path: '/upgrade',
   getParentRoute: () => rootRouteImport,
 } as any)
-const UtmRoute = UtmRouteImport.update({
-  id: '/utm',
-  path: '/utm',
+const TermosRoute = TermosRouteImport.update({
+  id: '/termos',
+  path: '/termos',
   getParentRoute: () => rootRouteImport,
+} as any)
+const SuporteRoute = SuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacidadeRoute = PrivacidadeRouteImport.update({
+  id: '/privacidade',
+  path: '/privacidade',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PalavrasBloqueadasRoute = PalavrasBloqueadasRouteImport.update({
+  id: '/palavras-bloqueadas',
+  path: '/palavras-bloqueadas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfertasDoDiaRoute = OfertasDoDiaRouteImport.update({
+  id: '/ofertas-do-dia',
+  path: '/ofertas-do-dia',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfertasRoute = OfertasRouteImport.update({
+  id: '/ofertas',
+  path: '/ofertas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelarWhatsappRoute = ModelarWhatsappRouteImport.update({
+  id: '/modelar-whatsapp',
+  path: '/modelar-whatsapp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelarQuizRoute = ModelarQuizRouteImport.update({
+  id: '/modelar-quiz',
+  path: '/modelar-quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelarOfertaRoute = ModelarOfertaRouteImport.update({
+  id: '/modelar-oferta',
+  path: '/modelar-oferta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelaSpyAiRoute = ModelaSpyAiRouteImport.update({
+  id: '/modela-spy-ai',
+  path: '/modela-spy-ai',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MinhaContaRoute = MinhaContaRouteImport.update({
+  id: '/minha-conta',
+  path: '/minha-conta',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FerramentasRoute = FerramentasRouteImport.update({
+  id: '/ferramentas',
+  path: '/ferramentas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritosRoute = FavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ExclusaoDeDadosRoute = ExclusaoDeDadosRouteImport.update({
+  id: '/exclusao-de-dados',
+  path: '/exclusao-de-dados',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmBreveRoute = EmBreveRouteImport.update({
+  id: '/em-breve',
+  path: '/em-breve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadorVslRoute = CriadorVslRouteImport.update({
+  id: '/criador-vsl',
+  path: '/criador-vsl',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadorCriativosRoute = CriadorCriativosRouteImport.update({
+  id: '/criador-criativos',
+  path: '/criador-criativos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadorAudiosRoute = CriadorAudiosRouteImport.update({
+  id: '/criador-audios',
+  path: '/criador-audios',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BuscarRoute = BuscarRouteImport.update({
+  id: '/buscar',
+  path: '/buscar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModelarQuizIndexRoute = ModelarQuizIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ModelarQuizRoute,
 } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminBlacklistRoute = AdminBlacklistRouteImport.update({
-  id: '/blacklist',
-  path: '/blacklist',
-  getParentRoute: () => AdminRoute,
+const QuizSlugRoute = QuizSlugRouteImport.update({
+  id: '/quiz/$slug',
+  path: '/quiz/$slug',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
-  id: '/categorias',
-  path: '/categorias',
-  getParentRoute: () => AdminRoute,
+const OfertaIdRoute = OfertaIdRouteImport.update({
+  id: '/oferta/$id',
+  path: '/oferta/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AdminClientesRoute = AdminClientesRouteImport.update({
-  id: '/clientes',
-  path: '/clientes',
-  getParentRoute: () => AdminRoute,
+const ModelarQuizIdRoute = ModelarQuizIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => ModelarQuizRoute,
 } as any)
-const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
-  id: '/configuracoes',
-  path: '/configuracoes',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminLogsRoute = AdminLogsRouteImport.update({
-  id: '/logs',
-  path: '/logs',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminMineracaoRoute = AdminMineracaoRouteImport.update({
-  id: '/mineracao',
-  path: '/mineracao',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminPalavrasChaveRoute = AdminPalavrasChaveRouteImport.update({
-  id: '/palavras-chave',
-  path: '/palavras-chave',
+const AdminSuporteRoute = AdminSuporteRouteImport.update({
+  id: '/suporte',
+  path: '/suporte',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminQualidadeRoute = AdminQualidadeRouteImport.update({
@@ -235,40 +225,50 @@ const AdminQualidadeRoute = AdminQualidadeRouteImport.update({
   path: '/qualidade',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminSuporteRoute = AdminSuporteRouteImport.update({
-  id: '/suporte',
-  path: '/suporte',
+const AdminPalavrasChaveRoute = AdminPalavrasChaveRouteImport.update({
+  id: '/palavras-chave',
+  path: '/palavras-chave',
   getParentRoute: () => AdminRoute,
 } as any)
-const ModelarQuizIndexRoute = ModelarQuizIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ModelarQuizRoute,
+const AdminMineracaoRoute = AdminMineracaoRouteImport.update({
+  id: '/mineracao',
+  path: '/mineracao',
+  getParentRoute: () => AdminRoute,
 } as any)
-const ModelarQuizIdRoute = ModelarQuizIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => ModelarQuizRoute,
+const AdminLogsRoute = AdminLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
+  getParentRoute: () => AdminRoute,
 } as any)
-const OfertaIdRoute = OfertaIdRouteImport.update({
-  id: '/oferta/$id',
-  path: '/oferta/$id',
-  getParentRoute: () => rootRouteImport,
+const AdminConfiguracoesRoute = AdminConfiguracoesRouteImport.update({
+  id: '/configuracoes',
+  path: '/configuracoes',
+  getParentRoute: () => AdminRoute,
 } as any)
-const QuizSlugRoute = QuizSlugRouteImport.update({
-  id: '/quiz/$slug',
-  path: '/quiz/$slug',
-  getParentRoute: () => rootRouteImport,
+const AdminClientesRoute = AdminClientesRouteImport.update({
+  id: '/clientes',
+  path: '/clientes',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCategoriasRoute = AdminCategoriasRouteImport.update({
+  id: '/categorias',
+  path: '/categorias',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBlacklistRoute = AdminBlacklistRouteImport.update({
+  id: '/blacklist',
+  path: '/blacklist',
+  getParentRoute: () => AdminRoute,
 } as any)
 const ModelarQuizLeadsIdRoute = ModelarQuizLeadsIdRouteImport.update({
   id: '/leads/$id',
   path: '/leads/$id',
   getParentRoute: () => ModelarQuizRoute,
 } as any)
-const ApiPublicExtensionValidateRoute =
-  ApiPublicExtensionValidateRouteImport.update({
-    id: '/api/public/extension/validate',
-    path: '/api/public/extension/validate',
+const ApiPublicHooksRefreshWorkerRoute =
+  ApiPublicHooksRefreshWorkerRouteImport.update({
+    id: '/api/public/hooks/refresh-worker',
+    path: '/api/public/hooks/refresh-worker',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksRefreshOffersRoute =
@@ -277,10 +277,10 @@ const ApiPublicHooksRefreshOffersRoute =
     path: '/api/public/hooks/refresh-offers',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksRefreshWorkerRoute =
-  ApiPublicHooksRefreshWorkerRouteImport.update({
-    id: '/api/public/hooks/refresh-worker',
-    path: '/api/public/hooks/refresh-worker',
+const ApiPublicExtensionValidateRoute =
+  ApiPublicExtensionValidateRouteImport.update({
+    id: '/api/public/extension/validate',
+    path: '/api/public/extension/validate',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -603,179 +603,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/buscar': {
-      id: '/buscar'
-      path: '/buscar'
-      fullPath: '/buscar'
-      preLoaderRoute: typeof BuscarRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/configuracoes': {
-      id: '/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof ConfiguracoesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/criador-audios': {
-      id: '/criador-audios'
-      path: '/criador-audios'
-      fullPath: '/criador-audios'
-      preLoaderRoute: typeof CriadorAudiosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/criador-criativos': {
-      id: '/criador-criativos'
-      path: '/criador-criativos'
-      fullPath: '/criador-criativos'
-      preLoaderRoute: typeof CriadorCriativosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/criador-vsl': {
-      id: '/criador-vsl'
-      path: '/criador-vsl'
-      fullPath: '/criador-vsl'
-      preLoaderRoute: typeof CriadorVslRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/em-breve': {
-      id: '/em-breve'
-      path: '/em-breve'
-      fullPath: '/em-breve'
-      preLoaderRoute: typeof EmBreveRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/exclusao-de-dados': {
-      id: '/exclusao-de-dados'
-      path: '/exclusao-de-dados'
-      fullPath: '/exclusao-de-dados'
-      preLoaderRoute: typeof ExclusaoDeDadosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/favoritos': {
-      id: '/favoritos'
-      path: '/favoritos'
-      fullPath: '/favoritos'
-      preLoaderRoute: typeof FavoritosRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ferramentas': {
-      id: '/ferramentas'
-      path: '/ferramentas'
-      fullPath: '/ferramentas'
-      preLoaderRoute: typeof FerramentasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/minha-conta': {
-      id: '/minha-conta'
-      path: '/minha-conta'
-      fullPath: '/minha-conta'
-      preLoaderRoute: typeof MinhaContaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/modela-spy-ai': {
-      id: '/modela-spy-ai'
-      path: '/modela-spy-ai'
-      fullPath: '/modela-spy-ai'
-      preLoaderRoute: typeof ModelaSpyAiRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/modelar-oferta': {
-      id: '/modelar-oferta'
-      path: '/modelar-oferta'
-      fullPath: '/modelar-oferta'
-      preLoaderRoute: typeof ModelarOfertaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/modelar-quiz': {
-      id: '/modelar-quiz'
-      path: '/modelar-quiz'
-      fullPath: '/modelar-quiz'
-      preLoaderRoute: typeof ModelarQuizRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/modelar-whatsapp': {
-      id: '/modelar-whatsapp'
-      path: '/modelar-whatsapp'
-      fullPath: '/modelar-whatsapp'
-      preLoaderRoute: typeof ModelarWhatsappRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ofertas': {
-      id: '/ofertas'
-      path: '/ofertas'
-      fullPath: '/ofertas'
-      preLoaderRoute: typeof OfertasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/ofertas-do-dia': {
-      id: '/ofertas-do-dia'
-      path: '/ofertas-do-dia'
-      fullPath: '/ofertas-do-dia'
-      preLoaderRoute: typeof OfertasDoDiaRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/palavras-bloqueadas': {
-      id: '/palavras-bloqueadas'
-      path: '/palavras-bloqueadas'
-      fullPath: '/palavras-bloqueadas'
-      preLoaderRoute: typeof PalavrasBloqueadasRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacidade': {
-      id: '/privacidade'
-      path: '/privacidade'
-      fullPath: '/privacidade'
-      preLoaderRoute: typeof PrivacidadeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap.xml': {
-      id: '/sitemap.xml'
-      path: '/sitemap.xml'
-      fullPath: '/sitemap.xml'
-      preLoaderRoute: typeof SitemapDotxmlRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/suporte': {
-      id: '/suporte'
-      path: '/suporte'
-      fullPath: '/suporte'
-      preLoaderRoute: typeof SuporteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/termos': {
-      id: '/termos'
-      path: '/termos'
-      fullPath: '/termos'
-      preLoaderRoute: typeof TermosRouteImport
+    '/utm': {
+      id: '/utm'
+      path: '/utm'
+      fullPath: '/utm'
+      preLoaderRoute: typeof UtmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/upgrade': {
@@ -785,12 +617,187 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UpgradeRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/utm': {
-      id: '/utm'
-      path: '/utm'
-      fullPath: '/utm'
-      preLoaderRoute: typeof UtmRouteImport
+    '/termos': {
+      id: '/termos'
+      path: '/termos'
+      fullPath: '/termos'
+      preLoaderRoute: typeof TermosRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/suporte': {
+      id: '/suporte'
+      path: '/suporte'
+      fullPath: '/suporte'
+      preLoaderRoute: typeof SuporteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacidade': {
+      id: '/privacidade'
+      path: '/privacidade'
+      fullPath: '/privacidade'
+      preLoaderRoute: typeof PrivacidadeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/palavras-bloqueadas': {
+      id: '/palavras-bloqueadas'
+      path: '/palavras-bloqueadas'
+      fullPath: '/palavras-bloqueadas'
+      preLoaderRoute: typeof PalavrasBloqueadasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ofertas-do-dia': {
+      id: '/ofertas-do-dia'
+      path: '/ofertas-do-dia'
+      fullPath: '/ofertas-do-dia'
+      preLoaderRoute: typeof OfertasDoDiaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ofertas': {
+      id: '/ofertas'
+      path: '/ofertas'
+      fullPath: '/ofertas'
+      preLoaderRoute: typeof OfertasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/modelar-whatsapp': {
+      id: '/modelar-whatsapp'
+      path: '/modelar-whatsapp'
+      fullPath: '/modelar-whatsapp'
+      preLoaderRoute: typeof ModelarWhatsappRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/modelar-quiz': {
+      id: '/modelar-quiz'
+      path: '/modelar-quiz'
+      fullPath: '/modelar-quiz'
+      preLoaderRoute: typeof ModelarQuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/modelar-oferta': {
+      id: '/modelar-oferta'
+      path: '/modelar-oferta'
+      fullPath: '/modelar-oferta'
+      preLoaderRoute: typeof ModelarOfertaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/modela-spy-ai': {
+      id: '/modela-spy-ai'
+      path: '/modela-spy-ai'
+      fullPath: '/modela-spy-ai'
+      preLoaderRoute: typeof ModelaSpyAiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/minha-conta': {
+      id: '/minha-conta'
+      path: '/minha-conta'
+      fullPath: '/minha-conta'
+      preLoaderRoute: typeof MinhaContaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/ferramentas': {
+      id: '/ferramentas'
+      path: '/ferramentas'
+      fullPath: '/ferramentas'
+      preLoaderRoute: typeof FerramentasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favoritos': {
+      id: '/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/exclusao-de-dados': {
+      id: '/exclusao-de-dados'
+      path: '/exclusao-de-dados'
+      fullPath: '/exclusao-de-dados'
+      preLoaderRoute: typeof ExclusaoDeDadosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/em-breve': {
+      id: '/em-breve'
+      path: '/em-breve'
+      fullPath: '/em-breve'
+      preLoaderRoute: typeof EmBreveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criador-vsl': {
+      id: '/criador-vsl'
+      path: '/criador-vsl'
+      fullPath: '/criador-vsl'
+      preLoaderRoute: typeof CriadorVslRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criador-criativos': {
+      id: '/criador-criativos'
+      path: '/criador-criativos'
+      fullPath: '/criador-criativos'
+      preLoaderRoute: typeof CriadorCriativosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criador-audios': {
+      id: '/criador-audios'
+      path: '/criador-audios'
+      fullPath: '/criador-audios'
+      preLoaderRoute: typeof CriadorAudiosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/configuracoes': {
+      id: '/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof ConfiguracoesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/buscar': {
+      id: '/buscar'
+      path: '/buscar'
+      fullPath: '/buscar'
+      preLoaderRoute: typeof BuscarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/modelar-quiz/': {
+      id: '/modelar-quiz/'
+      path: '/'
+      fullPath: '/modelar-quiz/'
+      preLoaderRoute: typeof ModelarQuizIndexRouteImport
+      parentRoute: typeof ModelarQuizRoute
     }
     '/admin/': {
       id: '/admin/'
@@ -799,53 +806,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/blacklist': {
-      id: '/admin/blacklist'
-      path: '/blacklist'
-      fullPath: '/admin/blacklist'
-      preLoaderRoute: typeof AdminBlacklistRouteImport
-      parentRoute: typeof AdminRoute
+    '/quiz/$slug': {
+      id: '/quiz/$slug'
+      path: '/quiz/$slug'
+      fullPath: '/quiz/$slug'
+      preLoaderRoute: typeof QuizSlugRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/categorias': {
-      id: '/admin/categorias'
-      path: '/categorias'
-      fullPath: '/admin/categorias'
-      preLoaderRoute: typeof AdminCategoriasRouteImport
-      parentRoute: typeof AdminRoute
+    '/oferta/$id': {
+      id: '/oferta/$id'
+      path: '/oferta/$id'
+      fullPath: '/oferta/$id'
+      preLoaderRoute: typeof OfertaIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/admin/clientes': {
-      id: '/admin/clientes'
-      path: '/clientes'
-      fullPath: '/admin/clientes'
-      preLoaderRoute: typeof AdminClientesRouteImport
-      parentRoute: typeof AdminRoute
+    '/modelar-quiz/$id': {
+      id: '/modelar-quiz/$id'
+      path: '/$id'
+      fullPath: '/modelar-quiz/$id'
+      preLoaderRoute: typeof ModelarQuizIdRouteImport
+      parentRoute: typeof ModelarQuizRoute
     }
-    '/admin/configuracoes': {
-      id: '/admin/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/admin/configuracoes'
-      preLoaderRoute: typeof AdminConfiguracoesRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/logs': {
-      id: '/admin/logs'
-      path: '/logs'
-      fullPath: '/admin/logs'
-      preLoaderRoute: typeof AdminLogsRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/mineracao': {
-      id: '/admin/mineracao'
-      path: '/mineracao'
-      fullPath: '/admin/mineracao'
-      preLoaderRoute: typeof AdminMineracaoRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/palavras-chave': {
-      id: '/admin/palavras-chave'
-      path: '/palavras-chave'
-      fullPath: '/admin/palavras-chave'
-      preLoaderRoute: typeof AdminPalavrasChaveRouteImport
+    '/admin/suporte': {
+      id: '/admin/suporte'
+      path: '/suporte'
+      fullPath: '/admin/suporte'
+      preLoaderRoute: typeof AdminSuporteRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/qualidade': {
@@ -855,40 +841,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminQualidadeRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/suporte': {
-      id: '/admin/suporte'
-      path: '/suporte'
-      fullPath: '/admin/suporte'
-      preLoaderRoute: typeof AdminSuporteRouteImport
+    '/admin/palavras-chave': {
+      id: '/admin/palavras-chave'
+      path: '/palavras-chave'
+      fullPath: '/admin/palavras-chave'
+      preLoaderRoute: typeof AdminPalavrasChaveRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/modelar-quiz/': {
-      id: '/modelar-quiz/'
-      path: '/'
-      fullPath: '/modelar-quiz/'
-      preLoaderRoute: typeof ModelarQuizIndexRouteImport
-      parentRoute: typeof ModelarQuizRoute
+    '/admin/mineracao': {
+      id: '/admin/mineracao'
+      path: '/mineracao'
+      fullPath: '/admin/mineracao'
+      preLoaderRoute: typeof AdminMineracaoRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/modelar-quiz/$id': {
-      id: '/modelar-quiz/$id'
-      path: '/$id'
-      fullPath: '/modelar-quiz/$id'
-      preLoaderRoute: typeof ModelarQuizIdRouteImport
-      parentRoute: typeof ModelarQuizRoute
+    '/admin/logs': {
+      id: '/admin/logs'
+      path: '/logs'
+      fullPath: '/admin/logs'
+      preLoaderRoute: typeof AdminLogsRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/oferta/$id': {
-      id: '/oferta/$id'
-      path: '/oferta/$id'
-      fullPath: '/oferta/$id'
-      preLoaderRoute: typeof OfertaIdRouteImport
-      parentRoute: typeof rootRouteImport
+    '/admin/configuracoes': {
+      id: '/admin/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/admin/configuracoes'
+      preLoaderRoute: typeof AdminConfiguracoesRouteImport
+      parentRoute: typeof AdminRoute
     }
-    '/quiz/$slug': {
-      id: '/quiz/$slug'
-      path: '/quiz/$slug'
-      fullPath: '/quiz/$slug'
-      preLoaderRoute: typeof QuizSlugRouteImport
-      parentRoute: typeof rootRouteImport
+    '/admin/clientes': {
+      id: '/admin/clientes'
+      path: '/clientes'
+      fullPath: '/admin/clientes'
+      preLoaderRoute: typeof AdminClientesRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/categorias': {
+      id: '/admin/categorias'
+      path: '/categorias'
+      fullPath: '/admin/categorias'
+      preLoaderRoute: typeof AdminCategoriasRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/blacklist': {
+      id: '/admin/blacklist'
+      path: '/blacklist'
+      fullPath: '/admin/blacklist'
+      preLoaderRoute: typeof AdminBlacklistRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/modelar-quiz/leads/$id': {
       id: '/modelar-quiz/leads/$id'
@@ -897,11 +897,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModelarQuizLeadsIdRouteImport
       parentRoute: typeof ModelarQuizRoute
     }
-    '/api/public/extension/validate': {
-      id: '/api/public/extension/validate'
-      path: '/api/public/extension/validate'
-      fullPath: '/api/public/extension/validate'
-      preLoaderRoute: typeof ApiPublicExtensionValidateRouteImport
+    '/api/public/hooks/refresh-worker': {
+      id: '/api/public/hooks/refresh-worker'
+      path: '/api/public/hooks/refresh-worker'
+      fullPath: '/api/public/hooks/refresh-worker'
+      preLoaderRoute: typeof ApiPublicHooksRefreshWorkerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/refresh-offers': {
@@ -911,11 +911,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRefreshOffersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/refresh-worker': {
-      id: '/api/public/hooks/refresh-worker'
-      path: '/api/public/hooks/refresh-worker'
-      fullPath: '/api/public/hooks/refresh-worker'
-      preLoaderRoute: typeof ApiPublicHooksRefreshWorkerRouteImport
+    '/api/public/extension/validate': {
+      id: '/api/public/extension/validate'
+      path: '/api/public/extension/validate'
+      fullPath: '/api/public/extension/validate'
+      preLoaderRoute: typeof ApiPublicExtensionValidateRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

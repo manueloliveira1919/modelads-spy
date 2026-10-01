@@ -8,3 +8,6 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+- Extension tokens: store only SHA-256 hashes; access checks (suspended, active subscription, feature) live in SQL `extension_access_check` and run on every validation — keeps one source of truth.
+- Suspension checks reuse `is_user_suspended` via `src/lib/account-guard.server.ts` — single reusable guard for all future protected access.
