@@ -11,3 +11,4 @@
 
 - Extension tokens: store only SHA-256 hashes; access checks (suspended, active subscription, feature) live in SQL `extension_access_check` and run on every validation — keeps one source of truth.
 - Suspension checks reuse `is_user_suspended` via `src/lib/account-guard.server.ts` — single reusable guard for all future protected access.
+- Extension candidates never write to meta_offers/offers directly: they land in extension_candidates and are injected as a partial-coverage run starting at the classify phase — so they pass the same classification and never deactivate the catalog.
