@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { categoriesQueryOptions } from "@/hooks/use-categories";
 import { logSystem } from "@/lib/admin-log";
 import { AdminPageHeader } from "@/components/admin-shell";
+import { ExtensionCandidatesCard } from "@/components/extension-candidates-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -419,6 +420,7 @@ function MineracaoPage() {
           </>
         }
       />
+      <ExtensionCandidatesCard />
 
       {last && summary && (
         <Card className="mb-6 border-brand/30 bg-brand/5">
