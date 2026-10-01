@@ -8,6 +8,13 @@
       "when": 1790561368424,
       "tag": "0000_quiz_elements_allow_result",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790872085559,
+      "tag": "0001_extension_tokens",
+      "breakpoints": true
     }
   ]
 }

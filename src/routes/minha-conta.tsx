@@ -6,6 +6,7 @@ import { RequireAuth } from "@/components/require-auth";
 import { useAuth } from "@/lib/auth-context";
 import { useEntitlements } from "@/hooks/use-entitlements";
 import { fetchMyLedger, planLabel } from "@/lib/entitlements";
+import { MyExtensionTokens } from "@/components/extension-tokens";
 
 export const Route = createFileRoute("/minha-conta")({
   head: () => ({
@@ -132,7 +133,7 @@ function Page() {
           </div>
         )}
 
-
+        <MyExtensionTokens userId={user.id} />
         {!isPro && (
           <div className="rounded-2xl border border-brand/40 bg-gradient-to-br from-brand/10 to-card p-6">
             <h3 className="font-display text-lg font-semibold">Desbloqueie o PRO</h3>

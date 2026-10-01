@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logSystem } from "@/lib/admin-log";
 import { AdminPageHeader } from "@/components/admin-shell";
+import { AdminExtensionTokens } from "@/components/extension-tokens";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -344,6 +345,11 @@ function ClientesPage() {
           </TableBody>
         </Table>
       </Card>
+      <AdminExtensionTokens
+        emailById={Object.fromEntries(
+          (profilesQuery.data ?? []).map((p) => [p.id, p.email ?? p.display_name ?? p.id]),
+        )}
+      />
 
       <Dialog open={Boolean(creditTarget)} onOpenChange={(o) => !o && setCreditTarget(null)}>
         <DialogContent>

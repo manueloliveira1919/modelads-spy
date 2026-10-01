@@ -155,6 +155,44 @@ export type Database = {
         }
         Relationships: []
       }
+      extension_tokens: {
+        Row: {
+          created_at: string
+          id: string
+          last_used_at: string | null
+          revoked_at: string | null
+          token_hash: string
+          token_prefix: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          token_hash: string
+          token_prefix?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+          token_prefix?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extension_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       keyword_categories: {
         Row: {
           color: string | null
@@ -1228,7 +1266,12 @@ export type Database = {
         }
         Returns: Json
       }
+      create_extension_token: {
+        Args: { p_prefix: string; p_token_hash: string }
+        Returns: Json
+      }
       current_plan_code: { Args: { _user_id: string }; Returns: string }
+      extension_access_check: { Args: { _user_id: string }; Returns: Json }
       get_my_entitlements: { Args: never; Returns: Json }
       get_offer_row: {
         Args: { p_id: string }
@@ -1258,6 +1301,7 @@ export type Database = {
         }[]
       }
       get_public_quiz: { Args: { p_slug: string }; Returns: Json }
+      has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_feature: {
         Args: { _feature_key: string; _user_id: string }
         Returns: boolean
@@ -1269,6 +1313,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_user_suspended: { Args: { _user_id: string }; Returns: boolean }
       list_active_offer_pages: {
         Args: never
         Returns: {
@@ -1544,6 +1589,7 @@ export type Database = {
         Args: { p_exclude_id?: string; p_slug: string }
         Returns: string
       }
+      revoke_extension_token: { Args: { p_id: string }; Returns: boolean }
       submit_quiz_lead: {
         Args: {
           p_email?: string
@@ -1557,6 +1603,10 @@ export type Database = {
       try_advance_run_phase: {
         Args: { p_from_phase: string; p_run_id: string; p_to_phase: string }
         Returns: boolean
+      }
+      validate_extension_token: {
+        Args: { p_token_hash: string }
+        Returns: Json
       }
     }
     Enums: {
