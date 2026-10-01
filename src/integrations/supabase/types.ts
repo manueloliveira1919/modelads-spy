@@ -155,6 +155,68 @@ export type Database = {
         }
         Relationships: []
       }
+      extension_candidates: {
+        Row: {
+          active_days: number | null
+          ad_archive_id: string
+          creative_text: string | null
+          id: string
+          keyword_used: string | null
+          link_url: string | null
+          media_url: string | null
+          page_id: string | null
+          page_name: string | null
+          processed_at: string | null
+          repeated_ads_count: number | null
+          run_id: string | null
+          status: string
+          submitted_at: string
+          submitted_by: string
+        }
+        Insert: {
+          active_days?: number | null
+          ad_archive_id: string
+          creative_text?: string | null
+          id?: string
+          keyword_used?: string | null
+          link_url?: string | null
+          media_url?: string | null
+          page_id?: string | null
+          page_name?: string | null
+          processed_at?: string | null
+          repeated_ads_count?: number | null
+          run_id?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by: string
+        }
+        Update: {
+          active_days?: number | null
+          ad_archive_id?: string
+          creative_text?: string | null
+          id?: string
+          keyword_used?: string | null
+          link_url?: string | null
+          media_url?: string | null
+          page_id?: string | null
+          page_name?: string | null
+          processed_at?: string | null
+          repeated_ads_count?: number | null
+          run_id?: string | null
+          status?: string
+          submitted_at?: string
+          submitted_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "extension_candidates_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "meta_refresh_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       extension_tokens: {
         Row: {
           created_at: string
@@ -1272,6 +1334,10 @@ export type Database = {
       }
       current_plan_code: { Args: { _user_id: string }; Returns: string }
       extension_access_check: { Args: { _user_id: string }; Returns: Json }
+      extension_submit_candidates: {
+        Args: { p_rows: Json; p_user_id: string }
+        Returns: Json
+      }
       get_my_entitlements: { Args: never; Returns: Json }
       get_offer_row: {
         Args: { p_id: string }

@@ -15,6 +15,13 @@
       "when": 1790872085559,
       "tag": "0001_extension_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790896669649,
+      "tag": "0002_extension_candidates",
+      "breakpoints": true
     }
   ]
 }
