@@ -22,6 +22,13 @@
       "when": 1790896669649,
       "tag": "0002_extension_candidates",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791239898080,
+      "tag": "0003_fix_review_account_nulls",
+      "breakpoints": true
     }
   ]
 }
