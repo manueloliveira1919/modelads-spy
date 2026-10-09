@@ -43,6 +43,13 @@
       "when": 1791587694993,
       "tag": "0005_extension_candidates_claims_and_status",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791587716432,
+      "tag": "0006_fix_extension_claim_returning",
+      "breakpoints": true
     }
   ]
 }
