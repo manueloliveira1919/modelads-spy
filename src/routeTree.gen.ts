@@ -51,6 +51,7 @@ import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 import { Route as QuizSlugRouteImport } from './routes/quiz.$slug'
 import { Route as ModelarQuizLeadsIdRouteImport } from './routes/modelar-quiz.leads.$id'
+import { Route as ApiPublicExtensionStatusRouteImport } from './routes/api/public/extension/status'
 import { Route as ApiPublicExtensionSubmitRouteImport } from './routes/api/public/extension/submit'
 import { Route as ApiPublicExtensionValidateRouteImport } from './routes/api/public/extension/validate'
 import { Route as ApiPublicHooksRefreshOffersRouteImport } from './routes/api/public/hooks/refresh-offers'
@@ -266,6 +267,12 @@ const ModelarQuizLeadsIdRoute = ModelarQuizLeadsIdRouteImport.update({
   path: '/leads/$id',
   getParentRoute: () => ModelarQuizRoute,
 } as any)
+const ApiPublicExtensionStatusRoute =
+  ApiPublicExtensionStatusRouteImport.update({
+    id: '/api/public/extension/status',
+    path: '/api/public/extension/status',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicExtensionSubmitRoute =
   ApiPublicExtensionSubmitRouteImport.update({
     id: '/api/public/extension/submit',
@@ -334,6 +341,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
+  '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
   '/api/public/extension/submit': typeof ApiPublicExtensionSubmitRoute
   '/api/public/extension/validate': typeof ApiPublicExtensionValidateRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
@@ -380,6 +388,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/modelar-quiz': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
+  '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
   '/api/public/extension/submit': typeof ApiPublicExtensionSubmitRoute
   '/api/public/extension/validate': typeof ApiPublicExtensionValidateRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
@@ -429,6 +438,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
+  '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
   '/api/public/extension/submit': typeof ApiPublicExtensionSubmitRoute
   '/api/public/extension/validate': typeof ApiPublicExtensionValidateRoute
   '/api/public/hooks/refresh-offers': typeof ApiPublicHooksRefreshOffersRoute
@@ -479,6 +489,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/modelar-quiz/'
     | '/modelar-quiz/leads/$id'
+    | '/api/public/extension/status'
     | '/api/public/extension/submit'
     | '/api/public/extension/validate'
     | '/api/public/hooks/refresh-offers'
@@ -525,6 +536,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/modelar-quiz'
     | '/modelar-quiz/leads/$id'
+    | '/api/public/extension/status'
     | '/api/public/extension/submit'
     | '/api/public/extension/validate'
     | '/api/public/hooks/refresh-offers'
@@ -573,6 +585,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/modelar-quiz/'
     | '/modelar-quiz/leads/$id'
+    | '/api/public/extension/status'
     | '/api/public/extension/submit'
     | '/api/public/extension/validate'
     | '/api/public/hooks/refresh-offers'
@@ -609,6 +622,7 @@ export interface RootRouteChildren {
   UtmRoute: typeof UtmRoute
   OfertaIdRoute: typeof OfertaIdRoute
   QuizSlugRoute: typeof QuizSlugRoute
+  ApiPublicExtensionStatusRoute: typeof ApiPublicExtensionStatusRoute
   ApiPublicExtensionSubmitRoute: typeof ApiPublicExtensionSubmitRoute
   ApiPublicExtensionValidateRoute: typeof ApiPublicExtensionValidateRoute
   ApiPublicHooksRefreshOffersRoute: typeof ApiPublicHooksRefreshOffersRoute
@@ -911,6 +925,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModelarQuizLeadsIdRouteImport
       parentRoute: typeof ModelarQuizRoute
     }
+    '/api/public/extension/status': {
+      id: '/api/public/extension/status'
+      path: '/api/public/extension/status'
+      fullPath: '/api/public/extension/status'
+      preLoaderRoute: typeof ApiPublicExtensionStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/extension/submit': {
       id: '/api/public/extension/submit'
       path: '/api/public/extension/submit'
@@ -1016,6 +1037,7 @@ const rootRouteChildren: RootRouteChildren = {
   UtmRoute: UtmRoute,
   OfertaIdRoute: OfertaIdRoute,
   QuizSlugRoute: QuizSlugRoute,
+  ApiPublicExtensionStatusRoute: ApiPublicExtensionStatusRoute,
   ApiPublicExtensionSubmitRoute: ApiPublicExtensionSubmitRoute,
   ApiPublicExtensionValidateRoute: ApiPublicExtensionValidateRoute,
   ApiPublicHooksRefreshOffersRoute: ApiPublicHooksRefreshOffersRoute,
