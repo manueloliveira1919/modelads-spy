@@ -18,14 +18,16 @@ function json(body: unknown, status: number) {
 }
 
 const str = (max: number) => z.string().trim().max(max).optional().nullable();
+// Only http(s): blocks javascript:/data: links that could later be rendered as href/src.
+const httpUrl = z.string().url().max(2000).regex(/^https?:\/\//i).optional().nullable();
 const Candidate = z.object({
   ad_archive_id: z.string().trim().regex(/^[0-9A-Za-z_-]{3,64}$/),
   keyword_used: str(200),
   page_id: str(64),
   page_name: str(300),
   creative_text: str(5000),
-  media_url: z.string().url().max(2000).optional().nullable(),
-  link_url: z.string().url().max(2000).optional().nullable(),
+  media_url: httpUrl,
+  link_url: httpUrl,
   active_days: z.number().int().min(0).max(5000).optional().nullable(),
   repeated_ads_count: z.number().int().min(0).max(100000).optional().nullable(),
 });
