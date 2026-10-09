@@ -29,6 +29,13 @@
       "when": 1791239898080,
       "tag": "0003_fix_review_account_nulls",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791587391734,
+      "tag": "0004_restrict_extension_access_check",
+      "breakpoints": true
     }
   ]
 }
