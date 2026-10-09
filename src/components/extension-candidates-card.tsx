@@ -25,7 +25,13 @@ export function ExtensionCandidatesCard() {
     mutationFn: () => process(),
     onSuccess: (r) => {
       if (!r.ok) return toast.error(r.message);
-      toast.success(r.processed ? `${r.processed} candidatos enviados para classificação` : "Nenhum candidato pendente");
+      toast.success(
+        r.processed
+          ? `${r.processed} candidatos enviados para classificação`
+          : r.recovered
+            ? `${r.recovered} reservas abandonadas devolvidas à fila`
+            : "Nenhum candidato pendente (ou já em processamento)",
+      );
       qc.invalidateQueries({ queryKey: ["admin", "extension-candidates"] });
     },
     onError: () => toast.error("Falha ao processar candidatos."),
