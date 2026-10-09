@@ -159,14 +159,20 @@ export type Database = {
         Row: {
           active_days: number | null
           ad_archive_id: string
+          attempts: number
+          claim_token: string | null
+          claimed_at: string | null
           creative_text: string | null
           id: string
           keyword_used: string | null
+          last_error: string | null
           link_url: string | null
+          media_error: string | null
           media_url: string | null
           page_id: string | null
           page_name: string | null
           processed_at: string | null
+          reject_reason: string | null
           repeated_ads_count: number | null
           run_id: string | null
           status: string
@@ -176,14 +182,20 @@ export type Database = {
         Insert: {
           active_days?: number | null
           ad_archive_id: string
+          attempts?: number
+          claim_token?: string | null
+          claimed_at?: string | null
           creative_text?: string | null
           id?: string
           keyword_used?: string | null
+          last_error?: string | null
           link_url?: string | null
+          media_error?: string | null
           media_url?: string | null
           page_id?: string | null
           page_name?: string | null
           processed_at?: string | null
+          reject_reason?: string | null
           repeated_ads_count?: number | null
           run_id?: string | null
           status?: string
@@ -193,14 +205,20 @@ export type Database = {
         Update: {
           active_days?: number | null
           ad_archive_id?: string
+          attempts?: number
+          claim_token?: string | null
+          claimed_at?: string | null
           creative_text?: string | null
           id?: string
           keyword_used?: string | null
+          last_error?: string | null
           link_url?: string | null
+          media_error?: string | null
           media_url?: string | null
           page_id?: string | null
           page_name?: string | null
           processed_at?: string | null
+          reject_reason?: string | null
           repeated_ads_count?: number | null
           run_id?: string | null
           status?: string
@@ -1334,6 +1352,34 @@ export type Database = {
       }
       current_plan_code: { Args: { _user_id: string }; Returns: string }
       extension_access_check: { Args: { _user_id: string }; Returns: Json }
+      extension_candidate_status: {
+        Args: { p_ids?: string[]; p_limit?: number; p_user_id: string }
+        Returns: Json
+      }
+      extension_claim_candidates: {
+        Args: {
+          p_limit: number
+          p_max_attempts?: number
+          p_stale_minutes?: number
+        }
+        Returns: {
+          claim_token: string
+          ids: string[]
+          recovered: number
+        }[]
+      }
+      extension_complete_claim: {
+        Args: { p_claim_token: string; p_run_id: string }
+        Returns: number
+      }
+      extension_release_claim: {
+        Args: {
+          p_claim_token: string
+          p_error: string
+          p_max_attempts?: number
+        }
+        Returns: number
+      }
       extension_submit_candidates: {
         Args: { p_rows: Json; p_user_id: string }
         Returns: Json

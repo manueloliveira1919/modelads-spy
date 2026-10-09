@@ -36,6 +36,13 @@
       "when": 1791587391734,
       "tag": "0004_restrict_extension_access_check",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791587694993,
+      "tag": "0005_extension_candidates_claims_and_status",
+      "breakpoints": true
     }
   ]
 }
