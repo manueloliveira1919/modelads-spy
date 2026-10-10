@@ -34,9 +34,28 @@ export const Route = createFileRoute("/api/public/extension/validate")({
           p_token_hash: hash,
         });
         if (error) return json({ ok: false, reason: "error" }, 500);
-        const res = (data ?? { ok: false }) as { ok: boolean; reason?: string };
+        const res = (data ?? { ok: false }) as { ok: boolean; reason?: string; user_id?: string };
         if (!res.ok) return json(res, res.reason === "invalid_token" ? 401 : 403);
-        return json(res, 200);
+        // plan_code drives extension UI only; submit re-checks admin server-side.
+        let plan_code = "starter";
+        if (res.user_id) {
+          const { data: isAdmin } = await supabaseAdmin.rpc("has_role", {
+            _user_id: res.user_id,
+            _role: "admin",
+          });
+          if (isAdmin) plan_code = "admin";
+          else {
+            const { data: sub } = await supabaseAdmin
+              .from("user_subscriptions")
+              .select("plan_code")
+              .eq("user_id", res.user_id)
+              .order("updated_at", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            if (sub?.plan_code) plan_code = String(sub.plan_code);
+          }
+        }
+        return json({ ...res, plan_code }, 200);
       },
     },
   },
