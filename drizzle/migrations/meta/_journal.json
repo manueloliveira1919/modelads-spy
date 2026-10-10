@@ -57,6 +57,13 @@
       "when": 1791587825902,
       "tag": "0007_extension_submit_owner_only_update",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791633091622,
+      "tag": "0008_extension_rate_limits",
+      "breakpoints": true
     }
   ]
 }
