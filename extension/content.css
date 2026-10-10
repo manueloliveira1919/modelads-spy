@@ -1,9 +1,19 @@
-.mdl-badge { display: inline-block; margin: 6px 0; padding: 3px 8px; border-radius: 999px; font: 600 12px system-ui, sans-serif; background: #6D7CFF; color: #fff; }
-.mdl-badge.mdl-low { background: #555; }
+.mdl-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 6px 0; font: 12px system-ui, sans-serif; }
+.mdl-badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font: 600 12px system-ui, sans-serif; background: #6D7CFF; color: #fff; }
+.mdl-badge.mdl-rep { background: #1DB8FF; }
+.mdl-act { padding: 3px 7px; border: 1px solid #2A3050; border-radius: 6px; background: #141828; color: #E6E8F2; font: 600 11px system-ui, sans-serif; cursor: pointer; }
+.mdl-act:hover { background: #1C2136; }
+.mdl-act:disabled { opacity: .6; cursor: default; }
+.mdl-act.mdl-send { background: linear-gradient(90deg,#6D7CFF,#1DB8FF); color: #fff; border: 0; }
 .mdl-hidden { display: none !important; }
-.mdl-panel { position: fixed; right: 16px; bottom: 16px; z-index: 2147483647; width: 250px; padding: 12px; border-radius: 12px; background: #090B14; color: #E6E8F2; font: 13px system-ui, sans-serif; box-shadow: 0 8px 30px rgba(0,0,0,.4); }
-.mdl-panel h4 { margin: 0 0 8px; font-size: 13px; color: #6D7CFF; }
-.mdl-panel input { width: 70px; padding: 4px; border-radius: 6px; border: 1px solid #2A3050; background: #0F1220; color: inherit; }
+.mdl-panel { position: fixed; right: 16px; bottom: 16px; z-index: 2147483647; width: 260px; padding: 12px; border-radius: 12px; background: #090B14; color: #E6E8F2; font: 13px system-ui, sans-serif; box-shadow: 0 8px 30px rgba(0,0,0,.4); }
+.mdl-panel.mdl-collapsed { width: auto; padding: 8px 10px; }
+.mdl-panel.mdl-collapsed .mdl-body { display: none; }
+.mdl-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.mdl-panel h4 { margin: 0; font-size: 13px; color: #6D7CFF; }
+.mdl-panel .mdl-toggle { width: auto; margin: 0; padding: 2px 8px; }
+.mdl-count { margin: 6px 0; font-size: 12px; color: #9AA0B8; }
+.mdl-panel input { width: 60px; padding: 4px; border-radius: 6px; border: 1px solid #2A3050; background: #0F1220; color: inherit; }
 .mdl-panel label { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 6px; }
 .mdl-panel button { width: 100%; margin-top: 6px; padding: 7px; border: 0; border-radius: 6px; font-weight: 600; cursor: pointer; background: #1C2136; color: #E6E8F2; }
 .mdl-panel button.mdl-primary { background: linear-gradient(90deg,#6D7CFF,#1DB8FF); color: #fff; }
