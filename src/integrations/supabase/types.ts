@@ -235,6 +235,54 @@ export type Database = {
           },
         ]
       }
+      extension_rate_events: {
+        Row: {
+          ads: number
+          at: string
+          id: number
+          is_request: boolean
+          token_id: string
+        }
+        Insert: {
+          ads?: number
+          at?: string
+          id?: number
+          is_request?: boolean
+          token_id: string
+        }
+        Update: {
+          ads?: number
+          at?: string
+          id?: number
+          is_request?: boolean
+          token_id?: string
+        }
+        Relationships: []
+      }
+      extension_rate_limits: {
+        Row: {
+          ads_per_day: number
+          ads_per_hour: number
+          id: boolean
+          requests_per_minute: number
+          updated_at: string
+        }
+        Insert: {
+          ads_per_day?: number
+          ads_per_hour?: number
+          id?: boolean
+          requests_per_minute?: number
+          updated_at?: string
+        }
+        Update: {
+          ads_per_day?: number
+          ads_per_hour?: number
+          id?: boolean
+          requests_per_minute?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       extension_tokens: {
         Row: {
           created_at: string
@@ -1371,6 +1419,14 @@ export type Database = {
       extension_complete_claim: {
         Args: { p_claim_token: string; p_run_id: string }
         Returns: number
+      }
+      extension_rate_check: {
+        Args: {
+          p_ads?: number
+          p_count_request?: boolean
+          p_token_hash: string
+        }
+        Returns: Json
       }
       extension_release_claim: {
         Args: {

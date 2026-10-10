@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+import { Input } from "@/components/ui/input";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
@@ -51,6 +53,67 @@ export function ExtensionCandidatesCard() {
           {mut.isPending ? "Processando…" : "Processar candidatos"}
         </Button>
       </CardContent>
+      <RateLimitsEditor />
     </Card>
+  );
+}
+
+type Limits = { requests_per_minute: number; ads_per_hour: number; ads_per_day: number };
+
+function RateLimitsEditor() {
+  const qc = useQueryClient();
+  const [form, setForm] = useState<Limits | null>(null);
+  const { data } = useQuery({
+    queryKey: ["admin", "extension-rate-limits"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("extension_rate_limits")
+        .select("requests_per_minute, ads_per_hour, ads_per_day")
+        .maybeSingle();
+      if (error) throw error;
+      return data as Limits | null;
+    },
+  });
+  useEffect(() => {
+    if (data) setForm(data);
+  }, [data]);
+  const save = useMutation({
+    mutationFn: async () => {
+      if (!form) return;
+      const { error } = await supabase
+        .from("extension_rate_limits")
+        .update({ ...form, updated_at: new Date().toISOString() })
+        .eq("id", true);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Limites salvos");
+      qc.invalidateQueries({ queryKey: ["admin", "extension-rate-limits"] });
+    },
+    onError: (e) => toast.error((e as Error).message),
+  });
+  if (!form) return null;
+  const field = (k: keyof Limits, label: string) => (
+    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+      {label}
+      <Input
+        type="number"
+        min={1}
+        className="h-8 w-32"
+        value={form[k]}
+        onChange={(e) => setForm({ ...form, [k]: Math.max(1, Number(e.target.value) || 1) })}
+      />
+    </label>
+  );
+  return (
+    <CardContent className="flex flex-wrap items-end gap-4 border-t border-border/60 p-4">
+      <div className="w-full text-xs font-semibold">Limites por código de acesso (máx. 50 anúncios por envio)</div>
+      {field("requests_per_minute", "Requisições/min")}
+      {field("ads_per_hour", "Anúncios/hora")}
+      {field("ads_per_day", "Anúncios/dia")}
+      <Button size="sm" variant="outline" disabled={save.isPending} onClick={() => save.mutate()}>
+        Salvar limites
+      </Button>
+    </CardContent>
   );
 }
