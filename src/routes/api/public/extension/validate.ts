@@ -1,10 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { sha256Hex } from "@/lib/account-guard.server";
+import { checkExtensionRate, rateLimitedResponse } from "@/lib/extension-rate-limit.server";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
   "Access-Control-Allow-Headers": "authorization, content-type",
+  "Access-Control-Expose-Headers": "Retry-After",
 };
 
 function json(body: unknown, status: number) {
@@ -26,6 +28,8 @@ export const Route = createFileRoute("/api/public/extension/validate")({
         }
         const hash = await sha256Hex(token);
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        const rate = await checkExtensionRate(supabaseAdmin, hash);
+        if (!rate.ok) return rateLimitedResponse(rate, cors);
         const { data, error } = await supabaseAdmin.rpc("validate_extension_token", {
           p_token_hash: hash,
         });
