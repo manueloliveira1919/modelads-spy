@@ -39,7 +39,8 @@ $("connect").onclick = async () => {
   if (r.status === 200 && r.data.ok) {
     await chrome.storage.local.set({ mdlToken: token, mdlPlan: r.data.plan_code });
     $("token").value = "";
-    load();
+    $("ver").textContent = "v" + chrome.runtime.getManifest().version;
+load();
   } else if (r.status === 429) {
     $("msg").textContent = `Muitas tentativas. Aguarde ${r.retryAfter}s.`;
   } else {
@@ -57,4 +58,5 @@ $("minDays").oninput = async (e) => {
   await chrome.storage.local.set({ mdlMinDays: v });
 };
 
+$("ver").textContent = "v" + chrome.runtime.getManifest().version;
 load();

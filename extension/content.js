@@ -5,7 +5,10 @@
     jan: 0, fev: 1, feb: 1, mar: 2, abr: 3, apr: 3, mai: 4, may: 4, jun: 5, jul: 6,
     ago: 7, aug: 7, set: 8, sep: 8, out: 9, oct: 9, nov: 10, dez: 11, dec: 11,
   };
-  const ID_RE = /(?:identificacao da biblioteca|id da biblioteca|library id)\s*:?\s*(\d{5,})/i;
+  const VERSION = chrome.runtime.getManifest().version;
+  const LABEL_RE = /(identificacao da biblioteca|id da biblioteca|library id)/i;
+  const LABEL_G = /(identificacao da biblioteca|id da biblioteca|library id)/gi;
+  const ID_RE = /(?:identificacao da biblioteca|id da biblioteca|library id)\s*:?\s*(\d{8,})/i;
   const START_RE = /(?:veiculacao iniciada em|started running on)\s*([^\n·]+)/i;
   const REPEAT_RE = /(\d+)\s+(?:anuncios usam esse criativo|anuncios usam este criativo|ads use this creative)/i;
 
@@ -13,6 +16,16 @@
   let panel, msgEl, mineBtn, countEl;
 
   const norm = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const flat = (s) => norm(s).replace(/[\u00a0\s]+/g, " ").toLowerCase();
+  const diag = { labels: 0, cards: 0, dated: 0, errors: 0, lastError: "", sample: "" };
+  let diagEl;
+  function logErr(e) {
+    diag.errors++; diag.lastError = String(e && e.message || e).slice(0, 200);
+    renderDiag();
+  }
+  function renderDiag() {
+    if (diagEl) diagEl.textContent = `Diagnóstico: rótulos ${diag.labels} · cards ${diag.cards} · com data ${diag.dated} · erros ${diag.errors}${diag.lastError ? "\nÚltimo erro: " + diag.lastError : ""}`;
+  }
 
   // "2 de set de 2025" / "Mar 12, 2025" / "12/03/2025" (input already normalized)
   function parseStart(text) {
@@ -25,39 +38,56 @@
     return null;
   }
 
+  function isCard(t) {
+    const m = t.match(LABEL_G);
+    if (!m || m.length !== 1) return m && m.length > 1 ? -1 : 0;
+    return ID_RE.test(t) && /veiculacao iniciada em|started running on/.test(t) &&
+      /ver detalhes do anuncio|ver resumo|see ad details|see summary/.test(t) ? 1 : 0;
+  }
+
   function findCards() {
     const cards = [];
     const seen = new Set();
+    const labels = [];
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     let n;
     while ((n = walker.nextNode())) {
-      const t = norm(n.nodeValue);
-      if (!/(identificacao da biblioteca|id da biblioteca|library id)/i.test(t)) continue;
-      if (n.parentElement?.closest(".mdl-panel, .mdl-bar")) continue;
-      let idm = t.match(ID_RE);
-      if (!idm) idm = norm(n.parentElement?.parentElement?.innerText).match(ID_RE);
-      if (!idm || seen.has(idm[1])) continue;
-      let el = n.parentElement, found = null;
-      for (let i = 0; el && i < 15; i++, el = el.parentElement) {
-        const it = norm(el.innerText);
-        if (/(veiculacao iniciada em|started running on)/i.test(it) && it.length > 120) { found = el; break; }
+      if (!LABEL_RE.test(norm(n.nodeValue))) continue;
+      const p = n.parentElement;
+      if (!p || p.closest(".mdl-panel, .mdl-bar")) continue;
+      labels.push(p);
+    }
+    diag.labels = labels.length;
+    if (labels[0] && !diag.sample) diag.sample = labels[0];
+    for (const lab of labels) {
+      let el = lab, found = null, lastSingle = null;
+      for (let i = 0; el && el !== document.body && i < 25; i++, el = el.parentElement) {
+        const r = isCard(flat(el.innerText));
+        if (r === -1) break;
+        if (ID_RE.test(flat(el.innerText))) lastSingle = el;
+        if (r === 1) { found = el; break; }
       }
+      found = found || lastSingle; // fallback: maior ancestral com um único rótulo
       if (!found) continue;
+      const idm = flat(found.innerText).match(ID_RE);
+      if (!idm || seen.has(idm[1])) continue;
       seen.add(idm[1]);
       cards.push({ el: found, id: idm[1] });
     }
+    diag.cards = cards.length;
+    if (cards[0]) diag.sample = cards[0].el;
     return cards;
   }
 
   function cardData(card) {
     const raw = card.el.innerText || "";
-    const text = norm(raw);
+    const text = flat(raw);
     const sm = text.match(START_RE);
     const start = sm ? parseStart(sm[1]) : null;
     const days = start && !isNaN(start) ? Math.max(0, Math.floor((Date.now() - start) / 86400000)) : null;
     const rm = text.match(REPEAT_RE);
     const repeated = rm ? parseInt(rm[1], 10) : 1;
-    return { raw, days, repeated };
+    return { raw, days, repeated, start: start && !isNaN(start) ? start : null };
   }
 
   const IGNORE = /^(ativo|inativo|active|inactive|plataformas|platforms|ver detalhes do anuncio|see ad details|ver resumo|see summary|patrocinado|sponsored)$/i;
@@ -88,6 +118,49 @@
     return true;
   }
 
+  function stage(d) {
+    const days = d.days || 0, n = d.repeated || 0;
+    if (days >= 30 && n >= 30) return "Escaladíssimo";
+    if (days >= 20 && n >= 20) return "Escalado";
+    if (days >= 5 && n >= 10) return "Testando";
+    return "Sem sinal de escala";
+  }
+  const libLink = (id) => `https://www.facebook.com/ads/library/?id=${id}`;
+
+  async function clip(t) {
+    try { await navigator.clipboard.writeText(t); }
+    catch {
+      const ta = document.createElement("textarea");
+      ta.value = t; document.body.appendChild(ta); ta.select();
+      document.execCommand("copy"); ta.remove();
+    }
+  }
+
+  function summary(card, full) {
+    const d = cardData(card), c = candidate(card);
+    const lines = [
+      `Página: ${c.page_name || "?"}`,
+      `ID do anúncio: ${card.id}`,
+      `Início: ${d.start ? d.start.toLocaleDateString("pt-BR") : "?"}`,
+      `Dias ativos: ${d.days ?? "?"}`,
+      `Anúncios (mesmo criativo): ${d.repeated}`,
+      `Estágio estimado: ${stage(d)}`,
+    ];
+    if (c.link_url) lines.push(`Destino: ${c.link_url}`);
+    lines.push(`Biblioteca: ${libLink(card.id)}`);
+    if (full && c.creative_text) lines.push("", "Copy:", c.creative_text);
+    return lines.join("\n");
+  }
+
+  async function share(card, btn) {
+    const text = summary(card, false);
+    if (navigator.share) {
+      try { await navigator.share({ title: "Oferta - Model Ads", text, url: libLink(card.id) }); return; }
+      catch (e) { if (e && e.name === "AbortError") return; }
+    }
+    await clip(text); flash(btn, "Link copiado!");
+  }
+
   function flash(btn, text) {
     const old = btn.textContent;
     btn.textContent = text;
@@ -97,12 +170,7 @@
   async function copyText(card, btn) {
     const t = creativeText(card);
     if (!t) return flash(btn, "Sem texto");
-    try { await navigator.clipboard.writeText(t); }
-    catch {
-      const ta = document.createElement("textarea");
-      ta.value = t; document.body.appendChild(ta); ta.select();
-      document.execCommand("copy"); ta.remove();
-    }
+    await clip(t);
     flash(btn, "Copiado!");
   }
 
@@ -138,7 +206,10 @@
     bar.innerHTML = `
       <span class="mdl-badge mdl-days"></span>
       <span class="mdl-badge mdl-rep"></span>
+      <span class="mdl-badge mdl-stage" title="Estágio estimado: o nº de anúncios do card é só o de repetições do mesmo criativo"></span>
       <button class="mdl-act" data-a="copy" title="Copiar copy">📋 Copiar</button>
+      <button class="mdl-act" data-a="all" title="Copiar todos os dados">📄 Copiar tudo</button>
+      <button class="mdl-act" data-a="share" title="Compartilhar">🔗 Compartilhar</button>
       <button class="mdl-act" data-a="dl" title="Baixar criativo">⬇ Baixar</button>
       <button class="mdl-act" data-a="open" title="Abrir na biblioteca">↗ Abrir</button>
       ${state.plan === "admin" ? '<button class="mdl-act mdl-send" data-a="send" title="Enviar ao Model Ads">➤ Enviar</button>' : ""}`;
@@ -148,8 +219,10 @@
       e.preventDefault(); e.stopPropagation();
       const a = b.dataset.a;
       if (a === "copy") copyText(card, b);
+      else if (a === "all") clip(summary(card, true)).then(() => flash(b, "Copiado!"));
+      else if (a === "share") share(card, b);
       else if (a === "dl") download(card, b);
-      else if (a === "open") window.open(`https://www.facebook.com/ads/library/?id=${card.id}`, "_blank");
+      else if (a === "open") window.open(libLink(card.id), "_blank");
       else if (a === "send" && state.plan === "admin") sendOne(card, b);
     });
     card.el.prepend(bar);
@@ -157,21 +230,28 @@
   }
 
   function applyFilter() {
+    try { applyFilterInner(); } catch (e) { logErr(e); }
+  }
+  function applyFilterInner() {
     if (!state.token) return;
     const cards = findCards();
-    let visible = 0;
+    let visible = 0, dated = 0;
     for (const card of cards) {
       const d = cardData(card);
+      if (d.days != null) dated++;
       const bar = ensureBar(card);
       bar.querySelector(".mdl-days").textContent = d.days == null ? "Dias ativos: ?" : `${d.days} dias ativos`;
       bar.querySelector(".mdl-rep").textContent = `${d.repeated} anúncio${d.repeated === 1 ? "" : "s"}`;
+      bar.querySelector(".mdl-stage").textContent = `${stage(d)} (estimado)`;
       const ok = passes(d);
       card.el.classList.toggle("mdl-hidden", !ok);
       card.el.dataset.mdlDays = d.days ?? "";
       card.el.dataset.mdlRep = d.repeated;
       if (ok) visible++;
     }
+    diag.dated = dated;
     if (countEl) countEl.textContent = `${cards.length} carregados · ${visible} visíveis`;
+    renderDiag();
   }
 
   function keyword() {
@@ -277,7 +357,7 @@
     panel = document.createElement("div");
     panel.className = "mdl-panel";
     panel.innerHTML = `
-      <div class="mdl-head"><h4>Model Ads · ${state.plan === "admin" ? "admin" : "cliente"}</h4>
+      <div class="mdl-head"><h4>Model Ads v${VERSION} · ${state.plan === "admin" ? "admin" : "cliente"}</h4>
         <button class="mdl-toggle" title="Recolher/expandir">—</button></div>
       <div class="mdl-count"></div>
       <div class="mdl-body">
@@ -286,10 +366,22 @@
         <button class="mdl-more">Carregar mais</button>
         ${state.plan === "admin" ? '<button class="mdl-primary mdl-mine">Minerar e enviar ao Model Ads</button>' : ""}
         <div class="mdl-msg"></div>
+        <div class="mdl-diag"></div>
+        <button class="mdl-copydiag">Copiar diagnóstico</button>
       </div>`;
     document.body.appendChild(panel);
     msgEl = panel.querySelector(".mdl-msg");
     countEl = panel.querySelector(".mdl-count");
+    diagEl = panel.querySelector(".mdl-diag");
+    const cd = panel.querySelector(".mdl-copydiag");
+    cd.onclick = async () => {
+      const smp = diag.sample ? flat(diag.sample.innerText).slice(0, 300) : "(nenhum)";
+      await clip([`Model Ads extensão v${VERSION}`, `URL: ${location.origin}${location.pathname}`,
+        `Rótulos de ID: ${diag.labels}`, `Cards montados: ${diag.cards}`, `Com data lida: ${diag.dated}`,
+        `Erros: ${diag.errors}${diag.lastError ? " (" + diag.lastError + ")" : ""}`, `Amostra: ${smp}`].join("\n"));
+      flash(cd, "Copiado!");
+    };
+    renderDiag();
     const min = panel.querySelector(".mdl-min");
     min.value = state.minDays || "";
     min.oninput = () => {
@@ -318,8 +410,11 @@
     document.querySelectorAll(".mdl-bar").forEach((e) => e.remove());
   }
 
-  let observer;
+  let observer, ticker;
   async function init() {
+    try { await initInner(); } catch (e) { logErr(e); }
+  }
+  async function initInner() {
     const s = await chrome.storage.local.get(["mdlToken", "mdlMinDays", "mdlMinAds", "mdlCollapsed"]);
     state.minDays = s.mdlMinDays || 0;
     state.minAds = s.mdlMinAds || 0;
@@ -340,6 +435,10 @@
         clearTimeout(t); t = setTimeout(applyFilter, 600);
       });
       observer.observe(document.body, { childList: true, subtree: true });
+    }
+    if (!ticker) {
+      let k = 0;
+      ticker = setInterval(() => { applyFilter(); if (++k >= 10) clearInterval(ticker); }, 2000);
     }
   }
 
@@ -362,5 +461,6 @@
     if (c.mdlToken?.newValue) init();
   });
 
+  window.addEventListener("error", (e) => { if (String(e.filename || "").startsWith("chrome-extension://")) logErr(e.error || e.message); });
   init();
 })();

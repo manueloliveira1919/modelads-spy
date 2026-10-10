@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Model Ads - Mineração",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Filtro de dias ativos na Biblioteca de Anúncios da Meta e mineração para o Model Ads.",
   "permissions": ["storage"],
   "host_permissions": [
