@@ -13,3 +13,4 @@
 - Suspension checks reuse `is_user_suspended` via `src/lib/account-guard.server.ts` — single reusable guard for all future protected access.
 - Extension candidates never write to meta_offers/offers directly: they land in extension_candidates and are injected as a partial-coverage run starting at the classify phase — so they pass the same classification and never deactivate the catalog.
 - Extension candidates are claimed atomically (claim_token + SKIP LOCKED) before processing; stale claims return to pending and become failed after 3 attempts, so retries never duplicate offers or touch the catalog.
+- Extension gallery renders keyed, data-only in-memory snapshots scoped to the current Meta search; exclude extension UI from discovery and observation to preserve Facebook-owned DOM and prevent feedback loops.

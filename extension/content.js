@@ -14,9 +14,28 @@
 
   let state = { token: null, plan: null, minDays: 0, minAds: 0, collapsed: false };
   let panel, msgEl, mineBtn, countEl;
+  const cache = new Map();
+  const galleryItems = new Map();
+  let gallery, galleryGrid, galleryCount, viewBtn;
+  let galleryActive = true, sortMode = "scale", searchScope = "";
+  const UI_SELECTOR = ".mdl-panel, .mdl-bar, .mdl-gallery";
+  const queryScope = () => {
+    const u = new URL(location.href);
+    u.searchParams.delete("id");
+    return u.pathname + "?" + u.searchParams.toString();
+  };
 
   const norm = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const flat = (s) => norm(s).replace(/[\u00a0\s]+/g, " ").toLowerCase();
+  function readableText(el) {
+    const parts = [];
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = walker.nextNode())) {
+      if (!n.parentElement?.closest(UI_SELECTOR)) parts.push(n.nodeValue);
+    }
+    return parts.join("\n");
+  }
   const diag = { labels: 0, cards: 0, dated: 0, errors: 0, lastError: "", sample: "" };
   let diagEl;
   function logErr(e) {
@@ -54,7 +73,7 @@
     while ((n = walker.nextNode())) {
       if (!LABEL_RE.test(norm(n.nodeValue))) continue;
       const p = n.parentElement;
-      if (!p || p.closest(".mdl-panel, .mdl-bar")) continue;
+      if (!p || p.closest(UI_SELECTOR)) continue;
       labels.push(p);
     }
     diag.labels = labels.length;
@@ -62,14 +81,15 @@
     for (const lab of labels) {
       let el = lab, found = null, lastSingle = null;
       for (let i = 0; el && el !== document.body && i < 25; i++, el = el.parentElement) {
-        const r = isCard(flat(el.innerText));
+        const text = flat(readableText(el));
+        const r = isCard(text);
         if (r === -1) break;
-        if (ID_RE.test(flat(el.innerText))) lastSingle = el;
+        if (ID_RE.test(text)) lastSingle = el;
         if (r === 1) { found = el; break; }
       }
       found = found || lastSingle; // fallback: maior ancestral com um único rótulo
       if (!found) continue;
-      const idm = flat(found.innerText).match(ID_RE);
+      const idm = flat(readableText(found)).match(ID_RE);
       if (!idm || seen.has(idm[1])) continue;
       seen.add(idm[1]);
       cards.push({ el: found, id: idm[1] });
@@ -80,7 +100,8 @@
   }
 
   function cardData(card) {
-    const raw = card.el.innerText || "";
+    if (card.snapshot) return card.snapshot.data;
+    const raw = readableText(card.el);
     const text = flat(raw);
     const sm = text.match(START_RE);
     const start = sm ? parseStart(sm[1]) : null;
@@ -92,6 +113,7 @@
 
   const IGNORE = /^(ativo|inativo|active|inactive|plataformas|platforms|ver detalhes do anuncio|see ad details|ver resumo|see summary|patrocinado|sponsored)$/i;
   function creativeText(card) {
+    if (card.snapshot) return card.snapshot.creative;
     const lines = cardData(card).raw.split("\n").map((s) => s.trim()).filter(Boolean);
     const good = lines.filter((l) => {
       const nl = norm(l);
@@ -102,6 +124,7 @@
   }
 
   function mediaOf(card) {
+    if (card.snapshot) return card.snapshot.media;
     const v = card.el.querySelector("video");
     if (v) {
       const src = v.currentSrc || v.src || v.querySelector("source[src]")?.src;
@@ -232,25 +255,146 @@
   function applyFilter() {
     try { applyFilterInner(); } catch (e) { logErr(e); }
   }
+  function remember(card) {
+    const previous = cache.get(card.id);
+    const data = cardData(card);
+    const c = candidate(card);
+    const creative = creativeText(card) || previous?.snapshot.creative || null;
+    const media = mediaOf(card);
+    const oldMedia = previous?.snapshot.media;
+    const snapshot = {
+      data: { ...data, days: data.days ?? previous?.snapshot.data.days ?? null,
+        start: data.start || previous?.snapshot.data.start || null },
+      creative,
+      media: media ? { ...media, url: media.url || oldMedia?.url || null,
+        poster: media.poster || oldMedia?.poster || null } : oldMedia || null,
+      candidate: Object.fromEntries(Object.entries(c).map(([key, value]) =>
+        [key, value ?? previous?.snapshot.candidate[key] ?? null])),
+    };
+    snapshot.candidate.active_days = snapshot.data.days;
+    snapshot.candidate.creative_text = creative;
+    cache.set(card.id, { id: card.id, snapshot });
+  }
+
+  const scaleRank = (d) => d.days >= 30 && d.repeated >= 30 ? 3
+    : d.days >= 20 && d.repeated >= 20 ? 2
+    : d.days >= 5 && d.repeated >= 10 ? 1 : 0;
+
+  function filteredCards() {
+    return [...cache.values()].filter((c) => passes(cardData(c))).sort((a, b) => {
+      const x = cardData(a), y = cardData(b);
+      if (sortMode === "days") return (y.days || 0) - (x.days || 0) || y.repeated - x.repeated || a.id.localeCompare(b.id);
+      if (sortMode === "ads") return y.repeated - x.repeated || (y.days || 0) - (x.days || 0) || a.id.localeCompare(b.id);
+      return scaleRank(y) - scaleRank(x) || y.repeated - x.repeated || (y.days || 0) - (x.days || 0) || a.id.localeCompare(b.id);
+    });
+  }
+
+  function ensureGallery(cards) {
+    if (gallery?.isConnected) return;
+    gallery = document.createElement("section");
+    gallery.className = "mdl-gallery";
+    gallery.setAttribute("aria-label", "Ofertas filtradas");
+    gallery.innerHTML = `<div class="mdl-gallery-head"><div><h3>Ofertas filtradas</h3><span class="mdl-gallery-count"></span></div>
+      <div class="mdl-gallery-tools"><select aria-label="Ordenar ofertas"><option value="scale">Mais escaladas</option><option value="days">Mais dias ativos</option><option value="ads">Mais anúncios</option></select>
+      <button class="mdl-act mdl-view">Ver lista original da Meta</button></div></div>
+      <div class="mdl-gallery-grid"></div><p class="mdl-gallery-empty">Nenhuma oferta corresponde aos filtros atuais.</p>`;
+    galleryGrid = gallery.querySelector(".mdl-gallery-grid");
+    galleryCount = gallery.querySelector(".mdl-gallery-count");
+    viewBtn = gallery.querySelector(".mdl-view");
+    const select = gallery.querySelector("select");
+    select.value = sortMode;
+    select.onchange = () => { sortMode = select.value; renderGallery(); };
+    viewBtn.onclick = () => { galleryActive = !galleryActive; applyFilter(); };
+    // Insert a separate sibling; never move or clone Facebook's React nodes.
+    let anchor = cards[0]?.el;
+    if (anchor) {
+      let common = anchor.parentElement;
+      while (common && common !== document.body && !cards.every((c) => common.contains(c.el))) common = common.parentElement;
+      if (common && common !== document.body && common.parentElement !== document.body) anchor = common;
+      anchor.before(gallery);
+    } else if (panel) panel.before(gallery);
+    else document.body.appendChild(gallery);
+    galleryItems.clear();
+  }
+
+  function renderGallery() {
+    if (!galleryGrid) return;
+    const cards = filteredCards();
+    const ids = new Set(cards.map((c) => c.id));
+    for (const [id, entry] of galleryItems) {
+      if (!ids.has(id)) { entry.el.remove(); galleryItems.delete(id); }
+    }
+    cards.forEach((card, index) => {
+      const signature = JSON.stringify([card.snapshot, state.plan]);
+      let entry = galleryItems.get(card.id);
+      if (!entry) {
+        const el = document.createElement("article");
+        el.className = "mdl-gallery-card";
+        el.dataset.adArchiveId = card.id;
+        el.innerHTML = `<div class="mdl-thumb"><span>Sem prévia de mídia</span></div><div class="mdl-card-info"><h4></h4><p class="mdl-copy"></p><div class="mdl-actions"></div></div>`;
+        entry = { el, signature: null };
+        galleryItems.set(card.id, entry);
+      }
+      if (entry.signature !== signature) {
+        const el = entry.el, d = cardData(card), c = candidate(card), m = mediaOf(card);
+        el.querySelector("h4").textContent = c.page_name || "Página não identificada";
+        el.querySelector(".mdl-copy").textContent = c.creative_text ? c.creative_text.slice(0, 140) + (c.creative_text.length > 140 ? "…" : "") : "";
+        const thumb = el.querySelector(".mdl-thumb");
+        const url = m?.type === "video" ? m.poster : m?.url;
+        if (thumb.dataset.url !== (url || "")) {
+          thumb.dataset.url = url || "";
+          thumb.replaceChildren();
+          const placeholder = document.createElement("span");
+          placeholder.textContent = m?.type === "video" ? "Vídeo sem prévia acessível" : "Sem prévia de mídia";
+          thumb.appendChild(placeholder);
+          if (url && /^https?:\/\//i.test(url)) {
+            const img = document.createElement("img");
+            img.alt = c.page_name ? `Criativo de ${c.page_name}` : "Criativo do anúncio";
+            img.loading = "lazy"; img.referrerPolicy = "no-referrer";
+            img.onload = () => { placeholder.hidden = true; };
+            img.onerror = () => { img.remove(); placeholder.hidden = false; };
+            img.src = url; thumb.appendChild(img);
+          }
+        }
+        const actions = el.querySelector(".mdl-actions");
+        actions.replaceChildren();
+        const bar = ensureBar({ ...card, el: actions });
+        bar.querySelector(".mdl-days").textContent = d.days == null ? "Dias ativos: ?" : `${d.days} dias ativos`;
+        bar.querySelector(".mdl-rep").textContent = `${d.repeated} anúncio${d.repeated === 1 ? "" : "s"}`;
+        bar.querySelector(".mdl-stage").textContent = `${stage(d)} (estimado)`;
+        entry.signature = signature;
+      }
+      const current = galleryGrid.children[index];
+      if (current !== entry.el) galleryGrid.insertBefore(entry.el, current || null);
+    });
+    gallery.classList.toggle("mdl-original-view", !galleryActive);
+    gallery.querySelector(".mdl-gallery-empty").hidden = cards.length > 0;
+    viewBtn.textContent = galleryActive ? "Ver lista original da Meta" : "Ver ofertas filtradas";
+    galleryCount.textContent = `${cache.size} carregados · ${cards.length} na galeria`;
+    if (countEl) countEl.textContent = galleryCount.textContent;
+  }
+
+  function resetGallery() {
+    document.querySelectorAll(".mdl-original-hidden, .mdl-hidden").forEach((e) => e.classList.remove("mdl-original-hidden", "mdl-hidden"));
+    gallery?.remove(); gallery = null; galleryGrid = null;
+    cache.clear(); galleryItems.clear();
+  }
+
   function applyFilterInner() {
     if (!state.token) return;
+    const scope = queryScope();
+    if (scope !== searchScope) { resetGallery(); searchScope = scope; diag.sample = ""; }
     const cards = findCards();
-    let visible = 0, dated = 0;
+    for (const card of cards) remember(card);
+    if (cards.length || cache.size) ensureGallery(cards);
     for (const card of cards) {
-      const d = cardData(card);
-      if (d.days != null) dated++;
-      const bar = ensureBar(card);
-      bar.querySelector(".mdl-days").textContent = d.days == null ? "Dias ativos: ?" : `${d.days} dias ativos`;
-      bar.querySelector(".mdl-rep").textContent = `${d.repeated} anúncio${d.repeated === 1 ? "" : "s"}`;
-      bar.querySelector(".mdl-stage").textContent = `${stage(d)} (estimado)`;
-      const ok = passes(d);
-      card.el.classList.toggle("mdl-hidden", !ok);
-      card.el.dataset.mdlDays = d.days ?? "";
-      card.el.dataset.mdlRep = d.repeated;
-      if (ok) visible++;
+      card.el.classList.remove("mdl-hidden");
+      card.el.classList.toggle("mdl-original-hidden", galleryActive);
     }
-    diag.dated = dated;
-    if (countEl) countEl.textContent = `${cards.length} carregados · ${visible} visíveis`;
+    if (!galleryActive) document.querySelectorAll(".mdl-original-hidden").forEach((e) => e.classList.remove("mdl-original-hidden"));
+    diag.dated = [...cache.values()].filter((c) => cardData(c).days != null).length;
+    renderGallery();
+    if (!gallery && countEl) countEl.textContent = "0 carregados · 0 na galeria";
     renderDiag();
   }
 
@@ -260,6 +404,7 @@
   }
 
   function candidate(card) {
+    if (card.snapshot) return { ...card.snapshot.candidate };
     const { days, repeated } = cardData(card);
     const links = [...card.el.querySelectorAll("a[href]")].map((a) => a.href);
     const pageLink = links.find((h) => /facebook\.com\/(?!ads\/)/.test(h) && !/l\.facebook\.com/.test(h));
@@ -285,27 +430,34 @@
   }
 
   function collect() {
-    return findCards().filter((c) => !c.el.classList.contains("mdl-hidden")).map(candidate);
+    return filteredCards().map(candidate);
   }
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   async function loadMore(btn) {
     btn.disabled = true;
-    for (let i = 0; i < 5; i++) {
-      window.scrollTo(0, document.body.scrollHeight);
-      await sleep(1500);
-    }
-    btn.disabled = false;
-    applyFilter();
+    try {
+      for (let i = 0; i < 5; i++) {
+        window.scrollTo(0, document.body.scrollHeight);
+        await sleep(1500);
+        applyFilter();
+      }
+    } finally { btn.disabled = false; }
   }
 
   function msg(t) { if (msgEl) msgEl.textContent = t; }
 
   // Shared submit with 429 handling. Admin only.
+  let nextSubmitAt = 0;
   async function submit(batch) {
+    if (state.plan !== "admin" || !state.token) return { err: "Envio permitido somente para admin conectado." };
+    if (Date.now() < nextSubmitAt) return { err: `Limite atingido. Aguarde ${Math.ceil((nextSubmitAt - Date.now()) / 1000)} segundos e tente de novo.` };
     const r = await mdlCall("submit", state.token, { candidates: batch });
-    if (r.status === 429) return { err: `Limite atingido. Aguarde ${r.retryAfter || "alguns"} segundos e tente de novo.` };
+    if (r.status === 429) {
+      nextSubmitAt = Date.now() + (r.retryAfter || 60) * 1000;
+      return { err: `Limite atingido. Aguarde ${r.retryAfter || 60} segundos e tente de novo.` };
+    }
     if (r.status !== 200 || !r.data.ok) return { err: r.data.message || `Erro no envio (${r.status}).` };
     return {
       received: r.data.received || 0,
@@ -327,12 +479,12 @@
   async function mineAndSend() {
     if (state.plan !== "admin") return;
     const items = collect();
-    if (!items.length) return msg("Nenhum anúncio visível para enviar.");
+    if (!items.length) return msg("Nenhum anúncio na galeria para enviar.");
     mineBtn.disabled = true;
     let received = 0, inserted = 0, skipped = 0;
     for (let i = 0; i < items.length; i += MAX_PER_SUBMIT) {
       const batch = items.slice(i, i + MAX_PER_SUBMIT);
-      msg(`Enviando ${i + batch.length}/${items.length}...`);
+      msg(`Enviando lote ${Math.floor(i / MAX_PER_SUBMIT) + 1} de ${Math.ceil(items.length / MAX_PER_SUBMIT)} · ${i + batch.length}/${items.length} anúncios...`);
       const r = await submit(batch);
       if (r.err) {
         mineBtn.disabled = false;
@@ -405,7 +557,10 @@
   }
 
   function clearUi() {
+    resetGallery();
     panel?.remove(); panel = null;
+    observer?.disconnect(); observer = null;
+    if (ticker) { clearInterval(ticker); ticker = null; }
     document.querySelectorAll(".mdl-hidden").forEach((e) => e.classList.remove("mdl-hidden"));
     document.querySelectorAll(".mdl-bar").forEach((e) => e.remove());
   }
@@ -426,19 +581,22 @@
     state.plan = r.data.plan_code;
     chrome.storage.local.set({ mdlPlan: state.plan });
     document.querySelectorAll(".mdl-bar").forEach((e) => e.remove()); // rebuild with right plan
+    for (const entry of galleryItems.values()) entry.signature = null;
     buildPanel();
     applyFilter();
     if (!observer) {
       let t;
       observer = new MutationObserver((muts) => {
-        if (muts.every((m) => m.target.closest?.(".mdl-panel, .mdl-bar"))) return;
+        if (muts.every((m) => m.target.closest?.(UI_SELECTOR) ||
+          [...m.addedNodes, ...m.removedNodes].length > 0 &&
+          [...m.addedNodes, ...m.removedNodes].every((n) => n.nodeType === 1 && n.matches?.(UI_SELECTOR)))) return;
         clearTimeout(t); t = setTimeout(applyFilter, 600);
       });
       observer.observe(document.body, { childList: true, subtree: true });
     }
     if (!ticker) {
       let k = 0;
-      ticker = setInterval(() => { applyFilter(); if (++k >= 10) clearInterval(ticker); }, 2000);
+      ticker = setInterval(() => { applyFilter(); if (++k >= 10) { clearInterval(ticker); ticker = null; } }, 2000);
     }
   }
 

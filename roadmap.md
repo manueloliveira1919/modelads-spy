@@ -1,3 +1,9 @@
+# Extensão 1.2.0
+
+- [x] Galeria com cache, ordenação e alternância da lista original
+- [x] Envio administrativo em lotes e atualização do ZIP
+- [x] Validar com página simulada e verificar pacote
+
 # Fase 5 — Modelar Quiz
 
 - [ ] Centralizar tipografia e animações compatíveis com quizzes antigos
