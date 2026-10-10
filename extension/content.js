@@ -27,6 +27,15 @@
 
   const norm = (s) => (s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
   const flat = (s) => norm(s).replace(/[\u00a0\s]+/g, " ").toLowerCase();
+  function readableText(el) {
+    const parts = [];
+    const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+    let n;
+    while ((n = walker.nextNode())) {
+      if (!n.parentElement?.closest(UI_SELECTOR)) parts.push(n.nodeValue);
+    }
+    return parts.join("\n");
+  }
   const diag = { labels: 0, cards: 0, dated: 0, errors: 0, lastError: "", sample: "" };
   let diagEl;
   function logErr(e) {
@@ -72,14 +81,15 @@
     for (const lab of labels) {
       let el = lab, found = null, lastSingle = null;
       for (let i = 0; el && el !== document.body && i < 25; i++, el = el.parentElement) {
-        const r = isCard(flat(el.innerText));
+        const text = flat(readableText(el));
+        const r = isCard(text);
         if (r === -1) break;
-        if (ID_RE.test(flat(el.innerText))) lastSingle = el;
+        if (ID_RE.test(text)) lastSingle = el;
         if (r === 1) { found = el; break; }
       }
       found = found || lastSingle; // fallback: maior ancestral com um único rótulo
       if (!found) continue;
-      const idm = flat(found.innerText).match(ID_RE);
+      const idm = flat(readableText(found)).match(ID_RE);
       if (!idm || seen.has(idm[1])) continue;
       seen.add(idm[1]);
       cards.push({ el: found, id: idm[1] });
@@ -91,7 +101,7 @@
 
   function cardData(card) {
     if (card.snapshot) return card.snapshot.data;
-    const raw = card.el.innerText || card.el.textContent || "";
+    const raw = readableText(card.el);
     const text = flat(raw);
     const sm = text.match(START_RE);
     const start = sm ? parseStart(sm[1]) : null;
@@ -439,9 +449,15 @@
   function msg(t) { if (msgEl) msgEl.textContent = t; }
 
   // Shared submit with 429 handling. Admin only.
+  let nextSubmitAt = 0;
   async function submit(batch) {
+    if (state.plan !== "admin" || !state.token) return { err: "Envio permitido somente para admin conectado." };
+    if (Date.now() < nextSubmitAt) return { err: `Limite atingido. Aguarde ${Math.ceil((nextSubmitAt - Date.now()) / 1000)} segundos e tente de novo.` };
     const r = await mdlCall("submit", state.token, { candidates: batch });
-    if (r.status === 429) return { err: `Limite atingido. Aguarde ${r.retryAfter || "alguns"} segundos e tente de novo.` };
+    if (r.status === 429) {
+      nextSubmitAt = Date.now() + (r.retryAfter || 60) * 1000;
+      return { err: `Limite atingido. Aguarde ${r.retryAfter || 60} segundos e tente de novo.` };
+    }
     if (r.status !== 200 || !r.data.ok) return { err: r.data.message || `Erro no envio (${r.status}).` };
     return {
       received: r.data.received || 0,
@@ -565,6 +581,7 @@
     state.plan = r.data.plan_code;
     chrome.storage.local.set({ mdlPlan: state.plan });
     document.querySelectorAll(".mdl-bar").forEach((e) => e.remove()); // rebuild with right plan
+    for (const entry of galleryItems.values()) entry.signature = null;
     buildPanel();
     applyFilter();
     if (!observer) {
