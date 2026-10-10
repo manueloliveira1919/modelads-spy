@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<style>
+  body { width: 300px; margin: 0; font: 13px system-ui, sans-serif; background: #090B14; color: #E6E8F2; }
+  .wrap { padding: 14px; }
+  h1 { font-size: 15px; margin: 0 0 10px; color: #6D7CFF; }
+  .status { padding: 8px; border-radius: 8px; background: #141828; margin-bottom: 10px; }
+  input { width: 100%; box-sizing: border-box; padding: 8px; border-radius: 6px; border: 1px solid #2A3050; background: #0F1220; color: inherit; margin-bottom: 8px; }
+  button { width: 100%; padding: 8px; border: 0; border-radius: 6px; font-weight: 600; cursor: pointer; margin-bottom: 6px; }
+  .primary { background: linear-gradient(90deg,#6D7CFF,#1DB8FF); color: #fff; }
+  .ghost { background: #1C2136; color: #E6E8F2; }
+  label { display: block; margin: 6px 0 4px; color: #9AA0B8; }
+  .msg { font-size: 12px; color: #FF8A8A; min-height: 16px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Model Ads - Mineração</h1>
+  <div id="status" class="status">🔴 Não conectada</div>
+
+  <div id="disconnected">
+    <input id="token" placeholder="Cole aqui seu token (mdl_...)" />
+    <button id="connect" class="primary">Conectar</button>
+  </div>
+
+  <div id="connected" class="hidden">
+    <label for="minDays">Dias mínimos ativos (filtro local)</label>
+    <input id="minDays" type="number" min="0" placeholder="0 = sem filtro" />
+    <button id="disconnect" class="ghost">Desconectar</button>
+  </div>
+  <div id="msg" class="msg"></div>
+</div>
+<script src="api.js"></script>
+<script src="popup.js"></script>
+</body>
+</html>
