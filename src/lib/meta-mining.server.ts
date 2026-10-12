@@ -28,6 +28,10 @@ export interface MetaResponse {
 export const META_API = "https://graph.facebook.com/v20.0/ads_archive";
 export const SNAPSHOT_BATCH_SIZE = 8;
 export const SNAPSHOT_TIMEOUT_MS = 8000;
+// Timeout duro de cada requisição à API da Meta. Sem ele, uma chamada pendurada
+// segura o job meta.search até o hard timeout do worker (~53 min).
+export const META_FETCH_TIMEOUT_MS = 30000;
+
 export const SNAPSHOT_MAX_ATTEMPTS = 3;
 
 export class MetaApiError extends Error {
@@ -39,15 +43,27 @@ export class MetaApiError extends Error {
 }
 
 export async function fetchMeta(url: string): Promise<MetaResponse> {
-  const res = await fetch(url);
-  const json = (await res.json()) as MetaResponse;
-  if (!res.ok || json.error) {
-    const msg = json.error?.message ?? "unknown";
-    const isRateLimit = res.status === 400 && msg.includes("(#613)");
-    throw new MetaApiError(`Meta API ${res.status}: ${msg}`, isRateLimit);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), META_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    const json = (await res.json()) as MetaResponse;
+    if (!res.ok || json.error) {
+      const msg = json.error?.message ?? "unknown";
+      const isRateLimit = res.status === 400 && msg.includes("(#613)");
+      throw new MetaApiError(`Meta API ${res.status}: ${msg}`, isRateLimit);
+    }
+    return json;
+  } catch (err) {
+    if ((err as Error)?.name === "AbortError") {
+      throw new MetaApiError(`Meta API timeout após ${META_FETCH_TIMEOUT_MS / 1000}s`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
   }
-  return json;
 }
+
 
 export function buildSearchUrl(opts: {
   token: string;
