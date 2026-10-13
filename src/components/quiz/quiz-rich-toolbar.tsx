@@ -56,7 +56,7 @@ export function QuizRichTextProvider({ children }: { children: ReactNode }) {
       if (command === "font") span.style.fontFamily = value ?? ""; else span.style.color = value ?? "";
       saved.insertNode(span); saved.selectNodeContents(span); selection.removeAllRanges(); selection.addRange(saved);
     } else if (command === "clear") {
-      const text = document.createTextNode(saved.toString()); saved.deleteContents(); saved.insertNode(text); saved.selectNodeContents(text); selection.removeAllRanges(); selection.addRange(saved);
+      document.execCommand("removeFormat", false);
     } else document.execCommand({ b: "bold", i: "italic", u: "underline" }[command]);
     range.current = selection.rangeCount ? selection.getRangeAt(0).cloneRange() : null;
     editable.dispatchEvent(new Event("input", { bubbles: true }));
