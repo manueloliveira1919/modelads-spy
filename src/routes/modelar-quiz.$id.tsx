@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { RESULT_TEXT_PARTS, resultPartSettings, type ResultTextPart } from "@/components/quiz/quiz-result-view";
+import { useAuth } from "@/lib/auth-context";
 import { countRulesTo, stripRulesTo } from "@/lib/quiz-logic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -8,7 +8,6 @@ import {
   Copy,
   ExternalLink,
   Eye,
-
   GripVertical,
   HelpCircle,
   Image as ImageIcon,
@@ -25,7 +24,6 @@ import {
   Type as TypeIcon,
   Users,
   X,
-
 } from "lucide-react";
 import { toast } from "sonner";
 import { ProGate } from "@/components/pro-gate";
@@ -42,12 +40,14 @@ import {
 import { cn } from "@/lib/utils";
 import { QuizPreview, type PreviewDevice } from "@/components/quiz/quiz-preview";
 import { QuizRunner } from "@/components/quiz/quiz-runner";
-import { AppearancePanel, ElementVisualPanel, SectionProperties } from "@/components/quiz/quiz-panels";
+import { ThemePanel, ElementEditor, SectionProperties } from "@/components/quiz/quiz-panels";
 import { isSlugAvailable, loadQuiz, saveQuiz, SlugTakenError } from "@/lib/quiz-api";
 import { useSlugAvailability } from "@/lib/use-slug-availability";
 import {
   SECTION_LABEL,
   makeSection,
+  makeElement,
+  type ElementType,
   slugify,
   uid,
   type Quiz,
@@ -98,6 +98,8 @@ function EditorPage() {
 
 function EditorContent() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
+  const [propertyTab, setPropertyTab] = useState("secao");
   const search = Route.useSearch();
   const navigate = useNavigate();
 
@@ -112,7 +114,6 @@ function EditorContent() {
   const [runKey, setRunKey] = useState(0);
   const [dragId, setDragId] = useState<string | null>(null);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [replay, setReplay] = useState<{ id: string | null; n: number }>({ id: null, n: 0 });
 
   // Trocar de seção limpa a seleção de elemento.
   useEffect(() => {
@@ -183,7 +184,11 @@ function EditorContent() {
     setSections((prev) => prev.map((s) => (s.id === sid ? { ...s, ...patch } : s)));
   };
   // Atualiza content/settings (JSON existente) de um elemento; reutiliza o autosave.
-  const updateElement = (eid: string, key: "content" | "settings", patch: Record<string, unknown>) => {
+  const updateElement = (
+    eid: string,
+    key: "content" | "settings",
+    patch: Record<string, unknown>,
+  ) => {
     touch();
     setSections((prev) =>
       prev.map((s) => ({
@@ -232,7 +237,9 @@ function EditorContent() {
       return;
     touch();
     setSections((prev) => {
-      const next = stripRulesTo(prev, sid).filter((s) => s.id !== sid).map((s, i) => ({ ...s, position: i }));
+      const next = stripRulesTo(prev, sid)
+        .filter((s) => s.id !== sid)
+        .map((s, i) => ({ ...s, position: i }));
       if (selectedId === sid) setSelectedId(next[0]?.id ?? null);
       return next;
     });
@@ -260,26 +267,40 @@ function EditorContent() {
     0,
     sections.findIndex((s) => s.id === selectedId),
   );
-  // Fase 7: "elementId::parte" seleciona um texto do bloco Resultado; o painel da Fase 5
-  // edita settings.styles[parte] desse bloco.
-  const [selElId, selPart] = (selectedElementId ?? "").split("::");
-  const selectedRaw =
-    selected?.elements.find(
-      (e) =>
-        e.id === selElId &&
-        (selPart ? e.type === "result" : e.type === "text" || e.type === "button"),
-    ) ?? null;
-  const selectedElement =
-    selectedRaw && selPart
-      ? { ...selectedRaw, type: "text" as const, settings: resultPartSettings(selectedRaw.settings as Record<string, any>, selPart) }
-      : selectedRaw;
-  const onVisualChange = (p: Record<string, unknown>) => {
-    if (!selectedRaw) return;
-    if (!selPart) return updateElement(selectedRaw.id, "settings", p);
-    const styles = ((selectedRaw.settings as Record<string, any>).styles ?? {}) as Record<string, Record<string, unknown>>;
-    updateElement(selectedRaw.id, "settings", {
-      styles: { ...styles, [selPart]: { ...(styles[selPart] ?? {}), ...p } },
-    });
+  const selectedElement = selected?.elements.find((e) => e.id === selectedElementId) ?? null;
+  const selectElement = (eid: string | null) => {
+    setSelectedElementId(eid);
+    if (eid) setPropertyTab("elemento");
+  };
+  const addElement = (type: ElementType) => {
+    if (!selected) return;
+    const el = makeElement(selected.id, type, selected.elements.length);
+    updateSection(selected.id, { elements: [...selected.elements, el] });
+    selectElement(el.id);
+  };
+  const elementAction = (eid: string, action: "up" | "down" | "duplicate" | "remove") => {
+    if (!selected) return;
+    const index = selected.elements.findIndex((e) => e.id === eid);
+    if (index < 0) return;
+    const next = [...selected.elements];
+    if (action === "remove") {
+      next.splice(index, 1);
+      selectElement(null);
+    } else if (action === "duplicate") {
+      const copy = {
+        ...next[index],
+        id: uid(),
+        content: structuredClone(next[index].content),
+        settings: structuredClone(next[index].settings),
+      };
+      next.splice(index + 1, 0, copy);
+      selectElement(copy.id);
+    } else {
+      const target = index + (action === "up" ? -1 : 1);
+      if (target < 0 || target >= next.length) return;
+      [next[index], next[target]] = [next[target], next[index]];
+    }
+    updateSection(selected.id, { elements: next.map((e, i) => ({ ...e, position: i })) });
   };
 
   if (loadError) {
@@ -299,9 +320,9 @@ function EditorContent() {
   }
 
   const publicUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/quiz/${quiz.slug}` : `/quiz/${quiz.slug}`;
-
-
+    typeof window !== "undefined"
+      ? `${window.location.origin}/quiz/${quiz.slug}`
+      : `/quiz/${quiz.slug}`;
 
   if (previewMode) {
     return (
@@ -348,7 +369,8 @@ function EditorContent() {
             onDragEnd={() => setDragId(null)}
             onClick={() => {
               setSelectedId(s.id);
-              setMobilePanel("propriedades");
+              setPropertyTab("secao");
+              setMobilePanel("preview");
             }}
             className={cn(
               "group flex cursor-pointer items-center gap-2 rounded-xl border px-2.5 py-2 text-sm transition-colors",
@@ -361,12 +383,13 @@ function EditorContent() {
             <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground" />
             <span className="w-4 shrink-0 text-xs text-muted-foreground">{i + 1}</span>
             <Icon className="h-4 w-4 shrink-0 text-brand" />
-            <span className="flex-1 truncate font-medium">{s.title}</span>
-            <span className="shrink-0 text-[10px] uppercase text-muted-foreground">
+            <span className="min-w-0 flex-1 truncate font-medium">{s.title}</span>
+            <span className="hidden 2xl:inline shrink-0 text-[10px] uppercase text-muted-foreground">
               {SECTION_LABEL[s.type]}
             </span>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               aria-label="Duplicar seção"
               onClick={(e) => {
                 e.stopPropagation();
@@ -375,9 +398,10 @@ function EditorContent() {
               className="rounded p-1 text-muted-foreground hover:text-foreground"
             >
               <Copy className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               aria-label="Excluir seção"
               onClick={(e) => {
                 e.stopPropagation();
@@ -386,7 +410,7 @@ function EditorContent() {
               className="rounded p-1 text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </div>
         );
       })}
@@ -409,34 +433,42 @@ function EditorContent() {
   );
 
   const propsPanel = (
-    <Tabs defaultValue="secao">
-      <TabsList className="grid w-full grid-cols-2">
+    <Tabs value={propertyTab} onValueChange={setPropertyTab}>
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="elemento">Elemento</TabsTrigger>
         <TabsTrigger value="secao">Seção</TabsTrigger>
-        <TabsTrigger value="aparencia">Aparência</TabsTrigger>
+        <TabsTrigger value="tema">Tema</TabsTrigger>
       </TabsList>
-      <TabsContent value="secao" className="mt-3 space-y-4">
-        {selected && selectedElement && (
-          <ElementVisualPanel
-            element={selectedElement}
+      <TabsContent value="elemento" className="mt-5">
+        {selectedElement ? (
+          <ElementEditor
+            key={selectedElement.id}
+            el={selectedElement}
             settings={quiz.settings}
-            title={selPart ? RESULT_TEXT_PARTS[selPart as ResultTextPart]?.label : undefined}
-            onChange={onVisualChange}
-            onReplay={() => setReplay((r) => ({ id: selectedElement.id, n: r.n + 1 }))}
-            onClose={() => setSelectedElementId(null)}
-          />
-        )}
-        {selected ? (
-          <SectionProperties
-            section={selected}
             allSections={sections}
-            onChange={(p) => updateSection(selected.id, p)}
+            userId={user?.id ?? quiz.user_id}
+            onContentChange={(p) => updateElement(selectedElement.id, "content", p)}
+            onSettingsChange={(p) => updateElement(selectedElement.id, "settings", p)}
           />
         ) : (
-          <p className="text-sm text-muted-foreground">Selecione uma seção para editar.</p>
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Nenhum elemento selecionado
+          </p>
         )}
       </TabsContent>
-      <TabsContent value="aparencia" className="mt-3">
-        <AppearancePanel settings={quiz.settings} onChange={updateSettings} />
+      <TabsContent value="secao" className="mt-5">
+        {selected && (
+          <SectionProperties
+            section={selected}
+            onChange={(p) => updateSection(selected.id, p)}
+            onSelect={selectElement}
+            onAction={elementAction}
+            onAdd={addElement}
+          />
+        )}
+      </TabsContent>
+      <TabsContent value="tema" className="mt-5">
+        <ThemePanel settings={quiz.settings} onChange={updateSettings} />
       </TabsContent>
     </Tabs>
   );
@@ -453,10 +485,12 @@ function EditorContent() {
         index={selectedIndex}
         total={sections.length}
         selectedElementId={selectedElementId}
-        onSelectElement={setSelectedElementId}
+        onSelectElement={selectElement}
         onElementContentChange={(eid, p) => updateElement(eid, "content", p)}
-        replayKey={replay.n}
-        replayTarget={replay.id}
+        onElementSettingsChange={(eid, p) => updateElement(eid, "settings", p)}
+        onElementAction={elementAction}
+        onAddElement={addElement}
+        onNavigate={(index) => setSelectedId(sections[index]?.id ?? null)}
       />
     </div>
   );
@@ -491,13 +525,14 @@ function EditorContent() {
                 ✕ Este endereço já está sendo utilizado
               </span>
               {slugCheck.suggestion && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="text-[11px] font-semibold text-brand underline"
                   onClick={() => updateQuiz({ slug: slugCheck.suggestion! })}
                 >
                   Usar {slugCheck.suggestion}
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -538,7 +573,7 @@ function EditorContent() {
           </Button>
           <Button
             size="sm"
-            className="bg-gradient-brand text-white"
+            className="bg-gradient-brand"
             disabled={slugBlocked && quiz.status !== "published"}
             onClick={async () => {
               const publishing = quiz.status !== "published";
@@ -546,7 +581,9 @@ function EditorContent() {
                 // Revalida o endereço no banco antes de colocar o link no ar.
                 const free = await isSlugAvailable(quiz.slug, quiz.id).catch(() => false);
                 if (!free) {
-                  toast.error("Este endereço já está sendo utilizado. Escolha outro para publicar.");
+                  toast.error(
+                    "Este endereço já está sendo utilizado. Escolha outro para publicar.",
+                  );
                   return;
                 }
               }
@@ -595,9 +632,8 @@ function EditorContent() {
         </div>
       )}
 
-
       {/* Mobile / tablet: abas */}
-      <div className="lg:hidden">
+      <div className="xl:hidden">
         <Tabs value={mobilePanel} onValueChange={(v) => setMobilePanel(v as typeof mobilePanel)}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="secoes">Seções</TabsTrigger>
@@ -620,14 +656,12 @@ function EditorContent() {
       </div>
 
       {/* Desktop: três colunas */}
-      <div className="hidden gap-4 lg:grid lg:grid-cols-[260px_minmax(0,1fr)_320px]">
-        <aside className="max-h-[75vh] overflow-y-auto rounded-2xl border border-border bg-card p-3">
+      <div className="hidden gap-4 xl:grid xl:grid-cols-[210px_minmax(0,1fr)_280px] 2xl:grid-cols-[230px_minmax(0,1fr)_300px]">
+        <aside className="max-h-[80vh] overflow-y-auto border-r border-border bg-card/30 p-3">
           {sectionsPanel}
         </aside>
-        <section className="rounded-2xl border border-border bg-background/40 p-4">
-          {previewPanel}
-        </section>
-        <aside className="max-h-[75vh] overflow-y-auto rounded-2xl border border-border bg-card p-3">
+        <section className="min-w-0 bg-background/40 p-3">{previewPanel}</section>
+        <aside className="max-h-[80vh] overflow-y-auto border-r border-border bg-card/30 p-3">
           {propsPanel}
         </aside>
       </div>
@@ -650,9 +684,10 @@ function DeviceSwitch({
   return (
     <div className="inline-flex rounded-lg border border-border p-0.5">
       {items.map((it) => (
-        <button
+        <Button
           key={it.key}
-          type="button"
+          variant="ghost"
+          size="icon"
           aria-label={it.label}
           onClick={() => onChange(it.key)}
           className={cn(
@@ -663,7 +698,7 @@ function DeviceSwitch({
           )}
         >
           <it.icon className="h-4 w-4" />
-        </button>
+        </Button>
       ))}
     </div>
   );

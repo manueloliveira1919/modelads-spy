@@ -3,7 +3,7 @@
 // e — no modo "live" — grava o lead da seção de captura e executa o CTA do resultado.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, Loader2, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   answerKey,
@@ -11,27 +11,20 @@ import {
   type OptionsAnswer,
   type QuizSessionState,
 } from "@/lib/quiz-session";
-import {
-  ctaHref,
-  isValidEmail,
-  isValidPhone,
-  maskPhone,
-  readCta,
-  storablePhone,
-} from "@/lib/quiz-conversion";
+import { ctaHref, isValidEmail, isValidPhone, readCta, storablePhone } from "@/lib/quiz-conversion";
 import { submitQuizLead } from "@/lib/quiz-public";
 import { resolveNextIndex } from "@/lib/quiz-logic";
 import {
-  animationClass,
-  animationStyle,
-  buttonTextVisualStyle,
-  textVisualStyle,
-} from "@/lib/quiz-visual";
-import { QuizFonts } from "@/components/quiz/quiz-preview";
-import { Confetti, ResultBlockView } from "@/components/quiz/quiz-result-view";
+  QuizFonts,
+  QuizElementView,
+  QuizProgress as ProgressBar,
+  QuizPrimaryButton as PrimaryButton,
+  quizSurfaceStyle,
+} from "@/components/quiz/quiz-element-view";
+import { Button } from "@/components/ui/button";
+import { Confetti } from "@/components/quiz/quiz-result-view";
 import { computeMaxScore, computePercent, computeScore } from "@/lib/quiz-result";
-import type { QuizElement, QuizSection, QuizSettings, OptionItem } from "@/lib/quiz-types";
-
+import type { QuizElement, QuizSection, QuizSettings } from "@/lib/quiz-types";
 
 type Sx = Record<string, string | number | boolean | undefined>;
 
@@ -42,109 +35,6 @@ const DEVICE_WIDTH: Record<RunnerDevice, number> = {
   tablet: 680,
   mobile: 380,
 };
-
-function backgroundStyle(s: QuizSettings): React.CSSProperties {
-  const bg = s.background;
-  if (bg.type === "gradient") {
-    return { backgroundImage: `linear-gradient(160deg, ${bg.gradientFrom}, ${bg.gradientTo})` };
-  }
-  if (bg.type === "image" && bg.imageUrl) {
-    return {
-      backgroundImage: `url(${bg.imageUrl})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    };
-  }
-  return { backgroundColor: bg.color };
-}
-
-function embedUrl(url: string): string | null {
-  if (!url) return null;
-  const yt = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([\w-]{6,})/);
-  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
-  const vm = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
-  if (vm) return `https://player.vimeo.com/video/${vm[1]}`;
-  return url;
-}
-
-function ProgressBar({ settings, percent }: { settings: QuizSettings; percent: number }) {
-  const p = settings.progress;
-  return (
-    <div className="w-full">
-      <div
-        style={{
-          height: p.thickness,
-          borderRadius: p.radius,
-          backgroundColor: `${settings.colors.text}1A`,
-          overflow: "hidden",
-        }}
-      >
-        <div
-          style={{
-            width: `${percent}%`,
-            height: "100%",
-            borderRadius: p.radius,
-            background:
-              p.style === "gradient"
-                ? `linear-gradient(90deg, ${settings.colors.primary}, ${settings.colors.secondary})`
-                : settings.colors.primary,
-            transition: "width .35s ease",
-          }}
-        />
-      </div>
-      {p.showPercentage && (
-        <div className="mt-1 text-right text-[11px]" style={{ color: `${settings.colors.text}99` }}>
-          {percent}%
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PrimaryButton({
-  label,
-  settings,
-  st,
-  loading = false,
-  onClick,
-}: {
-  label: string;
-  settings: QuizSettings;
-  st?: Sx;
-  loading?: boolean;
-  onClick: () => void;
-}) {
-  const s = st ?? {};
-  const full = (s.width || settings.button.width) === "full";
-  const txt = buttonTextVisualStyle(s, settings);
-  return (
-    <div
-      className={animationClass(s)}
-      style={{ ...animationStyle(s), textAlign: (s.align as React.CSSProperties["textAlign"]) || "center" }}
-    >
-      <button
-        type="button"
-        onClick={onClick}
-        disabled={loading}
-        className="inline-flex items-center justify-center gap-2 transition-transform active:scale-[.98] disabled:opacity-70"
-        style={{
-          ...txt,
-          textAlign: "center",
-          backgroundColor: (s.bg as string) || settings.colors.button,
-          borderRadius: Number(s.radius ?? settings.button.radius),
-          minHeight: Math.max(48, settings.button.height),
-          width: full ? "100%" : undefined,
-          maxWidth: "100%",
-          padding: full ? "8px 16px" : "8px 28px",
-        }}
-      >
-        {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        {label}
-      </button>
-    </div>
-  );
-}
-
 
 export function QuizRunner({
   sections,
@@ -189,7 +79,11 @@ export function QuizRunner({
           if (delta === -1) {
             // Volta para a seção realmente visitada antes (histórico real).
             if (history.length) {
-              return { ...s, current_section: history[history.length - 1], history: history.slice(0, -1) };
+              return {
+                ...s,
+                current_section: history[history.length - 1],
+                history: history.slice(0, -1),
+              };
             }
             return { ...s, current_section: Math.max(cur - 1, 0) };
           }
@@ -334,7 +228,10 @@ export function QuizRunner({
   // Fase 7: soma somente seções efetivamente visitadas (histórico + atual).
   const score = useMemo(() => {
     const visited = new Set([...(session.history ?? []), session.current_section]);
-    return computeScore(sections.filter((_, i) => visited.has(i)), session.answers);
+    return computeScore(
+      sections.filter((_, i) => visited.has(i)),
+      session.answers,
+    );
   }, [sections, session.answers, session.history, session.current_section]);
   const resultPercent = computePercent(score, maxScore);
   const showConfetti = !!section?.elements.some(
@@ -364,217 +261,25 @@ export function QuizRunner({
     );
   }
 
-
   const renderElement = (el: QuizElement) => {
-    const st = el.settings as Sx;
-    const ct = el.content as Record<string, unknown>;
-
-    switch (el.type) {
-      case "text":
-        return (
-          <div
-            key={el.id}
-            className={animationClass(st)}
-            style={{ ...animationStyle(st), marginBottom: Number(st.spacing) || 0 }}
-          >
-            <p style={textVisualStyle(st, settings, 16, 400)}>{String(ct.text ?? "")}</p>
-          </div>
-        );
-      case "image":
-        return ct.url ? (
-          <div
-            key={el.id}
-            style={{ textAlign: (st.align as React.CSSProperties["textAlign"]) || "center" }}
-          >
-            <img
-              src={String(ct.url)}
-              alt=""
-              loading="lazy"
-              style={{
-                maxWidth: "100%",
-                width: `${Number(st.width) || 100}%`,
-                height: Number(st.height) > 0 ? Number(st.height) : "auto",
-                objectFit: "cover",
-                borderRadius: Number(st.radius) || 0,
-                display: "inline-block",
-              }}
-            />
-          </div>
-        ) : null;
-      case "video": {
-        const src = embedUrl(String(ct.url || ""));
-        return src ? (
-          <div
-            key={el.id}
-            className="relative w-full overflow-hidden"
-            style={{ aspectRatio: "16 / 9", borderRadius: Number(st.radius) || 0 }}
-          >
-            <iframe
-              src={src}
-              title="Vídeo do quiz"
-              className="absolute inset-0 h-full w-full"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        ) : null;
-      }
-      case "button":
-        return (
-          <PrimaryButton
-            key={el.id}
-            label={String(ct.label || "Continuar")}
-            settings={settings}
-            st={st}
-            loading={saving}
-            onClick={() => runCta(el)}
-          />
-        );
-
-      case "options": {
-        const multiple = st.selection === "multiple";
-        const ans = session.answers[answerKey(section.id, el.id)] as OptionsAnswer | undefined;
-        const selected = ans?.optionIds ?? [];
-        const options = (ct.options ?? []) as OptionItem[];
-        return (
-          <div key={el.id} className="flex flex-col gap-3">
-            {ct.description ? (
-              <p className="text-center text-sm" style={{ color: `${settings.colors.text}AA` }}>
-                {String(ct.description)}
-              </p>
-            ) : null}
-            {options.map((o) => {
-              const active = selected.includes(o.id);
-              return (
-                <button
-                  key={o.id}
-                  type="button"
-                  onClick={() => {
-                    const next = multiple
-                      ? active
-                        ? selected.filter((x) => x !== o.id)
-                        : [...selected, o.id]
-                      : [o.id];
-                    setOptions(section.id, el.id, next);
-                  }}
-                  className="flex w-full items-center gap-3 text-left transition-all active:scale-[.99]"
-                  style={{
-                    border: `2px solid ${active ? settings.colors.primary : `${settings.colors.primary}44`}`,
-                    background: active ? `${settings.colors.primary}22` : "transparent",
-                    borderRadius: settings.button.radius,
-                    padding: "14px 16px",
-                    minHeight: 56,
-                    color: settings.colors.text,
-                    fontSize: 16,
-                  }}
-                >
-                  {o.image ? (
-                    <img
-                      src={o.image}
-                      alt=""
-                      loading="lazy"
-                      className="h-12 w-12 shrink-0 rounded-lg object-cover"
-                    />
-                  ) : null}
-                  <span className="flex-1">{o.label}</span>
-                  <span
-                    className="grid h-6 w-6 shrink-0 place-items-center"
-                    style={{
-                      border: `2px solid ${active ? settings.colors.primary : `${settings.colors.text}44`}`,
-                      borderRadius: multiple ? 6 : 999,
-                      background: active ? settings.colors.primary : "transparent",
-                    }}
-                  >
-                    {active && (
-                      <Check
-                        className="h-3.5 w-3.5"
-                        style={{ color: settings.colors.buttonText }}
-                      />
-                    )}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        );
-      }
-      case "fields": {
-        const ans = session.answers[answerKey(section.id, el.id)];
-        const values = ans && ans.type === "fields" ? ans.values : {};
-        return (
-          <div key={el.id} className="flex flex-col gap-3">
-            {(
-              (ct.fields ?? []) as {
-                key: string;
-                label: string;
-                enabled: boolean;
-                required?: boolean;
-              }[]
-            )
-              .filter((f) => f.enabled)
-              .map((f) => (
-                <input
-                  key={f.key}
-                  value={values[f.key] ?? ""}
-                  placeholder={f.required === false ? f.label : `${f.label} *`}
-                  type={f.key === "email" ? "email" : f.key === "whatsapp" ? "tel" : "text"}
-                  inputMode={f.key === "whatsapp" ? "numeric" : undefined}
-                  autoComplete={
-                    f.key === "email" ? "email" : f.key === "name" ? "name" : "tel-national"
-                  }
-                  onChange={(e) =>
-                    setField(
-                      section.id,
-                      el.id,
-                      f.key,
-                      f.key === "whatsapp" ? maskPhone(e.target.value) : e.target.value,
-                    )
-                  }
-                  className="w-full bg-transparent outline-none"
-                  style={{
-                    border: `1px solid ${settings.colors.text}33`,
-                    borderRadius: settings.button.radius,
-                    padding: "14px 16px",
-                    minHeight: 52,
-                    color: settings.colors.text,
-                    fontSize: 16,
-                  }}
-                />
-              ))}
-          </div>
-        );
-      }
-
-      case "percentage":
-        return (
-          <div
-            key={el.id}
-            style={{
-              fontSize: Number(st.size) || 14,
-              fontWeight: Number(st.weight) || 600,
-              color: (st.color as string) || settings.colors.secondary,
-              textAlign: (st.align as React.CSSProperties["textAlign"]) || "center",
-            }}
-          >
-            {percent}% concluído
-          </div>
-        );
-      case "progress":
-        return <ProgressBar key={el.id} settings={settings} percent={percent} />;
-      case "result":
-        return (
-          <ResultBlockView
-            key={el.id}
-            el={el}
-            settings={settings}
-            score={score}
-            percent={resultPercent}
-            hasScoring={maxScore > 0}
-          />
-        );
-      default:
-        return null;
-    }
+    const ans = session.answers[answerKey(section.id, el.id)];
+    return (
+      <QuizElementView
+        key={el.id}
+        el={el}
+        settings={settings}
+        percent={percent}
+        selectedOptions={ans?.type === "options" ? ans.optionIds : []}
+        onOptionsChange={(ids) => setOptions(section.id, el.id, ids)}
+        fieldValues={ans?.type === "fields" ? ans.values : {}}
+        onFieldChange={(key, value) => setField(section.id, el.id, key, value)}
+        onAction={() => runCta(el)}
+        loading={saving}
+        score={score}
+        resultPercent={resultPercent}
+        hasScoring={maxScore > 0}
+      />
+    );
   };
 
   return (
@@ -584,11 +289,11 @@ export function QuizRunner({
         fullScreen && "min-h-[100dvh] justify-center px-0 py-0",
         className,
       )}
-      style={fullScreen ? backgroundStyle(settings) : undefined}
+      style={fullScreen ? quizSurfaceStyle(settings) : undefined}
     >
       <div
         className={cn(
-          "w-full",
+          "q-surface w-full",
           fullScreen
             ? "min-h-[100dvh]"
             : "overflow-hidden rounded-2xl border border-border shadow-2xl",
@@ -596,25 +301,47 @@ export function QuizRunner({
         )}
         style={
           fullScreen
-            ? undefined
-            : { maxWidth: DEVICE_WIDTH[device], ...backgroundStyle(settings) }
+            ? quizSurfaceStyle(settings)
+            : { maxWidth: DEVICE_WIDTH[device], ...quizSurfaceStyle(settings) }
         }
       >
         {showConfetti && confettiKey === `${session.session_id}-${section.id}` && (
           <Confetti
             key={confettiKey}
-            colors={[settings.colors.primary, settings.colors.secondary, "#FFD166", "#EF476F", "#06D6A0"]}
+            colors={[
+              settings.colors.primary,
+              settings.colors.secondary,
+              "#FFD166",
+              "#EF476F",
+              "#06D6A0",
+            ]}
           />
         )}
         <div
-          className="mx-auto flex min-h-[460px] w-full flex-col px-5 py-7 sm:px-6"
+          className="q-card mx-auto flex min-h-[460px] w-full flex-col"
           style={{
             maxWidth: settings.layout.contentWidth,
-            minHeight: fullScreen ? "100dvh" : undefined,
+
             fontFamily: `${settings.font}, system-ui, sans-serif`,
             color: settings.colors.text,
           }}
         >
+          <div className="q-step-header">
+            {index > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="q-back"
+                aria-label="Voltar"
+                onClick={() => go(-1)}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <span>
+              Etapa {index + 1} de {total}
+            </span>
+          </div>
           {settings.progress.enabled && (
             <div className="mb-6 w-full">
               <ProgressBar settings={settings} percent={percent} />
@@ -625,7 +352,7 @@ export function QuizRunner({
           <div
             key={section.id}
             className={cn(
-              "flex w-full flex-1 flex-col justify-center transition-all duration-150",
+              "q-section-entry flex w-full flex-1 flex-col justify-center transition-all duration-150",
               anim === "in" ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
             )}
             style={{ gap: settings.layout.spacing }}
@@ -633,15 +360,7 @@ export function QuizRunner({
             {section.elements.map(renderElement)}
 
             {error && (
-              <div
-                role="alert"
-                className="rounded-xl px-4 py-3 text-center text-sm"
-                style={{
-                  background: "rgba(239,68,68,.14)",
-                  border: "1px solid rgba(239,68,68,.45)",
-                  color: "#FCA5A5",
-                }}
-              >
+              <div role="alert" className="q-error rounded-xl px-4 py-3 text-center text-sm">
                 {error}
               </div>
             )}
@@ -658,26 +377,15 @@ export function QuizRunner({
           </div>
 
           <div className="mt-6 flex items-center justify-between gap-3">
-            {index > 0 ? (
-              <button
-                type="button"
-                onClick={() => go(-1)}
-                className="flex items-center gap-1.5 text-sm"
-                style={{ color: `${settings.colors.text}99` }}
-              >
-                <ArrowLeft className="h-4 w-4" /> Voltar
-              </button>
-            ) : (
-              <span />
-            )}
-            <button
-              type="button"
+            <span />
+            <Button
+              variant="ghost"
               onClick={restart}
               className="flex items-center gap-1.5 text-sm"
               style={{ color: `${settings.colors.text}77` }}
             >
               <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -688,13 +396,12 @@ export function QuizRunner({
             Etapa {index + 1} de {total}
           </span>
           {onExit && (
-            <button type="button" onClick={onExit} className="underline">
+            <Button variant="link" onClick={onExit} className="underline">
               Fechar
-            </button>
+            </Button>
           )}
         </div>
       )}
     </div>
   );
 }
-

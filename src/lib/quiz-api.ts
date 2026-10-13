@@ -3,6 +3,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import {
   DEFAULT_QUIZ_SETTINGS,
+  NEW_QUIZ_SETTINGS,
   buildSectionsFromTemplate,
   slugify,
   uid,
@@ -91,7 +92,11 @@ export class SlugTakenError extends Error {
 }
 
 function isUniqueViolation(error: AnyRow | null): boolean {
-  return Boolean(error && (error.code === "23505" || /duplicate key|quizzes_slug_unique/i.test(String(error.message ?? ""))));
+  return Boolean(
+    error &&
+    (error.code === "23505" ||
+      /duplicate key|quizzes_slug_unique/i.test(String(error.message ?? ""))),
+  );
 }
 
 async function uniqueSlug(_userId: string, base: string): Promise<string> {
@@ -106,7 +111,10 @@ export async function createQuiz(input: {
 }): Promise<string> {
   const desired = slugify(input.slug || input.name);
   // Unicidade global: usa o endereço pedido se estiver livre, senão a primeira alternativa.
-  const slug = desired && (await isSlugAvailable(desired)) ? desired : await uniqueSlug(input.userId, desired || input.name);
+  const slug =
+    desired && (await isSlugAvailable(desired))
+      ? desired
+      : await uniqueSlug(input.userId, desired || input.name);
   const quizId = uid();
 
   const { error } = await db(QUIZZES).insert({
@@ -115,7 +123,7 @@ export async function createQuiz(input: {
     name: input.name.trim() || "Novo Quiz",
     slug,
     status: "draft",
-    settings: DEFAULT_QUIZ_SETTINGS,
+    settings: NEW_QUIZ_SETTINGS,
   });
   if (isUniqueViolation(error)) throw new SlugTakenError();
   if (error) throw error;

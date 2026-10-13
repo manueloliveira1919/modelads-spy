@@ -64,6 +64,14 @@ export const DEFAULT_QUIZ_SETTINGS: QuizSettings = {
   progress: { enabled: true, showPercentage: true, thickness: 8, radius: 999, style: "gradient" },
 };
 
+export const NEW_QUIZ_SETTINGS: QuizSettings = {
+  ...DEFAULT_QUIZ_SETTINGS,
+  background: { ...DEFAULT_QUIZ_SETTINGS.background, type: "gradient" },
+  button: { ...DEFAULT_QUIZ_SETTINGS.button, radius: 24, height: 56 },
+  layout: { ...DEFAULT_QUIZ_SETTINGS.layout, spacing: 20 },
+  progress: { ...DEFAULT_QUIZ_SETTINGS.progress, thickness: 5 },
+};
+
 export interface TextContent {
   text: string;
 }
@@ -99,7 +107,6 @@ export interface FieldsContent {
     required?: boolean;
   }[];
 }
-
 
 export interface QuizElement {
   id: string;
@@ -173,13 +180,13 @@ export function makeElement(
   > = {
     text: {
       content: { text: "Escreva seu texto aqui" },
-      settings: { size: 18, weight: 500, align: "center", color: "", spacing: 8 },
+      settings: { size: 17, weight: 500, align: "center", color: "", spacing: 8 },
     },
     image: {
       content: { url: "" },
-      settings: { width: 100, height: 0, radius: 16, align: "center" },
+      settings: { width: 100, height: 0, radius: 24, align: "center" },
     },
-    video: { content: { url: "" }, settings: { radius: 16 } },
+    video: { content: { url: "" }, settings: { radius: 24 } },
     button: {
       content: { label: "Continuar" },
       settings: {
@@ -188,7 +195,7 @@ export function makeElement(
         align: "center",
         bg: "",
         color: "",
-        radius: 12,
+        radius: 24,
         cta: "none",
         ctaUrl: "",
         ctaPhone: "",
@@ -219,7 +226,6 @@ export function makeElement(
           { key: "name", label: "Nome", enabled: true, required: true },
           { key: "email", label: "E-mail", enabled: true, required: true },
           { key: "whatsapp", label: "WhatsApp", enabled: true, required: true },
-
         ],
       },
       settings: {},
@@ -232,7 +238,13 @@ export function makeElement(
         image: "",
         ranges: [],
       },
-      settings: { showScore: true, showPercent: true, chart: "bar", confetti: true, scoreSuffix: "pontos" },
+      settings: {
+        showScore: true,
+        showPercent: true,
+        chart: "bar",
+        confetti: true,
+        scoreSuffix: "pontos",
+      },
     },
   };
   const d = base[type];
