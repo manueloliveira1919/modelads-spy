@@ -4,19 +4,13 @@
 - [x] Envio administrativo em lotes e atualização do ZIP
 - [x] Validar com página simulada e verificar pacote
 
-# Fase 5 — Modelar Quiz
-
-- [ ] Centralizar tipografia e animações compatíveis com quizzes antigos
-- [ ] Adicionar seleção e edição direta no preview
-- [ ] Adicionar painel contextual de texto e botão
-- [ ] Aplicar estilos e animações no preview e página pública
-- [ ] Carregar as fontes solicitadas
-- [ ] Validar autosave, persistência, fluxos existentes e responsividade
-
 # Modelar Quiz — editor simplificado
 
 - [x] Unificar renderização e preservar configurações antigas
 - [x] Edição direta, seleção, ações e navegação no editor
 - [x] Simplificar painéis e adicionar seis temas
-- [ ] Validar quiz existente, gravação, opções, captura, navegação e pontuação
-- [ ] Conferir Visualizar, público e tamanhos de tela
+- [x] Validar quiz existente, gravação, opções, captura, navegação e pontuação
+- [x] Conferir Visualizar, público e tamanhos de tela
+- [x] Preservar tipografia/animações antigas e fontes sob demanda sem controles avançados obsoletos
+- [x] Sete testes de compatibilidade e checagem automática sem erros
+- [x] Remover quiz, lead e imagem temporários de teste
