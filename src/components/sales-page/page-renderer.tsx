@@ -47,6 +47,8 @@ export const COUNTDOWN_SCRIPT = `(function(){function t(){document.querySelector
 type Ctx = {
   settings: PageSettings;
   editable: boolean;
+  selectedElement?: string;
+  onElementSelect?: (key: string) => void;
   onOrder?: (sectionId: string, order: string[]) => void;
   onText?: (sectionId: string, path: string, value: string) => void;
 };
@@ -459,7 +461,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
 }
 
 function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string; elementKey: string; ctx: Ctx; order: () => string[]; children: React.ReactNode }) {
-  const [selected, setSelected] = useState(false);
+  const selected = ctx.selectedElement === `${sid}:${elementKey}`;
   const [drop, setDrop] = useState<"before" | "after" | undefined>();
   const move = (delta: number) => {
     const keys = order(); const i = keys.indexOf(elementKey); const j = i + delta;
@@ -467,7 +469,7 @@ function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string
     [keys[i], keys[j]] = [keys[j], keys[i]]; ctx.onOrder?.(sid, keys);
   };
   return <div className="sp-element" data-element-key={elementKey} data-selected={selected} data-drop={drop}
-    onClick={() => setSelected(true)} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) setSelected(false); }}
+    onClick={() => ctx.onElementSelect?.(`${sid}:${elementKey}`)}
     onDragOver={e => { if (!e.dataTransfer.types.includes("application/modelads-element")) return; e.preventDefault(); e.stopPropagation(); setDrop(e.clientY < e.currentTarget.getBoundingClientRect().top + e.currentTarget.offsetHeight / 2 ? "before" : "after"); }}
     onDragLeave={() => setDrop(undefined)} onDrop={e => {
       e.preventDefault(); e.stopPropagation(); setDrop(undefined);
@@ -509,7 +511,8 @@ export function PageRenderer({
   onText?: Ctx["onText"];
   onOrder?: Ctx["onOrder"];
 }) {
-  const ctx: Ctx = { settings, editable, onText, onOrder };
+  const [selectedElement, onElementSelect] = useState<string>();
+  const ctx: Ctx = { settings, editable, onText, onOrder, selectedElement, onElementSelect };
   const visible = sections.filter((s) => !s.hidden);
   return (
     <div className="sp-root" style={{ background: pageBackground(settings), color: settings.colors.text, ["--sp-r" as string]: `${settings.radius}px` }}>
