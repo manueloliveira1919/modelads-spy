@@ -33,6 +33,30 @@ export interface SectionStyle {
   textSize?: number;
   paddingY?: number;
   align?: Align;
+  weight?: number;
+  maxWidth?: number;
+  gap?: number;
+}
+
+export interface PageButton {
+  id: string;
+  text: string;
+  url: string;
+  bg?: string;
+  color?: string;
+  variant?: "solid" | "outline" | "text";
+  radius?: number;
+  size?: number;
+}
+
+export interface PageBackground {
+  type: "solid" | "gradient" | "image";
+  gradientType: "linear" | "radial";
+  stops: { color: string; position: number }[];
+  angle: number;
+  centerX: number;
+  centerY: number;
+  image: string;
 }
 
 export type Item = Record<string, string>;
@@ -42,6 +66,7 @@ export interface PageSection {
   hidden?: boolean;
   content: Record<string, any> & { items?: Item[] };
   style: SectionStyle;
+  elementOrder?: string[];
 }
 
 export interface PageSettings {
@@ -54,6 +79,7 @@ export interface PageSettings {
   favicon: string;
   headScripts: string;
   bodyScripts: string;
+  background?: PageBackground;
 }
 
 export interface SalesPage {
