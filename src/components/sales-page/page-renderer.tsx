@@ -1,4 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, Children, isValidElement, cloneElement } from "react";
+import { Button } from "@/components/ui/button";
+import { ArrowUp, ArrowDown, GripVertical } from "lucide-react";
+import { pageBackground, sectionButtons } from "@/lib/sales-page-layout";
 import { BLOCK_MAP, type PageSection, type PageSettings } from "@/lib/sales-page-types";
 
 /* Renderizador único: editor, página pública e exportação HTML usam o mesmo código.
@@ -9,7 +12,8 @@ export const PAGE_CSS = `
 .sp-root *{box-sizing:border-box}
 .sp-root img{max-width:100%;display:block}
 .sp-wrap{margin:0 auto;padding:0 24px}
-.sp-h{margin:0 0 16px;line-height:1.15;font-weight:800;letter-spacing:-.01em}
+.sp-element{position:relative;min-width:0}.sp-element[data-selected="true"]{outline:2px solid var(--brand);outline-offset:3px}.sp-element-tools{display:flex;gap:2px;position:absolute;top:0;right:0;z-index:5;background:var(--card);color:var(--foreground);border-radius:4px}.sp-element[data-drop="before"]::before,.sp-element[data-drop="after"]::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--brand);z-index:9}.sp-element[data-drop="before"]::before{top:-5px}.sp-element[data-drop="after"]::after{bottom:-5px}.sp-ordered{display:flex;flex-direction:column;gap:var(--sp-gap,20px)}
+.sp-h{margin:0 0 16px;line-height:1.15;font-weight:800;letter-spacing:0}
 .sp-p{margin:0;white-space:pre-line}
 .sp-grid{display:grid;gap:20px;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:32px;text-align:left}
 .sp-grid2{display:grid;gap:20px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:32px}
@@ -43,6 +47,7 @@ export const COUNTDOWN_SCRIPT = `(function(){function t(){document.querySelector
 type Ctx = {
   settings: PageSettings;
   editable: boolean;
+  onOrder?: (sectionId: string, order: string[]) => void;
   onText?: (sectionId: string, path: string, value: string) => void;
 };
 
@@ -144,7 +149,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   const st = section.style ?? {};
   const c = section.content ?? {};
   const items = (c.items ?? []) as Record<string, string>[];
-  const bg = resolveColor(st.bg, s, s.colors.bg);
+  const bg = st.bg === "bg" || !st.bg ? (s.background ? "transparent" : s.colors.bg) : resolveColor(st.bg, s, s.colors.bg);
   const color = resolveColor(st.color, s, s.colors.text);
   const accent = resolveColor(st.accent, s, s.colors.primary);
   const btnBg = resolveColor(st.buttonBg, s, s.colors.primary);
@@ -159,26 +164,21 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
     <E ctx={ctx} sid={sid} path={path} value={v ?? ""} {...props} />
   );
   const title = (key = "title") =>
-    (c[key] || ctx.editable) && P(key, c[key], { as: "h2", className: "sp-h", style: { fontSize: ts, fontFamily: `'${s.headingFont}', sans-serif` } });
-  const button = () =>
-    (c.buttonText || ctx.editable) && (
-      <div style={{ marginTop: 28 }}>
-        <a
-          className="sp-btn"
-          href={safeHref(c.buttonUrl)}
-          target={c.buttonUrl?.startsWith("#") ? undefined : "_top"}
-          style={{ background: btnBg, color: btnColor, fontFamily: `'${s.headingFont}', sans-serif` }}
-          onClick={ctx.editable ? (e) => e.preventDefault() : undefined}
-        >
-          {P("buttonText", c.buttonText)}
-        </a>
-      </div>
-    );
+    (c[key] || ctx.editable) && P(key, c[key], { as: "h2", className: "sp-h", style: { fontSize: ts, fontFamily: `'${st.font || s.headingFont}', sans-serif`, fontWeight: st.weight ?? 800 } });
+  const button = () => sectionButtons(section).map((b, i) => (
+    <div key={b.id} data-sp-key={`button:${b.id}`} style={{ marginTop: 28 }}>
+      <a className="sp-btn" href={safeHref(b.url)} target={b.url.startsWith("#") ? undefined : "_top"}
+        style={{ background: b.variant === "outline" || b.variant === "text" ? "transparent" : resolveColor(b.bg, s, btnBg), color: resolveColor(b.color, s, btnColor), border: b.variant === "outline" ? `2px solid ${resolveColor(b.bg, s, btnBg)}` : undefined, boxShadow: b.variant === "text" ? "none" : undefined, borderRadius: b.radius ?? s.radius, fontSize: b.size ?? 18, fontFamily: `'${st.font || s.headingFont}', sans-serif` }}
+        onClick={ctx.editable ? (e) => e.preventDefault() : undefined}>
+        {P(Array.isArray(c.buttons) ? `buttons.${i}.text` : "buttonText", b.text)}
+      </a>
+    </div>
+  ));
   const img = (key: string, ph = "Adicione uma imagem") =>
     c[key] ? (
-      <img src={c[key]} alt="" style={{ borderRadius: s.radius, width: "100%", height: "auto" }} loading="lazy" />
+      <img data-sp-key={key} src={c[key]} alt="" style={{ borderRadius: s.radius, width: "100%", height: "auto" }} loading="lazy" />
     ) : ctx.editable ? (
-      <div className="sp-ph">{ph}</div>
+      <div data-sp-key={key} className="sp-ph">{ph}</div>
     ) : null;
 
   let body: React.ReactNode = null;
@@ -205,11 +205,11 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
           {title()}
           {v ? (
-            <div className="sp-video">
+            <div data-sp-key="videoUrl" className="sp-video">
               {v.kind === "iframe" ? <iframe src={v.src} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen title="vídeo" /> : <video src={v.src} controls playsInline />}
             </div>
           ) : ctx.editable ? (
-            <div className="sp-ph" style={{ aspectRatio: "16/9", margin: "24px 0" }}>Cole o link do vídeo no painel</div>
+            <div data-sp-key="videoUrl" className="sp-ph" style={{ aspectRatio: "16/9", margin: "24px 0" }}>Cole o link do vídeo no painel</div>
           ) : null}
           {button()}
         </div>
@@ -417,6 +417,25 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
       break;
   }
 
+  const slots: { key: string; node: React.ReactNode }[] = [];
+  function scan(node: React.ReactNode): React.ReactNode {
+    return Children.map(node, child => {
+      if (!isValidElement<Record<string, any>>(child)) return child;
+      const p = child.props;
+      const key = child.type === E ? p.path : p["data-sp-key"] || (child.type === Countdown ? "countdown" : ["sp-grid", "sp-grid2"].includes(p.className) ? "items" : null);
+      if (key) {
+        slots.push({ key, node: child });
+        return ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} ctx={ctx} order={() => slots.map(x => x.key)}>{child}</SectionElement> : child;
+      }
+      return p.children ? cloneElement(child, {}, scan(p.children)) : child;
+    });
+  }
+  const decorated = scan(body);
+  const ordered = [...(section.elementOrder ?? []).filter(k => slots.some(x => x.key === k)), ...slots.map(x => x.key).filter(k => !section.elementOrder?.includes(k))];
+  const output = section.elementOrder ? <div className="sp-ordered">{ordered.map(key => {
+    const node = slots.find(x => x.key === key)?.node;
+    return ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} ctx={ctx} order={() => ordered}>{node}</SectionElement> : <div key={key}>{node}</div>;
+  })}</div> : decorated;
   return (
     <section
       style={{
@@ -424,17 +443,45 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
         color,
         fontFamily: `'${font}', sans-serif`,
         fontSize: st.textSize ?? 17,
+        fontWeight: st.weight,
+        ["--sp-gap" as string]: `${st.gap ?? 20}px`,
         padding: `${st.paddingY ?? 64}px 0`,
         textAlign: align,
         ["--sp-card" as string]: card,
         ["--sp-ts" as string]: `${ts}px`,
       }}
     >
-      <div className="sp-wrap" style={{ maxWidth: s.maxWidth }}>
-        {body}
+      <div className="sp-wrap" style={{ maxWidth: st.maxWidth ?? s.maxWidth }}>
+        {output}
       </div>
     </section>
   );
+}
+
+function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string; elementKey: string; ctx: Ctx; order: () => string[]; children: React.ReactNode }) {
+  const [selected, setSelected] = useState(false);
+  const [drop, setDrop] = useState<"before" | "after" | undefined>();
+  const move = (delta: number) => {
+    const keys = order(); const i = keys.indexOf(elementKey); const j = i + delta;
+    if (i < 0 || j < 0 || j >= keys.length) return;
+    [keys[i], keys[j]] = [keys[j], keys[i]]; ctx.onOrder?.(sid, keys);
+  };
+  return <div className="sp-element" data-element-key={elementKey} data-selected={selected} data-drop={drop}
+    onClick={() => setSelected(true)} onBlur={e => { if (!e.currentTarget.contains(e.relatedTarget)) setSelected(false); }}
+    onDragOver={e => { if (!e.dataTransfer.types.includes("application/modelads-element")) return; e.preventDefault(); e.stopPropagation(); setDrop(e.clientY < e.currentTarget.getBoundingClientRect().top + e.currentTarget.offsetHeight / 2 ? "before" : "after"); }}
+    onDragLeave={() => setDrop(undefined)} onDrop={e => {
+      e.preventDefault(); e.stopPropagation(); setDrop(undefined);
+      try { const from = JSON.parse(e.dataTransfer.getData("application/modelads-element")); if (from.sid !== sid || from.key === elementKey) return;
+        const keys = order().filter(k => k !== from.key); const i = keys.indexOf(elementKey); keys.splice(i + (drop === "after" ? 1 : 0), 0, from.key); ctx.onOrder?.(sid, keys);
+      } catch { /* Ignore foreign drags. */ }
+    }}>
+    {children}
+    {selected && <div className="sp-element-tools" onClick={e => e.stopPropagation()}>
+      <Button size="icon" variant="ghost" title="Arrastar elemento" aria-label="Arrastar elemento" draggable onDragStart={e => { e.stopPropagation(); e.dataTransfer.setData("application/modelads-element", JSON.stringify({ sid, key: elementKey })); }}><GripVertical size={14}/></Button>
+      <Button size="icon" variant="ghost" title="Subir elemento" aria-label="Subir elemento" onClick={() => move(-1)}><ArrowUp size={14}/></Button>
+      <Button size="icon" variant="ghost" title="Descer elemento" aria-label="Descer elemento" onClick={() => move(1)}><ArrowDown size={14}/></Button>
+    </div>}
+  </div>;
 }
 
 export function isDarkColor(hex: string) {
@@ -452,6 +499,7 @@ export function PageRenderer({
   selectedId,
   onSelect,
   onText,
+  onOrder,
 }: {
   sections: PageSection[];
   settings: PageSettings;
@@ -459,11 +507,12 @@ export function PageRenderer({
   selectedId?: string | null;
   onSelect?: (id: string) => void;
   onText?: Ctx["onText"];
+  onOrder?: Ctx["onOrder"];
 }) {
-  const ctx: Ctx = { settings, editable, onText };
+  const ctx: Ctx = { settings, editable, onText, onOrder };
   const visible = sections.filter((s) => !s.hidden);
   return (
-    <div className="sp-root" style={{ background: settings.colors.bg, color: settings.colors.text, ["--sp-r" as string]: `${settings.radius}px` }}>
+    <div className="sp-root" style={{ background: pageBackground(settings), color: settings.colors.text, ["--sp-r" as string]: `${settings.radius}px` }}>
       <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
       {visible.length === 0 && editable && (
         <div style={{ padding: "120px 24px", textAlign: "center", opacity: 0.6, fontFamily: "sans-serif" }}>

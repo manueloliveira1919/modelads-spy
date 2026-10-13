@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Copy, ExternalLink, LayoutTemplate, Loader2, Pencil, Plus, Trash2, Type } from "lucide-react";
+import { Copy, ExternalLink, LayoutTemplate, Loader2, Pencil, Plus, Trash2, Type, Sparkles, Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { ProGate } from "@/components/pro-gate";
 import { useAuth } from "@/lib/auth-context";
@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { createPage, deletePage, duplicatePage, listPages, updatePage } from "@/lib/sales-page-api";
 import { PAGE_TEMPLATES, type SalesPage } from "@/lib/sales-page-types";
+import { salesPageUrl } from "@/lib/sales-page-layout";
 
 export const Route = createFileRoute("/criador-paginas/")({
   head: () => ({
@@ -94,7 +95,8 @@ function ListContent() {
             <div className="mt-4 flex flex-wrap gap-2">
               <Button asChild size="sm" variant="secondary"><Link to="/criador-paginas/$id" params={{ id: p.id }}><Pencil className="mr-1 h-3.5 w-3.5" /> Editar</Link></Button>
               {p.status === "published" && (
-                <Button asChild size="sm" variant="outline"><a href={`/p/${p.slug}`} target="_blank" rel="noreferrer"><ExternalLink className="mr-1 h-3.5 w-3.5" /> Abrir</a></Button>
+                <><Button asChild size="sm" variant="outline"><a href={salesPageUrl(p.slug)} target="_blank" rel="noreferrer"><ExternalLink className="mr-1 h-3.5 w-3.5" /> Abrir</a></Button>
+                <Button size="sm" variant="outline" onClick={async () => { try { await navigator.clipboard.writeText(salesPageUrl(p.slug)); toast.success("Link copiado."); } catch { toast.error("Não foi possível copiar o link."); } }}><LinkIcon className="mr-1 h-3.5 w-3.5"/>Copiar link</Button></>
               )}
               <Button size="sm" variant="outline" onClick={() => setRenaming(p)}><Type className="mr-1 h-3.5 w-3.5" /> Renomear</Button>
               <Button size="sm" variant="outline" disabled={dup.isPending} onClick={() => dup.mutate(p.id)}><Copy className="mr-1 h-3.5 w-3.5" /> Duplicar</Button>
@@ -168,6 +170,7 @@ function NewPageDialog({ open, onOpenChange, onCreated }: { open: boolean; onOpe
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex.: Curso de Confeitaria" autoFocus />
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
+          <Button asChild className="h-auto justify-start gap-3 border border-brand bg-brand/15 p-4 text-brand hover:bg-brand/25"><Link to="/criador-paginas/gerar-com-ia"><Sparkles className="h-6 w-6"/>Gerar com IA</Link></Button>
           {options.map((o) => (
             <button
               key={o.key ?? "blank"}

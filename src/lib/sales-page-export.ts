@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { COUNTDOWN_SCRIPT, PageRenderer } from "@/components/sales-page/page-renderer";
 import type { PageSection, PageSettings } from "./sales-page-types";
+import { pageBackground } from "./sales-page-layout";
 
 export const PAGE_FONTS = [
   "Inter", "Poppins", "Montserrat", "Roboto", "Open Sans", "Lato", "Nunito", "Raleway", "Oswald", "Playfair Display", "Merriweather", "Bebas Neue",
@@ -29,7 +30,7 @@ export function buildPageHtml(name: string, settings: PageSettings, sections: Pa
     settings.seo.image && `<meta property="og:image" content="${esc(settings.seo.image)}">`,
     settings.favicon && `<link rel="icon" href="${esc(settings.favicon)}">`,
     fonts && `<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="${fonts}">`,
-    `<style>html,body{margin:0;padding:0;background:${settings.colors.bg}}html{scroll-behavior:smooth}</style>`,
+    `<style>html,body{margin:0;padding:0;background:${pageBackground(settings).replace(/</g, "\\3c ")}}html{scroll-behavior:smooth}</style>`,
   ].filter(Boolean).join("\n");
   return `<!doctype html>
 <html lang="pt-BR">
