@@ -479,7 +479,29 @@ function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string
     }}>
     {children}
     {selected && <div className="sp-element-tools" onClick={e => e.stopPropagation()}>
-      <Button size="icon" variant="ghost" title="Arrastar elemento" aria-label="Arrastar elemento" draggable onDragStart={e => { e.stopPropagation(); e.dataTransfer.setData("application/modelads-element", JSON.stringify({ sid, key: elementKey })); }}><GripVertical size={14}/></Button>
+      <Button size="icon" variant="ghost" title="Arrastar elemento" aria-label="Arrastar elemento" style={{ touchAction: "none", cursor: "grab" }} onPointerDown={e => {
+        e.preventDefault(); e.stopPropagation();
+        const sectionRoot = e.currentTarget.closest('[data-section-id]');
+        if (!sectionRoot) return;
+        let targetKey: string | undefined; let after = false;
+        const clear = () => sectionRoot.querySelectorAll('[data-drop]').forEach(el => el.removeAttribute('data-drop'));
+        const track = (event: PointerEvent) => {
+          clear();
+          const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-element-key]');
+          if (!target || !sectionRoot.contains(target) || target.dataset.elementKey === elementKey) { targetKey = undefined; return; }
+          targetKey = target.dataset.elementKey;
+          const rect = target.getBoundingClientRect(); after = event.clientY > rect.top + rect.height / 2;
+          target.dataset.drop = after ? 'after' : 'before';
+        };
+        const finish = () => {
+          clear(); window.removeEventListener('pointermove', track); window.removeEventListener('pointerup', finish); window.removeEventListener('pointercancel', cancel);
+          if (!targetKey) return;
+          const keys = order().filter(k => k !== elementKey); const i = keys.indexOf(targetKey);
+          if (i >= 0) { keys.splice(i + (after ? 1 : 0), 0, elementKey); ctx.onOrder?.(sid, keys); }
+        };
+        const cancel = () => { targetKey = undefined; finish(); };
+        window.addEventListener('pointermove', track); window.addEventListener('pointerup', finish, { once: true }); window.addEventListener('pointercancel', cancel, { once: true });
+      }}><GripVertical size={14}/></Button>
       <Button size="icon" variant="ghost" title="Subir elemento" aria-label="Subir elemento" onClick={() => move(-1)}><ArrowUp size={14}/></Button>
       <Button size="icon" variant="ghost" title="Descer elemento" aria-label="Descer elemento" onClick={() => move(1)}><ArrowDown size={14}/></Button>
     </div>}
