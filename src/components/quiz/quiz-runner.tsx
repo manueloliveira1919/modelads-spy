@@ -3,7 +3,7 @@
 // e — no modo "live" — grava o lead da seção de captura e executa o CTA do resultado.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, Loader2, RotateCcw } from "lucide-react";
+import { ArrowLeft, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   answerKey,
@@ -11,28 +11,20 @@ import {
   type OptionsAnswer,
   type QuizSessionState,
 } from "@/lib/quiz-session";
-import {
-  ctaHref,
-  isValidEmail,
-  isValidPhone,
-  maskPhone,
-  readCta,
-  storablePhone,
-} from "@/lib/quiz-conversion";
+import { ctaHref, isValidEmail, isValidPhone, readCta, storablePhone } from "@/lib/quiz-conversion";
 import { submitQuizLead } from "@/lib/quiz-public";
 import { resolveNextIndex } from "@/lib/quiz-logic";
 import {
-  animationClass,
-  animationStyle,
-  buttonTextVisualStyle,
-  textVisualStyle,
-} from "@/lib/quiz-visual";
-import { QuizFonts, QuizElementView, QuizProgress as ProgressBar, QuizPrimaryButton as PrimaryButton, quizSurfaceStyle } from "@/components/quiz/quiz-element-view";
+  QuizFonts,
+  QuizElementView,
+  QuizProgress as ProgressBar,
+  QuizPrimaryButton as PrimaryButton,
+  quizSurfaceStyle,
+} from "@/components/quiz/quiz-element-view";
 import { Button } from "@/components/ui/button";
-import { Confetti, ResultBlockView } from "@/components/quiz/quiz-result-view";
+import { Confetti } from "@/components/quiz/quiz-result-view";
 import { computeMaxScore, computePercent, computeScore } from "@/lib/quiz-result";
-import type { QuizElement, QuizSection, QuizSettings, OptionItem } from "@/lib/quiz-types";
-
+import type { QuizElement, QuizSection, QuizSettings } from "@/lib/quiz-types";
 
 type Sx = Record<string, string | number | boolean | undefined>;
 
@@ -87,7 +79,11 @@ export function QuizRunner({
           if (delta === -1) {
             // Volta para a seção realmente visitada antes (histórico real).
             if (history.length) {
-              return { ...s, current_section: history[history.length - 1], history: history.slice(0, -1) };
+              return {
+                ...s,
+                current_section: history[history.length - 1],
+                history: history.slice(0, -1),
+              };
             }
             return { ...s, current_section: Math.max(cur - 1, 0) };
           }
@@ -232,7 +228,10 @@ export function QuizRunner({
   // Fase 7: soma somente seções efetivamente visitadas (histórico + atual).
   const score = useMemo(() => {
     const visited = new Set([...(session.history ?? []), session.current_section]);
-    return computeScore(sections.filter((_, i) => visited.has(i)), session.answers);
+    return computeScore(
+      sections.filter((_, i) => visited.has(i)),
+      session.answers,
+    );
   }, [sections, session.answers, session.history, session.current_section]);
   const resultPercent = computePercent(score, maxScore);
   const showConfetti = !!section?.elements.some(
@@ -262,15 +261,25 @@ export function QuizRunner({
     );
   }
 
-
   const renderElement = (el: QuizElement) => {
     const ans = session.answers[answerKey(section.id, el.id)];
-    return <QuizElementView key={el.id} el={el} settings={settings} percent={percent}
-      selectedOptions={ans?.type === "options" ? ans.optionIds : []}
-      onOptionsChange={(ids) => setOptions(section.id, el.id, ids)}
-      fieldValues={ans?.type === "fields" ? ans.values : {}}
-      onFieldChange={(key, value) => setField(section.id, el.id, key, value)}
-      onAction={() => runCta(el)} loading={saving} score={score} resultPercent={resultPercent} hasScoring={maxScore > 0}/>;
+    return (
+      <QuizElementView
+        key={el.id}
+        el={el}
+        settings={settings}
+        percent={percent}
+        selectedOptions={ans?.type === "options" ? ans.optionIds : []}
+        onOptionsChange={(ids) => setOptions(section.id, el.id, ids)}
+        fieldValues={ans?.type === "fields" ? ans.values : {}}
+        onFieldChange={(key, value) => setField(section.id, el.id, key, value)}
+        onAction={() => runCta(el)}
+        loading={saving}
+        score={score}
+        resultPercent={resultPercent}
+        hasScoring={maxScore > 0}
+      />
+    );
   };
 
   return (
@@ -291,27 +300,46 @@ export function QuizRunner({
           "relative",
         )}
         style={
-          fullScreen
-            ? undefined
-            : { maxWidth: DEVICE_WIDTH[device], ...quizSurfaceStyle(settings) }
+          fullScreen ? undefined : { maxWidth: DEVICE_WIDTH[device], ...quizSurfaceStyle(settings) }
         }
       >
         {showConfetti && confettiKey === `${session.session_id}-${section.id}` && (
           <Confetti
             key={confettiKey}
-            colors={[settings.colors.primary, settings.colors.secondary, "#FFD166", "#EF476F", "#06D6A0"]}
+            colors={[
+              settings.colors.primary,
+              settings.colors.secondary,
+              "#FFD166",
+              "#EF476F",
+              "#06D6A0",
+            ]}
           />
         )}
         <div
           className="q-card mx-auto flex min-h-[460px] w-full flex-col"
           style={{
             maxWidth: settings.layout.contentWidth,
-            
+
             fontFamily: `${settings.font}, system-ui, sans-serif`,
             color: settings.colors.text,
           }}
         >
-          <div className="q-step-header">{index > 0 && <Button variant="ghost" size="icon" className="q-back" aria-label="Voltar" onClick={() => go(-1)}><ArrowLeft className="h-4 w-4"/></Button>}<span>Etapa {index + 1} de {total}</span></div>
+          <div className="q-step-header">
+            {index > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="q-back"
+                aria-label="Voltar"
+                onClick={() => go(-1)}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <span>
+              Etapa {index + 1} de {total}
+            </span>
+          </div>
           {settings.progress.enabled && (
             <div className="mb-6 w-full">
               <ProgressBar settings={settings} percent={percent} />
@@ -330,10 +358,7 @@ export function QuizRunner({
             {section.elements.map(renderElement)}
 
             {error && (
-              <div
-                role="alert"
-                className="q-error rounded-xl px-4 py-3 text-center text-sm"
-              >
+              <div role="alert" className="q-error rounded-xl px-4 py-3 text-center text-sm">
                 {error}
               </div>
             )}
@@ -351,14 +376,14 @@ export function QuizRunner({
 
           <div className="mt-6 flex items-center justify-between gap-3">
             <span />
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={restart}
               className="flex items-center gap-1.5 text-sm"
               style={{ color: `${settings.colors.text}77` }}
             >
               <RotateCcw className="h-3.5 w-3.5" /> Reiniciar
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -369,13 +394,12 @@ export function QuizRunner({
             Etapa {index + 1} de {total}
           </span>
           {onExit && (
-            <button type="button" onClick={onExit} className="underline">
+            <Button variant="link" onClick={onExit} className="underline">
               Fechar
-            </button>
+            </Button>
           )}
         </div>
       )}
     </div>
   );
 }
-

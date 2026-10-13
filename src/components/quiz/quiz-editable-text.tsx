@@ -23,7 +23,12 @@ export function EditableText({
     const node = ref.current;
     if (node && document.activeElement !== node && node.innerText !== value) node.innerText = value;
   }, [value]);
-  if (!editable) return <Tag className={className} style={style}>{value}</Tag>;
+  if (!editable)
+    return (
+      <Tag className={className} style={style}>
+        {value}
+      </Tag>
+    );
   return (
     <Tag
       ref={ref as never}

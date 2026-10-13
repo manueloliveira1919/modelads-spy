@@ -8,7 +8,6 @@ import {
   Copy,
   ExternalLink,
   Eye,
-
   GripVertical,
   HelpCircle,
   Image as ImageIcon,
@@ -25,7 +24,6 @@ import {
   Type as TypeIcon,
   Users,
   X,
-
 } from "lucide-react";
 import { toast } from "sonner";
 import { ProGate } from "@/components/pro-gate";
@@ -101,7 +99,7 @@ function EditorPage() {
 function EditorContent() {
   const { id } = Route.useParams();
   const { user } = useAuth();
-  const [propertyTab,setPropertyTab] = useState("secao");
+  const [propertyTab, setPropertyTab] = useState("secao");
   const search = Route.useSearch();
   const navigate = useNavigate();
 
@@ -116,7 +114,6 @@ function EditorContent() {
   const [runKey, setRunKey] = useState(0);
   const [dragId, setDragId] = useState<string | null>(null);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-
 
   // Trocar de seção limpa a seleção de elemento.
   useEffect(() => {
@@ -187,7 +184,11 @@ function EditorContent() {
     setSections((prev) => prev.map((s) => (s.id === sid ? { ...s, ...patch } : s)));
   };
   // Atualiza content/settings (JSON existente) de um elemento; reutiliza o autosave.
-  const updateElement = (eid: string, key: "content" | "settings", patch: Record<string, unknown>) => {
+  const updateElement = (
+    eid: string,
+    key: "content" | "settings",
+    patch: Record<string, unknown>,
+  ) => {
     touch();
     setSections((prev) =>
       prev.map((s) => ({
@@ -236,7 +237,9 @@ function EditorContent() {
       return;
     touch();
     setSections((prev) => {
-      const next = stripRulesTo(prev, sid).filter((s) => s.id !== sid).map((s, i) => ({ ...s, position: i }));
+      const next = stripRulesTo(prev, sid)
+        .filter((s) => s.id !== sid)
+        .map((s, i) => ({ ...s, position: i }));
       if (selectedId === sid) setSelectedId(next[0]?.id ?? null);
       return next;
     });
@@ -264,23 +267,40 @@ function EditorContent() {
     0,
     sections.findIndex((s) => s.id === selectedId),
   );
-  const selectedElement = selected?.elements.find(e=>e.id===selectedElementId) ?? null;
-  const selectElement = (eid:string|null) => {setSelectedElementId(eid);if(eid)setPropertyTab("elemento");};
-  const addElement = (type:ElementType) => {
-    if(!selected)return;
-    const el=makeElement(selected.id,type,selected.elements.length);
-    updateSection(selected.id,{elements:[...selected.elements,el]});selectElement(el.id);
+  const selectedElement = selected?.elements.find((e) => e.id === selectedElementId) ?? null;
+  const selectElement = (eid: string | null) => {
+    setSelectedElementId(eid);
+    if (eid) setPropertyTab("elemento");
   };
-  const elementAction = (eid:string,action:"up"|"down"|"duplicate"|"remove") => {
-    if(!selected)return;
-    const index=selected.elements.findIndex(e=>e.id===eid);if(index<0)return;
-    const next=[...selected.elements];
-    if(action==="remove"){next.splice(index,1);selectElement(null);}
-    else if(action==="duplicate"){
-      const copy={...next[index],id:uid(),content:structuredClone(next[index].content),settings:structuredClone(next[index].settings)};
-      next.splice(index+1,0,copy);selectElement(copy.id);
-    } else {const target=index+(action==="up"?-1:1);if(target<0||target>=next.length)return;[next[index],next[target]]=[next[target],next[index]];}
-    updateSection(selected.id,{elements:next.map((e,i)=>({...e,position:i}))});
+  const addElement = (type: ElementType) => {
+    if (!selected) return;
+    const el = makeElement(selected.id, type, selected.elements.length);
+    updateSection(selected.id, { elements: [...selected.elements, el] });
+    selectElement(el.id);
+  };
+  const elementAction = (eid: string, action: "up" | "down" | "duplicate" | "remove") => {
+    if (!selected) return;
+    const index = selected.elements.findIndex((e) => e.id === eid);
+    if (index < 0) return;
+    const next = [...selected.elements];
+    if (action === "remove") {
+      next.splice(index, 1);
+      selectElement(null);
+    } else if (action === "duplicate") {
+      const copy = {
+        ...next[index],
+        id: uid(),
+        content: structuredClone(next[index].content),
+        settings: structuredClone(next[index].settings),
+      };
+      next.splice(index + 1, 0, copy);
+      selectElement(copy.id);
+    } else {
+      const target = index + (action === "up" ? -1 : 1);
+      if (target < 0 || target >= next.length) return;
+      [next[index], next[target]] = [next[target], next[index]];
+    }
+    updateSection(selected.id, { elements: next.map((e, i) => ({ ...e, position: i })) });
   };
 
   if (loadError) {
@@ -300,9 +320,9 @@ function EditorContent() {
   }
 
   const publicUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/quiz/${quiz.slug}` : `/quiz/${quiz.slug}`;
-
-
+    typeof window !== "undefined"
+      ? `${window.location.origin}/quiz/${quiz.slug}`
+      : `/quiz/${quiz.slug}`;
 
   if (previewMode) {
     return (
@@ -363,8 +383,8 @@ function EditorContent() {
             <GripVertical className="h-4 w-4 shrink-0 cursor-grab text-muted-foreground" />
             <span className="w-4 shrink-0 text-xs text-muted-foreground">{i + 1}</span>
             <Icon className="h-4 w-4 shrink-0 text-brand" />
-            <span className="flex-1 truncate font-medium">{s.title}</span>
-            <span className="shrink-0 text-[10px] uppercase text-muted-foreground">
+            <span className="min-w-0 flex-1 truncate font-medium">{s.title}</span>
+            <span className="hidden 2xl:inline shrink-0 text-[10px] uppercase text-muted-foreground">
               {SECTION_LABEL[s.type]}
             </span>
             <button
@@ -412,10 +432,42 @@ function EditorContent() {
 
   const propsPanel = (
     <Tabs value={propertyTab} onValueChange={setPropertyTab}>
-      <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="elemento">Elemento</TabsTrigger><TabsTrigger value="secao">Seção</TabsTrigger><TabsTrigger value="tema">Tema</TabsTrigger></TabsList>
-      <TabsContent value="elemento" className="mt-5">{selectedElement ? <ElementEditor key={selectedElement.id} el={selectedElement} settings={quiz.settings} allSections={sections} userId={user?.id??quiz.user_id} onContentChange={p=>updateElement(selectedElement.id,"content",p)} onSettingsChange={p=>updateElement(selectedElement.id,"settings",p)}/> : <p className="py-6 text-center text-sm text-muted-foreground">Nenhum elemento selecionado</p>}</TabsContent>
-      <TabsContent value="secao" className="mt-5">{selected&&<SectionProperties section={selected} onChange={p=>updateSection(selected.id,p)} onSelect={selectElement} onAction={elementAction} onAdd={addElement}/>}</TabsContent>
-      <TabsContent value="tema" className="mt-5"><ThemePanel settings={quiz.settings} onChange={updateSettings}/></TabsContent>
+      <TabsList className="grid w-full grid-cols-3">
+        <TabsTrigger value="elemento">Elemento</TabsTrigger>
+        <TabsTrigger value="secao">Seção</TabsTrigger>
+        <TabsTrigger value="tema">Tema</TabsTrigger>
+      </TabsList>
+      <TabsContent value="elemento" className="mt-5">
+        {selectedElement ? (
+          <ElementEditor
+            key={selectedElement.id}
+            el={selectedElement}
+            settings={quiz.settings}
+            allSections={sections}
+            userId={user?.id ?? quiz.user_id}
+            onContentChange={(p) => updateElement(selectedElement.id, "content", p)}
+            onSettingsChange={(p) => updateElement(selectedElement.id, "settings", p)}
+          />
+        ) : (
+          <p className="py-6 text-center text-sm text-muted-foreground">
+            Nenhum elemento selecionado
+          </p>
+        )}
+      </TabsContent>
+      <TabsContent value="secao" className="mt-5">
+        {selected && (
+          <SectionProperties
+            section={selected}
+            onChange={(p) => updateSection(selected.id, p)}
+            onSelect={selectElement}
+            onAction={elementAction}
+            onAdd={addElement}
+          />
+        )}
+      </TabsContent>
+      <TabsContent value="tema" className="mt-5">
+        <ThemePanel settings={quiz.settings} onChange={updateSettings} />
+      </TabsContent>
     </Tabs>
   );
 
@@ -433,10 +485,10 @@ function EditorContent() {
         selectedElementId={selectedElementId}
         onSelectElement={selectElement}
         onElementContentChange={(eid, p) => updateElement(eid, "content", p)}
-        onElementSettingsChange={(eid,p)=>updateElement(eid,"settings",p)}
+        onElementSettingsChange={(eid, p) => updateElement(eid, "settings", p)}
         onElementAction={elementAction}
         onAddElement={addElement}
-        onNavigate={index=>setSelectedId(sections[index]?.id??null)}
+        onNavigate={(index) => setSelectedId(sections[index]?.id ?? null)}
       />
     </div>
   );
@@ -526,7 +578,9 @@ function EditorContent() {
                 // Revalida o endereço no banco antes de colocar o link no ar.
                 const free = await isSlugAvailable(quiz.slug, quiz.id).catch(() => false);
                 if (!free) {
-                  toast.error("Este endereço já está sendo utilizado. Escolha outro para publicar.");
+                  toast.error(
+                    "Este endereço já está sendo utilizado. Escolha outro para publicar.",
+                  );
                   return;
                 }
               }
@@ -575,9 +629,8 @@ function EditorContent() {
         </div>
       )}
 
-
       {/* Mobile / tablet: abas */}
-      <div className="lg:hidden">
+      <div className="xl:hidden">
         <Tabs value={mobilePanel} onValueChange={(v) => setMobilePanel(v as typeof mobilePanel)}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="secoes">Seções</TabsTrigger>
@@ -600,13 +653,11 @@ function EditorContent() {
       </div>
 
       {/* Desktop: três colunas */}
-      <div className="hidden gap-4 lg:grid lg:grid-cols-[210px_minmax(0,1fr)_280px] xl:grid-cols-[230px_minmax(0,1fr)_300px]">
+      <div className="hidden gap-4 xl:grid xl:grid-cols-[210px_minmax(0,1fr)_280px] 2xl:grid-cols-[230px_minmax(0,1fr)_300px]">
         <aside className="max-h-[80vh] overflow-y-auto border-r border-border bg-card/30 p-3">
           {sectionsPanel}
         </aside>
-        <section className="min-w-0 bg-background/40 p-3">
-          {previewPanel}
-        </section>
+        <section className="min-w-0 bg-background/40 p-3">{previewPanel}</section>
         <aside className="max-h-[80vh] overflow-y-auto border-r border-border bg-card/30 p-3">
           {propsPanel}
         </aside>

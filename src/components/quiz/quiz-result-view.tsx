@@ -71,7 +71,14 @@ function CircleChart({ percent, settings }: { percent: number; settings: QuizSet
             <stop offset="100%" stopColor={settings.colors.secondary} />
           </linearGradient>
         </defs>
-        <circle cx="60" cy="60" r={r} fill="none" stroke={`${settings.colors.text}1A`} strokeWidth="10" />
+        <circle
+          cx="60"
+          cy="60"
+          r={r}
+          fill="none"
+          stroke={`${settings.colors.text}1A`}
+          strokeWidth="10"
+        />
         <circle
           cx="60"
           cy="60"
@@ -133,7 +140,13 @@ export function Confetti({ colors }: { colors: string[] }) {
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [colors]);
-  return <canvas ref={ref} aria-hidden className="pointer-events-none absolute inset-0 z-10 h-full w-full" />;
+  return (
+    <canvas
+      ref={ref}
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-10 h-full w-full"
+    />
+  );
 }
 
 export function ResultBlockView({
@@ -169,13 +182,20 @@ export function ResultBlockView({
     : range?.title?.trim() || String(ct.title ?? "").trim() || DEFAULT_RESULT_TITLE;
   const description = editor
     ? String(ct.description ?? "")
-    : range?.description?.trim() || String(ct.description ?? "").trim() || (range ? "" : DEFAULT_RESULT_DESCRIPTION);
+    : range?.description?.trim() ||
+      String(ct.description ?? "").trim() ||
+      (range ? "" : DEFAULT_RESULT_DESCRIPTION);
   const image = (editor ? "" : range?.image?.trim()) || String(ct.image ?? "").trim();
   const subtitle = String(ct.subtitle ?? "").trim();
   const chart = pct === null ? "none" : String(st.chart ?? "bar");
   const suffix = String(st.scoreSuffix ?? "pontos");
 
-  const part = (key: ResultTextPart, text: string, field?: "title" | "subtitle" | "description", extra?: React.CSSProperties) => {
+  const part = (
+    key: ResultTextPart,
+    text: string,
+    field?: "title" | "subtitle" | "description",
+    extra?: React.CSSProperties,
+  ) => {
     const ps = resultPartSettings(st, key);
     const def = RESULT_TEXT_PARTS[key];
     const isSel = editor?.selectedPart === key;
@@ -184,17 +204,11 @@ export function ResultBlockView({
       <div
         key={key}
         data-result-part={key}
-        className={cn(
-          "w-full min-w-0 rounded-md",
-          animationClass(ps),
-
-
-        )}
+        className={cn("w-full min-w-0 rounded-md", animationClass(ps))}
         style={{ ...animationStyle(ps), marginBottom: Number(ps.spacing) || 0 }}
         onClick={
           editor
             ? (e) => {
-
                 if (!isSel) editor.onSelectPart(key);
               }
             : undefined
@@ -211,19 +225,38 @@ export function ResultBlockView({
       </div>
     );
   };
-  const opacity = (key: ResultTextPart, o: number) => (resultPartSettings(st, key).color ? {} : { opacity: o });
+  const opacity = (key: ResultTextPart, o: number) =>
+    resultPartSettings(st, key).color ? {} : { opacity: o };
 
   return (
     <div className="q-result flex w-full flex-col items-center gap-4 text-center">
-      {(title || editor) && part("title", title || (editor ? DEFAULT_RESULT_TITLE : ""), "title", { lineHeight: resultPartSettings(st, "title").lineHeight ? undefined : 1.2 })}
-      {(subtitle || editor) && part("subtitle", subtitle || (editor ? "" : ""), "subtitle", opacity("subtitle", 0.75))}
-      {image && <img src={image} alt="" loading="lazy" className="max-h-64 w-full rounded-2xl object-cover" />}
-      {st.showScore !== false && hasScoring &&
-        part("score", `${score} ${suffix}`, undefined, resultPartSettings(st, "score").color ? {} : { color: settings.colors.secondary })}
+      {(title || editor) &&
+        part("title", title || (editor ? DEFAULT_RESULT_TITLE : ""), "title", {
+          lineHeight: resultPartSettings(st, "title").lineHeight ? undefined : 1.2,
+        })}
+      {(subtitle || editor) &&
+        part("subtitle", subtitle || (editor ? "" : ""), "subtitle", opacity("subtitle", 0.75))}
+      {image && (
+        <img
+          src={image}
+          alt=""
+          loading="lazy"
+          className="max-h-64 w-full rounded-2xl object-cover"
+        />
+      )}
+      {st.showScore !== false &&
+        hasScoring &&
+        part(
+          "score",
+          `${score} ${suffix}`,
+          undefined,
+          resultPartSettings(st, "score").color ? {} : { color: settings.colors.secondary },
+        )}
       {chart === "circle" && pct !== null && <CircleChart percent={pct} settings={settings} />}
       {chart === "bar" && pct !== null && <BarChart percent={pct} settings={settings} />}
       {st.showPercent !== false && pct !== null && chart !== "circle" && part("percent", `${pct}%`)}
-      {(description || editor) && part("description", description, "description", opacity("description", 0.9))}
+      {(description || editor) &&
+        part("description", description, "description", opacity("description", 0.9))}
     </div>
   );
 }

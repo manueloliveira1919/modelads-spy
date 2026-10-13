@@ -66,10 +66,10 @@ export const DEFAULT_QUIZ_SETTINGS: QuizSettings = {
 
 export const NEW_QUIZ_SETTINGS: QuizSettings = {
   ...DEFAULT_QUIZ_SETTINGS,
-  background: {...DEFAULT_QUIZ_SETTINGS.background, type: "gradient"},
-  button: {...DEFAULT_QUIZ_SETTINGS.button, radius: 24, height: 56},
-  layout: {...DEFAULT_QUIZ_SETTINGS.layout, spacing: 20},
-  progress: {...DEFAULT_QUIZ_SETTINGS.progress, thickness: 5},
+  background: { ...DEFAULT_QUIZ_SETTINGS.background, type: "gradient" },
+  button: { ...DEFAULT_QUIZ_SETTINGS.button, radius: 24, height: 56 },
+  layout: { ...DEFAULT_QUIZ_SETTINGS.layout, spacing: 20 },
+  progress: { ...DEFAULT_QUIZ_SETTINGS.progress, thickness: 5 },
 };
 
 export interface TextContent {
@@ -107,7 +107,6 @@ export interface FieldsContent {
     required?: boolean;
   }[];
 }
-
 
 export interface QuizElement {
   id: string;
@@ -227,7 +226,6 @@ export function makeElement(
           { key: "name", label: "Nome", enabled: true, required: true },
           { key: "email", label: "E-mail", enabled: true, required: true },
           { key: "whatsapp", label: "WhatsApp", enabled: true, required: true },
-
         ],
       },
       settings: {},
@@ -240,7 +238,13 @@ export function makeElement(
         image: "",
         ranges: [],
       },
-      settings: { showScore: true, showPercent: true, chart: "bar", confetti: true, scoreSuffix: "pontos" },
+      settings: {
+        showScore: true,
+        showPercent: true,
+        chart: "bar",
+        confetti: true,
+        scoreSuffix: "pontos",
+      },
     },
   };
   const d = base[type];
