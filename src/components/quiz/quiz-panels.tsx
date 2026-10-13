@@ -6,6 +6,8 @@ import {
   ArrowDown,
   ArrowUp,
   Bold,
+  Italic,
+  Underline,
   Copy,
   Plus,
   Trash2,
@@ -41,7 +43,9 @@ import {
   type OptionItem,
   type FieldsContent,
 } from "@/lib/quiz-types";
-import { QUIZ_FONTS } from "@/lib/quiz-visual";
+import { QUIZ_FONTS, loadQuizFont } from "@/lib/quiz-visual";
+import { clearRunProperty } from "@/lib/quiz-rich-text";
+import { useQuizRichText, type RichCommand } from "./quiz-rich-toolbar";
 import { QUIZ_THEMES, applyQuizTheme, readableQuizText } from "@/lib/quiz-themes";
 import { uploadPageImage } from "@/lib/sales-page-api";
 export const ELEMENT_LABEL: Record<ElementType, string> = {
@@ -135,6 +139,7 @@ function ColorField({
             size="icon"
             aria-label={`Usar cor ${c}`}
             onClick={() => onChange(c)}
+            onMouseDown={e => e.preventDefault()}
             style={{ backgroundColor: c }}
           />
         ))}
@@ -241,10 +246,19 @@ export function ElementEditor({
     ct = el.content;
   const [ruleErrors, setRuleErrors] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
+  const rich = useQuizRichText();
   const palette = Object.values(settings.colors);
   const setSt = onSettingsChange,
     setCt = onContentChange;
   const options = (ct.options ?? []) as (OptionItem & { emoji?: string })[];
+  const format = async (command: RichCommand, value?: string) => {
+    if (await rich.apply(command, value, el.id)) return;
+    if (command === "font") { await loadQuizFont(value || ""); setCt(clearRunProperty(ct, "font")); setSt({ fontFamily: value }); }
+    if (command === "color") { setCt(clearRunProperty(ct, "color")); setSt({ color: value }); }
+    if (command === "b") { setCt(clearRunProperty(ct, "b")); setSt({ weight: Number(st.weight) >= 700 ? 400 : 700 }); }
+    if (command === "i") { setCt(clearRunProperty(ct, "i")); setSt({ fontStyle: st.fontStyle === "italic" ? "normal" : "italic" }); }
+    if (command === "u") { setCt(clearRunProperty(ct, "u")); setSt({ textDecoration: st.textDecoration === "underline" ? "none" : "underline" }); }
+  };
   const upload = async (file: File) => {
     setUploading(true);
     try {
@@ -258,8 +272,13 @@ export function ElementEditor({
   return (
     <div className="space-y-5">
       <h3 className="text-sm font-semibold">{ELEMENT_LABEL[el.type]}</h3>
+      {["text", "button", "options", "result"].includes(el.type) && <div data-rich-controls className="space-y-4">
+        <Field label="Fonte"><select className="h-11 w-full rounded-md border border-border px-3 text-sm" aria-label="Fonte do elemento" value={String(st.fontFamily || settings.font)} onChange={e => void format("font", e.target.value)}>{QUIZ_FONTS.map(f => <option key={f}>{f}</option>)}</select></Field>
+        <ColorField label="Cor do texto" value={String(st.color || "")} fallback={el.type === "button" ? settings.colors.buttonText : settings.colors.text} palette={palette} onChange={v => void format("color", v)} />
+        <div className="flex gap-2" onMouseDown={e => e.preventDefault()}>{([["b", Bold, "Negrito"], ["i", Italic, "Itálico"], ["u", Underline, "Sublinhado"]] as const).map(([cmd, Icon, label]) => <Button key={cmd} variant="outline" size="icon" aria-label={label} onClick={() => void format(cmd)}><Icon className="h-4 w-4" /></Button>)}</div>
+      </div>}
       {el.type === "text" && (
-        <>
+        <details className="q-panel-details"><summary>Mais opções</summary><div className="space-y-4 pt-4">
           <Chips
             label="Tamanho"
             value={Number(st.size) || 17}
@@ -277,26 +296,10 @@ export function ElementEditor({
               onChange={(align) => setSt({ align })}
             />
           </Field>
-          <ColorField
-            label="Cor"
-            value={String(st.color || "")}
-            fallback={settings.colors.text}
-            palette={palette}
-            onChange={(color) => setSt({ color })}
-          />
-          <Button
-            aria-label="Negrito"
-            aria-pressed={Number(st.weight) >= 700}
-            variant={Number(st.weight) >= 700 ? "default" : "outline"}
-            size="icon"
-            onClick={() => setSt({ weight: Number(st.weight) >= 700 ? 400 : 700 })}
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-        </>
+        </div></details>
       )}
       {el.type === "button" && (
-        <>
+        <details className="q-panel-details"><summary>Mais opções</summary><div className="space-y-4 pt-4">
           <SelectField
             label="Ação"
             value={String(st.cta || "none")}
@@ -348,7 +351,7 @@ export function ElementEditor({
             palette={palette}
             onChange={(bg) => setSt({ bg })}
           />
-        </>
+        </div></details>
       )}
       {el.type === "image" && (
         <>
@@ -399,7 +402,7 @@ export function ElementEditor({
         </Field>
       )}
       {el.type === "options" && (
-        <>
+        <details className="q-panel-details"><summary>Mais opções</summary><div className="space-y-4 pt-4">
           <Chips
             label="Seleção"
             value={String(st.selection || "single")}
@@ -420,7 +423,7 @@ export function ElementEditor({
             return (
               <div key={o.id} className="space-y-2 border-t border-border pt-3">
                 <Field label={`Opção ${i + 1}`}>
-                  <Input value={o.label} onChange={(e) => update({ label: e.target.value })} />
+                  <Input value={o.label} onChange={(e) => update({ label: e.target.value, text: e.target.value, runs: [] })} />
                 </Field>
                 <div className="grid grid-cols-[64px_1fr] gap-2">
                   <Input
@@ -485,7 +488,7 @@ export function ElementEditor({
               ))}
             </div>
           </details>
-        </>
+        </div></details>
       )}
       {el.type === "fields" &&
         ((ct.fields ?? []) as FieldsContent["fields"]).map((f) => {
