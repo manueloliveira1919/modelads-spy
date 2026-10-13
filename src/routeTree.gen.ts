@@ -48,6 +48,7 @@ import { Route as AdminPalavrasChaveRouteImport } from './routes/admin.palavras-
 import { Route as AdminQualidadeRouteImport } from './routes/admin.qualidade'
 import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
 import { Route as CriadorPaginasIndexRouteImport } from './routes/criador-paginas.index'
+import { Route as CriadorPaginasIdRouteImport } from './routes/criador-paginas.$id'
 import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
 import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
@@ -255,6 +256,11 @@ const CriadorPaginasIndexRoute = CriadorPaginasIndexRouteImport.update({
   path: '/',
   getParentRoute: () => CriadorPaginasRoute,
 } as any)
+const CriadorPaginasIdRoute = CriadorPaginasIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CriadorPaginasRoute,
+} as any)
 const ModelarQuizIndexRoute = ModelarQuizIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -354,6 +360,7 @@ export interface FileRoutesByFullPath {
   '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
+  '/criador-paginas/$id': typeof CriadorPaginasIdRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/p/$slug': typeof PSlugRoute
@@ -403,6 +410,7 @@ export interface FileRoutesByTo {
   '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
+  '/criador-paginas/$id': typeof CriadorPaginasIdRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/p/$slug': typeof PSlugRoute
@@ -456,6 +464,7 @@ export interface FileRoutesById {
   '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
+  '/criador-paginas/$id': typeof CriadorPaginasIdRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/p/$slug': typeof PSlugRoute
@@ -510,6 +519,7 @@ export interface FileRouteTypes {
     | '/admin/palavras-chave'
     | '/admin/qualidade'
     | '/admin/suporte'
+    | '/criador-paginas/$id'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
     | '/p/$slug'
@@ -559,6 +569,7 @@ export interface FileRouteTypes {
     | '/admin/palavras-chave'
     | '/admin/qualidade'
     | '/admin/suporte'
+    | '/criador-paginas/$id'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
     | '/p/$slug'
@@ -611,6 +622,7 @@ export interface FileRouteTypes {
     | '/admin/palavras-chave'
     | '/admin/qualidade'
     | '/admin/suporte'
+    | '/criador-paginas/$id'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
     | '/p/$slug'
@@ -940,6 +952,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CriadorPaginasIndexRouteImport
       parentRoute: typeof CriadorPaginasRoute
     }
+    '/criador-paginas/$id': {
+      id: '/criador-paginas/$id'
+      path: '/$id'
+      fullPath: '/criador-paginas/$id'
+      preLoaderRoute: typeof CriadorPaginasIdRouteImport
+      parentRoute: typeof CriadorPaginasRoute
+    }
     '/modelar-quiz/': {
       id: '/modelar-quiz/'
       path: '/'
@@ -1049,10 +1068,12 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface CriadorPaginasRouteChildren {
+  CriadorPaginasIdRoute: typeof CriadorPaginasIdRoute
   CriadorPaginasIndexRoute: typeof CriadorPaginasIndexRoute
 }
 
 const CriadorPaginasRouteChildren: CriadorPaginasRouteChildren = {
+  CriadorPaginasIdRoute: CriadorPaginasIdRoute,
   CriadorPaginasIndexRoute: CriadorPaginasIndexRoute,
 }
 
