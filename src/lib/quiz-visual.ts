@@ -134,7 +134,7 @@ export async function loadQuizFont(font: string): Promise<void> {
   if (!(QUIZ_FONTS as readonly string[]).includes(font) || typeof document === "undefined") return;
   // Wait for the stable Google stylesheet before requesting its actual font face.
   const links = Array.from(document.querySelectorAll<HTMLLinkElement>('link[href*="fonts.googleapis.com/css2"]'));
-  await Promise.all(links.filter(link => !link.sheet).map(link => new Promise<void>(resolve => {
+  await Promise.all(links.filter(link => !link.sheet && !links.some(other => other.href === link.href && other.sheet)).map(link => new Promise<void>(resolve => {
     const done = () => { clearTimeout(timer); resolve(); };
     const timer = setTimeout(done, 8000);
     link.addEventListener("load", done, { once: true });

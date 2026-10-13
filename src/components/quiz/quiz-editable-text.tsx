@@ -27,7 +27,7 @@ export function EditableText({
   useLayoutEffect(() => {
     const node = ref.current;
     if (!node || document.activeElement === node) return;
-    node.replaceChildren(...usable.map(r => { const span = document.createElement("span"); span.textContent = r.t; Object.assign(span.style, runStyle(r)); return span; }));
+    node.replaceChildren(...usable.map(r => { const span = document.createElement("span"); span.textContent = r.t; for (const [key, val] of Object.entries(runStyle(r))) if (val !== undefined) (span.style as unknown as Record<string, string>)[key] = String(val); return span; }));
   }, [value, JSON.stringify(runs), editable]);
   if (!editable)
     return (

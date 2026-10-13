@@ -168,7 +168,7 @@ function useMotionProgress(duration: number, delay: number, enabled: boolean, in
 function Indicator({ item, target, index, animate, editable, onChange, onRemove }: { item: ResultItem; target: number; index: number; animate: boolean; editable: boolean; onChange: (label: string) => void; onRemove: () => void }) {
   const p = useMotionProgress(800, index * 450, animate, animate ? 0 : 1);
   const value = Math.round(target * p);
-  return <div className="q-result-indicator"><div className="flex items-center gap-2"><EditableText value={item.label} editable={editable} onChange={onChange} className="min-w-0 flex-1 text-left" /><strong>{value}%</strong>{editable && <Button variant="ghost" size="icon" aria-label="Remover indicador" onClick={onRemove}><X className="h-3 w-3" /></Button>}</div><BarChart percent={value} settings={{ colors: {} } as QuizSettings} /></div>;
+  return <div className="q-result-indicator"><div className="flex items-center gap-2"><EditableText value={item.label} editable={editable} onChange={onChange} className="min-w-0 flex-1 text-left" /><strong>{value}%</strong>{editable && <Button variant="ghost" size="icon" aria-label="Remover indicador" onClick={onRemove}><X className="h-3 w-3" /></Button>}</div><div className="q-indicator-track"><span style={{ width: `${value}%` }} /></div></div>;
 }
 export function ResultBlockView({ el, settings, score, percent, hasScoring, editor, animationKey = 0, onReady }: {
   el: QuizElement; settings: QuizSettings; score: number; percent: number | null; hasScoring: boolean; editor?: ResultEditorHooks; animationKey?: number; onReady?: () => void;
