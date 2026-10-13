@@ -761,7 +761,7 @@ function ResultEditor({
   };
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3">
+      <div>
         <SelectField
           label="Gráfico"
           value={String(st.chart ?? "bar")}
@@ -815,24 +815,27 @@ function ResultEditor({
               <div key={r.id} className="space-y-2 rounded-lg border border-border p-2">
                 <div className="flex items-center gap-1">
                   <span className="flex-1 text-xs font-medium">Faixa {i + 1}</span>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     aria-label="Mover faixa para cima"
                     onClick={() => move(i, -1)}
                     className="rounded p-1 text-muted-foreground hover:text-foreground"
                   >
-                    ↑
-                  </button>
-                  <button
-                    type="button"
+                    <ArrowUp className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     aria-label="Mover faixa para baixo"
                     onClick={() => move(i, 1)}
                     className="rounded p-1 text-muted-foreground hover:text-foreground"
                   >
-                    ↓
-                  </button>
-                  <button
-                    type="button"
+                    <ArrowDown className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     aria-label="Duplicar faixa"
                     onClick={() => {
                       const n = [...ranges];
@@ -842,15 +845,16 @@ function ResultEditor({
                     className="rounded p-1 text-muted-foreground hover:text-foreground"
                   >
                     <Copy className="h-3.5 w-3.5" />
-                  </button>
-                  <button
-                    type="button"
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     aria-label="Excluir faixa"
                     onClick={() => setRanges(ranges.filter((x) => x.id !== r.id))}
                     className="rounded p-1 text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  </Button>
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   <Input

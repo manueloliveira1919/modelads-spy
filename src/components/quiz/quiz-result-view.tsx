@@ -241,7 +241,7 @@ export function ResultBlockView({
           src={image}
           alt=""
           loading="lazy"
-          className="max-h-64 w-full rounded-2xl object-cover"
+          className="q-media max-h-64 w-full rounded-2xl object-cover"
         />
       )}
       {st.showScore !== false &&
