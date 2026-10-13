@@ -48,6 +48,7 @@ import { Route as AdminQualidadeRouteImport } from './routes/admin.qualidade'
 import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
 import { Route as CriadorPaginasIndexRouteImport } from './routes/criador-paginas.index'
 import { Route as CriadorPaginasIdRouteImport } from './routes/criador-paginas.$id'
+import { Route as CriadorPaginasGerarComIaRouteImport } from './routes/criador-paginas.gerar-com-ia'
 import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
 import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
@@ -255,6 +256,12 @@ const CriadorPaginasIdRoute = CriadorPaginasIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => CriadorPaginasRoute,
 } as any)
+const CriadorPaginasGerarComIaRoute =
+  CriadorPaginasGerarComIaRouteImport.update({
+    id: '/gerar-com-ia',
+    path: '/gerar-com-ia',
+    getParentRoute: () => CriadorPaginasRoute,
+  } as any)
 const ModelarQuizIndexRoute = ModelarQuizIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -354,6 +361,7 @@ export interface FileRoutesByFullPath {
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
   '/criador-paginas/$id': typeof CriadorPaginasIdRoute
+  '/criador-paginas/gerar-com-ia': typeof CriadorPaginasGerarComIaRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/p/$slug': typeof PSlugRoute
@@ -403,6 +411,7 @@ export interface FileRoutesByTo {
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
   '/criador-paginas/$id': typeof CriadorPaginasIdRoute
+  '/criador-paginas/gerar-com-ia': typeof CriadorPaginasGerarComIaRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/p/$slug': typeof PSlugRoute
@@ -456,6 +465,7 @@ export interface FileRoutesById {
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
   '/criador-paginas/$id': typeof CriadorPaginasIdRoute
+  '/criador-paginas/gerar-com-ia': typeof CriadorPaginasGerarComIaRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/p/$slug': typeof PSlugRoute
@@ -510,6 +520,7 @@ export interface FileRouteTypes {
     | '/admin/qualidade'
     | '/admin/suporte'
     | '/criador-paginas/$id'
+    | '/criador-paginas/gerar-com-ia'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
     | '/p/$slug'
@@ -559,6 +570,7 @@ export interface FileRouteTypes {
     | '/admin/qualidade'
     | '/admin/suporte'
     | '/criador-paginas/$id'
+    | '/criador-paginas/gerar-com-ia'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
     | '/p/$slug'
@@ -611,6 +623,7 @@ export interface FileRouteTypes {
     | '/admin/qualidade'
     | '/admin/suporte'
     | '/criador-paginas/$id'
+    | '/criador-paginas/gerar-com-ia'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
     | '/p/$slug'
@@ -939,6 +952,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CriadorPaginasIdRouteImport
       parentRoute: typeof CriadorPaginasRoute
     }
+    '/criador-paginas/gerar-com-ia': {
+      id: '/criador-paginas/gerar-com-ia'
+      path: '/gerar-com-ia'
+      fullPath: '/criador-paginas/gerar-com-ia'
+      preLoaderRoute: typeof CriadorPaginasGerarComIaRouteImport
+      parentRoute: typeof CriadorPaginasRoute
+    }
     '/modelar-quiz/': {
       id: '/modelar-quiz/'
       path: '/'
@@ -1049,11 +1069,13 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface CriadorPaginasRouteChildren {
   CriadorPaginasIdRoute: typeof CriadorPaginasIdRoute
+  CriadorPaginasGerarComIaRoute: typeof CriadorPaginasGerarComIaRoute
   CriadorPaginasIndexRoute: typeof CriadorPaginasIndexRoute
 }
 
 const CriadorPaginasRouteChildren: CriadorPaginasRouteChildren = {
   CriadorPaginasIdRoute: CriadorPaginasIdRoute,
+  CriadorPaginasGerarComIaRoute: CriadorPaginasGerarComIaRoute,
   CriadorPaginasIndexRoute: CriadorPaginasIndexRoute,
 }
 

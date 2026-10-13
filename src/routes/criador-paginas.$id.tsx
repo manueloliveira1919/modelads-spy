@@ -31,6 +31,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
+import { DEFAULT_PAGE_BACKGROUND, newPageButton, sectionButtons, salesPageUrl } from "@/lib/sales-page-layout";
 import { cn } from "@/lib/utils";
 import { PageRenderer } from "@/components/sales-page/page-renderer";
 import { getPage, updatePage, uploadPageImage } from "@/lib/sales-page-api";
@@ -46,6 +47,7 @@ import {
   type PageSettings,
   type SalesPage,
   type SectionStyle,
+  type PageButton,
 } from "@/lib/sales-page-types";
 
 export const Route = createFileRoute("/criador-paginas/$id")({
@@ -261,7 +263,7 @@ function Editor({ initial }: { initial: SalesPage }) {
     }
   };
 
-  const publicUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/p/${meta.slug}`;
+  const publicUrl = salesPageUrl(meta.slug);
   const togglePublish = async () => {
     await updatePage(initial.id, { sections: snap.sections, settings: snap.settings });
     const status = meta.status === "published" ? "draft" : "published";
@@ -302,7 +304,7 @@ function Editor({ initial }: { initial: SalesPage }) {
           </div>
           <Button size="sm" variant="outline" onClick={exportHtml}><Download className="mr-1 h-3.5 w-3.5" /> HTML</Button>
           {meta.status === "published" && (
-            <Button size="sm" variant="outline" onClick={() => (navigator.clipboard.writeText(publicUrl), toast.success("Link copiado."))}><LinkIcon className="mr-1 h-3.5 w-3.5" /> Link</Button>
+            <Button size="sm" variant="outline" onClick={() => (navigator.clipboard.writeText(publicUrl), toast.success("Link copiado."))}><LinkIcon className="mr-1 h-3.5 w-3.5" /> Copiar link</Button>
           )}
           <Button size="sm" onClick={togglePublish} className={meta.status === "published" ? "" : "bg-gradient-brand text-white"} variant={meta.status === "published" ? "secondary" : "default"}>
             {meta.status === "published" ? "Despublicar" : "Publicar"}
@@ -391,6 +393,7 @@ function Editor({ initial }: { initial: SalesPage }) {
               selectedId={selectedId}
               onSelect={(id) => select(id)}
               onText={(sid, path, v) => setContent(sid, path, v)}
+              onOrder={(sid, elementOrder) => updateSection(sid, s => ({ ...s, elementOrder }))}
             />
           </div>
         </main>
@@ -406,13 +409,14 @@ function Editor({ initial }: { initial: SalesPage }) {
               <SectionPanel
                 key={selected.id}
                 section={selected}
-                userId={user!.id}
+                userId={user?.id ?? ""}
                 onContent={(p, v) => setContent(selected.id, p, v)}
                 onStyle={(p) => setStyle(selected.id, p)}
+                onVisibility={(hidden) => updateSection(selected.id, s => ({ ...s, hidden }))}
                 onItems={(items) => updateSection(selected.id, (s) => ({ ...s, content: { ...s.content, items } }))}
               />
             ) : (
-              <PagePanel settings={snap.settings} set={setSettings} userId={user!.id} slug={meta.slug} onSlug={(slug) => saveMeta({ slug })} />
+              <PagePanel settings={snap.settings} set={setSettings} userId={user?.id ?? ""} slug={meta.slug} onSlug={(slug) => saveMeta({ slug })} />
             )}
           </div>
         </aside>
@@ -550,13 +554,18 @@ function SectionPanel({
   onContent,
   onStyle,
   onItems,
+  onVisibility,
 }: {
   section: PageSection;
   userId: string;
   onContent: (path: string, v: unknown) => void;
   onStyle: (p: Partial<SectionStyle>) => void;
   onItems: (items: Record<string, string>[]) => void;
+  onVisibility: (hidden: boolean) => void;
 }) {
+  const [subtab, setSubtab] = useState<"content" | "font" | "color" | "layout">("content");
+  const buttons = sectionButtons(section);
+  const updateButtons = (next: PageButton[]) => onContent("buttons", next);
   const def = BLOCK_MAP[section.type];
   const st = section.style ?? {};
   const items = (section.content.items ?? []) as Record<string, string>[];
@@ -566,44 +575,60 @@ function SectionPanel({
         <span className="text-xl">{def.emoji}</span>
         <div>
           <div className="text-sm font-bold">{def.label}</div>
-          <div className="text-[11px] text-muted-foreground">Dica: clique nos textos do preview para editar.</div>
+
         </div>
       </div>
 
+      <div className="grid grid-cols-4 gap-1 border-b border-border pb-2">
+        {([['content', 'Conteúdo'], ['font', 'Fonte'], ['color', 'Cor'], ['layout', 'Layout']] as const).map(([key, label]) => <Button key={key} size="sm" variant={subtab === key ? 'secondary' : 'ghost'} className="px-1 text-xs" onClick={() => setSubtab(key)}>{label}</Button>)}
+      </div>
+      {subtab === "content" && <>
       <Group title="Conteúdo">
-        {def.fields.map((f) => (
+        {def.fields.filter(f => f.key !== "buttonText" && f.key !== "buttonUrl").map((f) => (
           <Field key={f.key} def={f} value={section.content[f.key]} onChange={(v) => onContent(f.key, v)} userId={userId} />
         ))}
       </Group>
 
+      {def.hasButton && <Group title="Botões">
+        {buttons.map((button, i) => <div key={button.id} className="space-y-2 rounded-md border border-border p-3">
+          <div className="flex items-center justify-between"><span className="text-xs font-semibold">Botão {i + 1}</span><Button variant="ghost" size="icon" title="Remover botão" aria-label={`Remover botão ${i + 1}`} onClick={() => updateButtons(buttons.filter(b => b.id !== button.id))}><Trash2 size={14}/></Button></div>
+          <Field def={{ key: "text", label: "Texto do botão", kind: "text" }} value={button.text} userId={userId} onChange={text => updateButtons(buttons.map(b => b.id === button.id ? { ...b, text } : b))}/>
+          <Field def={{ key: "url", label: "Link do botão", kind: "url" }} value={button.url} userId={userId} onChange={url => updateButtons(buttons.map(b => b.id === button.id ? { ...b, url } : b))}/>
+          <Label className="text-xs">Estilo do botão</Label><select aria-label={`Estilo do botão ${i + 1}`} value={button.variant ?? "solid"} onChange={e => updateButtons(buttons.map(b => b.id === button.id ? { ...b, variant: e.target.value as PageButton['variant'] } : b))} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"><option value="solid">Preenchido</option><option value="outline">Contorno</option><option value="text">Somente texto</option></select>
+          <NumberField label="Cantos do botão" value={button.radius ?? 12} min={0} max={40} onChange={radius => updateButtons(buttons.map(b => b.id === button.id ? { ...b, radius } : b))}/>
+        </div>)}
+        <Button variant="outline" size="sm" className="w-full" onClick={() => updateButtons([...buttons, newPageButton()])}><Plus size={14} className="mr-2"/>Adicionar botão</Button>
+      </Group>}
       {def.items && (
         <Group title={`${def.items.label}s`}>
           {items.map((it, i) => (
             <div key={i} className="space-y-2 rounded-lg border border-border bg-background/50 p-2.5">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-semibold">{def.items!.label} {i + 1}</span>
+                <span className="text-xs font-semibold">{def.items?.label} {i + 1}</span>
                 <div className="flex">
                   <IconBtn title="Subir" onClick={() => { if (i > 0) { const a = [...items]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; onItems(a); } }}><ArrowUp className="h-3 w-3" /></IconBtn>
                   <IconBtn title="Duplicar" onClick={() => { const a = [...items]; a.splice(i + 1, 0, { ...it }); onItems(a); }}><Copy className="h-3 w-3" /></IconBtn>
                   <IconBtn title="Remover" onClick={() => onItems(items.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></IconBtn>
                 </div>
               </div>
-              {def.items!.fields.map((f) => (
+              {def.items?.fields.map((f) => (
                 <Field key={f.key} def={f} value={it[f.key]} onChange={(v) => onContent(`items.${i}.${f.key}`, v)} userId={userId} />
               ))}
             </div>
           ))}
-          <Button size="sm" variant="outline" className="w-full" onClick={() => onItems([...items, { ...def.items!.blank }])}>
+          <Button size="sm" variant="outline" className="w-full" onClick={() => onItems([...items, { ...def.items?.blank }])}>
             <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar {def.items.label.toLowerCase()}
           </Button>
         </Group>
       )}
 
-      <Group title="Texto">
+      </>}
+      {subtab === "font" && <Group title="Fonte">
         <div className="space-y-1">
           <Label className="text-xs">Fonte</Label>
           <FontSelect value={st.font} onChange={(v) => onStyle({ font: v })} allowDefault />
         </div>
+        <div className="space-y-1"><Label className="text-xs">Peso da fonte</Label><select aria-label="Peso da fonte" value={st.weight ?? 400} onChange={e => onStyle({ weight: Number(e.target.value) })} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm">{[400,600,700,800,900].map(w => <option key={w} value={w}>{w}</option>)}</select></div>
         <NumberField label="Tamanho do título" value={st.titleSize ?? (section.type === "hero" ? 48 : 34)} min={18} max={80} onChange={(v) => onStyle({ titleSize: v })} />
         <NumberField label="Tamanho do texto" value={st.textSize ?? 17} min={12} max={26} onChange={(v) => onStyle({ textSize: v })} />
         <div className="space-y-1">
@@ -616,9 +641,9 @@ function SectionPanel({
             ))}
           </div>
         </div>
-      </Group>
+      </Group>}
 
-      <Group title="Cores e fundo">
+      {subtab === "color" && <Group title="Cor">
         <ColorField label="Fundo da seção" value={st.bg} onChange={(v) => onStyle({ bg: v })} />
         <div className="flex gap-1.5">
           {(["bg", "surface", "primary"] as const).map((t) => (
@@ -629,17 +654,22 @@ function SectionPanel({
         </div>
         <ColorField label="Cor do texto" value={st.color} onChange={(v) => onStyle({ color: v })} />
         <ColorField label="Cor de destaque" value={st.accent} onChange={(v) => onStyle({ accent: v })} />
-        {def.hasButton && (
-          <>
-            <ColorField label="Cor do botão" value={st.buttonBg} onChange={(v) => onStyle({ buttonBg: v })} />
-            <ColorField label="Texto do botão" value={st.buttonColor} onChange={(v) => onStyle({ buttonColor: v })} />
-          </>
-        )}
-      </Group>
+        {def.hasButton && <>
+          <ColorField label="Cor padrão dos botões" value={st.buttonBg} onChange={v => onStyle({ buttonBg: v })}/>
+          <ColorField label="Texto padrão dos botões" value={st.buttonColor} onChange={v => onStyle({ buttonColor: v })}/>
+          {buttons.map((b, i) => <div key={b.id} className="space-y-3 border-t border-border pt-3"><Label>Botão {i + 1}</Label>
+            <ColorField label="Cor do botão" value={b.bg} onChange={bg => updateButtons(buttons.map(x => x.id === b.id ? { ...x, bg } : x))}/>
+            <ColorField label="Cor do texto do botão" value={b.color} onChange={color => updateButtons(buttons.map(x => x.id === b.id ? { ...x, color } : x))}/>
+          </div>)}
+        </>}
+      </Group>}
 
-      <Group title="Espaçamento">
+      {subtab === "layout" && <Group title="Layout">
         <NumberField label="Espaço vertical" value={st.paddingY ?? 64} min={0} max={160} step={4} onChange={(v) => onStyle({ paddingY: v })} />
-      </Group>
+        <NumberField label="Distância entre elementos" value={st.gap ?? 20} min={0} max={100} onChange={gap => onStyle({ gap })}/>
+        <NumberField label="Largura da seção" value={st.maxWidth ?? 1080} min={320} max={1400} step={20} onChange={maxWidth => onStyle({ maxWidth })}/>
+        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!section.hidden} onChange={e => onVisibility(!e.target.checked)}/>Seção visível</label>
+      </Group>}
     </>
   );
 }
@@ -647,6 +677,8 @@ function SectionPanel({
 function PagePanel({ settings, set, userId, slug, onSlug }: { settings: PageSettings; set: (p: string, v: unknown) => void; userId: string; slug: string; onSlug: (s: string) => Promise<boolean> }) {
   const [slugDraft, setSlugDraft] = useState(slug);
   useEffect(() => setSlugDraft(slug), [slug]);
+  const background = settings.background ?? { ...DEFAULT_PAGE_BACKGROUND, stops: [{ color: settings.colors.bg, position: 0 }, { color: settings.colors.primary, position: 100 }] };
+  const setBackground = (patch: Partial<typeof background>) => set("background", { ...background, ...patch });
   const palette: [keyof PageSettings["colors"], string][] = [
     ["primary", "Cor principal (botões)"],
     ["buttonText", "Texto dos botões"],
@@ -678,6 +710,21 @@ function PagePanel({ settings, set, userId, slug, onSlug }: { settings: PageSett
         ))}
       </Group>
 
+      <Group title="Fundo da página">
+        <select aria-label="Tipo de fundo" value={background.type} onChange={e => setBackground({ type: e.target.value as typeof background.type })} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"><option value="solid">Cor sólida</option><option value="gradient">Degradê</option><option value="image">Imagem</option></select>
+        {background.type === "solid" && <ColorField label="Cor sólida" value={settings.colors.bg} tokens={false} onChange={v => v && set("colors.bg", v)}/>}
+        {background.type === "image" && <ImageField label="Imagem de fundo" value={background.image} userId={userId} onChange={image => setBackground({ image })}/>}
+        {background.type === "gradient" && <>
+          <select aria-label="Tipo de degradê" value={background.gradientType} onChange={e => setBackground({ gradientType: e.target.value as "linear" | "radial" })} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"><option value="linear">Linear</option><option value="radial">Radial</option></select>
+          {background.stops.map((stop, i) => <div key={i} className="space-y-2 border-t border-border pt-3">
+            <ColorField label={`Cor ${i + 1}`} value={stop.color} tokens={false} onChange={color => color && setBackground({ stops: background.stops.map((s, j) => j === i ? { ...s, color } : s) })}/>
+            <NumberField label={`Posição ${i + 1}`} value={stop.position} min={0} max={100} suffix="%" onChange={position => setBackground({ stops: background.stops.map((s, j) => j === i ? { ...s, position } : s) })}/>
+            <Button variant="ghost" size="sm" disabled={background.stops.length <= 2} onClick={() => setBackground({ stops: background.stops.filter((_, j) => j !== i) })}><Trash2 size={14} className="mr-2"/>Remover cor</Button>
+          </div>)}
+          <Button variant="outline" size="sm" onClick={() => setBackground({ stops: [...background.stops, { color: settings.colors.primary, position: 100 }] })}><Plus size={14} className="mr-2"/>Adicionar cor</Button>
+          {background.gradientType === "linear" ? <NumberField label="Ângulo" value={background.angle} min={0} max={360} suffix="°" onChange={angle => setBackground({ angle })}/> : <><NumberField label="Centro horizontal" value={background.centerX} min={0} max={100} suffix="%" onChange={centerX => setBackground({ centerX })}/><NumberField label="Centro vertical" value={background.centerY} min={0} max={100} suffix="%" onChange={centerY => setBackground({ centerY })}/></>}
+        </>}
+      </Group>
       <Group title="Layout">
         <NumberField label="Largura máxima do conteúdo" value={settings.maxWidth} min={640} max={1400} step={20} onChange={(v) => set("maxWidth", v)} />
         <NumberField label="Arredondamento" value={settings.radius} min={0} max={32} onChange={(v) => set("radius", v)} />
