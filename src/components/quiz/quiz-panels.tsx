@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   AlignCenter,
   AlignLeft,
@@ -247,13 +247,16 @@ export function ElementEditor({
   const [ruleErrors, setRuleErrors] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
   const rich = useQuizRichText();
+  const formatVersion = useRef(0);
   const palette = Object.values(settings.colors);
   const setSt = onSettingsChange,
     setCt = onContentChange;
   const options = (ct.options ?? []) as (OptionItem & { emoji?: string })[];
   const format = async (command: RichCommand, value?: string) => {
+    const version = ++formatVersion.current;
     if (await rich.apply(command, value, el.id)) return;
-    if (command === "font") { await loadQuizFont(value || ""); setCt(clearRunProperty(ct, "font")); setSt({ fontFamily: value }); }
+    if (version !== formatVersion.current) return;
+    if (command === "font") { await loadQuizFont(value || ""); if (version !== formatVersion.current) return; setCt(clearRunProperty(ct, "font")); setSt({ fontFamily: value }); }
     if (command === "color") { setCt(clearRunProperty(ct, "color")); setSt({ color: value }); }
     if (command === "b") { setCt(clearRunProperty(ct, "b")); setSt({ weight: Number(st.weight) >= 700 ? 400 : 700 }); }
     if (command === "i") { setCt(clearRunProperty(ct, "i")); setSt({ fontStyle: st.fontStyle === "italic" ? "normal" : "italic" }); }

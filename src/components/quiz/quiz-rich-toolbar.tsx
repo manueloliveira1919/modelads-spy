@@ -62,7 +62,7 @@ export function QuizRichTextProvider({ children }: { children: ReactNode }) {
     editable.dispatchEvent(new Event("input", { bubbles: true }));
     return true;
   };
-  return <Context.Provider value={{ apply }}><div ref={scope}>{children}</div>{position && <div data-rich-controls className="q-rich-toolbar" style={position} onMouseDown={e => e.preventDefault()} role="toolbar" aria-label="Formatar trecho">
+  return <Context.Provider value={{ apply }}><div ref={scope}>{children}</div>{position && <div data-rich-controls className="q-rich-toolbar" style={position} onMouseDown={e => { if (!(e.target instanceof HTMLSelectElement) && !(e.target instanceof HTMLInputElement)) e.preventDefault(); }} role="toolbar" aria-label="Formatar trecho">
     <select aria-label="Fonte do trecho" defaultValue="" onChange={e => { void apply("font", e.target.value); e.target.value = ""; }}><option value="" disabled>Fonte</option>{QUIZ_FONTS.map(f => <option key={f}>{f}</option>)}</select>
     {palette.map(c => <Button key={c} variant="ghost" size="icon" aria-label={`Cor do trecho ${c}`} style={{ backgroundColor: c }} onClick={() => void apply("color", c)} />)}
     <input type="color" aria-label="Cor do trecho" defaultValue="#ffffff" onChange={e => void apply("color", e.target.value)} />

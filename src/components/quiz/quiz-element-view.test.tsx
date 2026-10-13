@@ -18,6 +18,13 @@ describe("Shared quiz renderer compatibility", () => {
     const fonts = collectQuizFonts(s, [{ settings: { fontFamily: "Lato" }, content: { options: [{ runs: [{ t: "a", font: "Oswald" }] }], titleRuns: [{ t: "b", font: "Nunito" }] } }]);
     expect(fonts).toEqual(["Lato", "Nunito", "Oswald", "Poppins"]);
   });
+  it("uses the same runs in button, option and result labels", () => {
+    const runs = [{ t: "Trecho", color: "#123456", font: "Oswald", i: true }];
+    for (const el of [makeElement("s", "button", 0, { label: "Trecho", runs }), makeElement("s", "options", 0, { options: [{ id: "x", label: "Trecho", runs }] }), makeElement("s", "result", 0, { title: "Trecho", titleRuns: runs }, { loading: false })]) {
+      const html = renderToStaticMarkup(<QuizElementView el={el} settings={s} percent={100} />);
+      expect(html).toContain("#123456"); expect(html).toContain("Oswald"); expect(html).toContain("font-style:italic");
+    }
+  });
   it("clears only the requested run override", () => {
     expect(clearRunProperty({ runs: [{ t: "x", color: "#123456", font: "Oswald", b: true }] }, "color")).toEqual({ runs: [{ t: "x", font: "Oswald", b: true }] });
   });
