@@ -3,6 +3,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import {
   DEFAULT_QUIZ_SETTINGS,
+  NEW_QUIZ_SETTINGS,
   buildSectionsFromTemplate,
   slugify,
   uid,
@@ -115,7 +116,7 @@ export async function createQuiz(input: {
     name: input.name.trim() || "Novo Quiz",
     slug,
     status: "draft",
-    settings: DEFAULT_QUIZ_SETTINGS,
+    settings: NEW_QUIZ_SETTINGS,
   });
   if (isUniqueViolation(error)) throw new SlugTakenError();
   if (error) throw error;

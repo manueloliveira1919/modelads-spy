@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { RESULT_TEXT_PARTS, resultPartSettings, type ResultTextPart } from "@/components/quiz/quiz-result-view";
+import { useAuth } from "@/lib/auth-context";
 import { countRulesTo, stripRulesTo } from "@/lib/quiz-logic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -42,12 +42,14 @@ import {
 import { cn } from "@/lib/utils";
 import { QuizPreview, type PreviewDevice } from "@/components/quiz/quiz-preview";
 import { QuizRunner } from "@/components/quiz/quiz-runner";
-import { AppearancePanel, ElementVisualPanel, SectionProperties } from "@/components/quiz/quiz-panels";
+import { ThemePanel, ElementEditor, SectionProperties } from "@/components/quiz/quiz-panels";
 import { isSlugAvailable, loadQuiz, saveQuiz, SlugTakenError } from "@/lib/quiz-api";
 import { useSlugAvailability } from "@/lib/use-slug-availability";
 import {
   SECTION_LABEL,
   makeSection,
+  makeElement,
+  type ElementType,
   slugify,
   uid,
   type Quiz,
@@ -98,6 +100,8 @@ function EditorPage() {
 
 function EditorContent() {
   const { id } = Route.useParams();
+  const { user } = useAuth();
+  const [propertyTab,setPropertyTab] = useState("secao");
   const search = Route.useSearch();
   const navigate = useNavigate();
 
@@ -112,7 +116,7 @@ function EditorContent() {
   const [runKey, setRunKey] = useState(0);
   const [dragId, setDragId] = useState<string | null>(null);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
-  const [replay, setReplay] = useState<{ id: string | null; n: number }>({ id: null, n: 0 });
+
 
   // Trocar de seção limpa a seleção de elemento.
   useEffect(() => {
@@ -260,26 +264,23 @@ function EditorContent() {
     0,
     sections.findIndex((s) => s.id === selectedId),
   );
-  // Fase 7: "elementId::parte" seleciona um texto do bloco Resultado; o painel da Fase 5
-  // edita settings.styles[parte] desse bloco.
-  const [selElId, selPart] = (selectedElementId ?? "").split("::");
-  const selectedRaw =
-    selected?.elements.find(
-      (e) =>
-        e.id === selElId &&
-        (selPart ? e.type === "result" : e.type === "text" || e.type === "button"),
-    ) ?? null;
-  const selectedElement =
-    selectedRaw && selPart
-      ? { ...selectedRaw, type: "text" as const, settings: resultPartSettings(selectedRaw.settings as Record<string, any>, selPart) }
-      : selectedRaw;
-  const onVisualChange = (p: Record<string, unknown>) => {
-    if (!selectedRaw) return;
-    if (!selPart) return updateElement(selectedRaw.id, "settings", p);
-    const styles = ((selectedRaw.settings as Record<string, any>).styles ?? {}) as Record<string, Record<string, unknown>>;
-    updateElement(selectedRaw.id, "settings", {
-      styles: { ...styles, [selPart]: { ...(styles[selPart] ?? {}), ...p } },
-    });
+  const selectedElement = selected?.elements.find(e=>e.id===selectedElementId) ?? null;
+  const selectElement = (eid:string|null) => {setSelectedElementId(eid);if(eid)setPropertyTab("elemento");};
+  const addElement = (type:ElementType) => {
+    if(!selected)return;
+    const el=makeElement(selected.id,type,selected.elements.length);
+    updateSection(selected.id,{elements:[...selected.elements,el]});selectElement(el.id);
+  };
+  const elementAction = (eid:string,action:"up"|"down"|"duplicate"|"remove") => {
+    if(!selected)return;
+    const index=selected.elements.findIndex(e=>e.id===eid);if(index<0)return;
+    const next=[...selected.elements];
+    if(action==="remove"){next.splice(index,1);selectElement(null);}
+    else if(action==="duplicate"){
+      const copy={...next[index],id:uid(),content:structuredClone(next[index].content),settings:structuredClone(next[index].settings)};
+      next.splice(index+1,0,copy);selectElement(copy.id);
+    } else {const target=index+(action==="up"?-1:1);if(target<0||target>=next.length)return;[next[index],next[target]]=[next[target],next[index]];}
+    updateSection(selected.id,{elements:next.map((e,i)=>({...e,position:i}))});
   };
 
   if (loadError) {
@@ -348,7 +349,8 @@ function EditorContent() {
             onDragEnd={() => setDragId(null)}
             onClick={() => {
               setSelectedId(s.id);
-              setMobilePanel("propriedades");
+              setPropertyTab("secao");
+              setMobilePanel("preview");
             }}
             className={cn(
               "group flex cursor-pointer items-center gap-2 rounded-xl border px-2.5 py-2 text-sm transition-colors",
@@ -409,35 +411,11 @@ function EditorContent() {
   );
 
   const propsPanel = (
-    <Tabs defaultValue="secao">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="secao">Seção</TabsTrigger>
-        <TabsTrigger value="aparencia">Aparência</TabsTrigger>
-      </TabsList>
-      <TabsContent value="secao" className="mt-3 space-y-4">
-        {selected && selectedElement && (
-          <ElementVisualPanel
-            element={selectedElement}
-            settings={quiz.settings}
-            title={selPart ? RESULT_TEXT_PARTS[selPart as ResultTextPart]?.label : undefined}
-            onChange={onVisualChange}
-            onReplay={() => setReplay((r) => ({ id: selectedElement.id, n: r.n + 1 }))}
-            onClose={() => setSelectedElementId(null)}
-          />
-        )}
-        {selected ? (
-          <SectionProperties
-            section={selected}
-            allSections={sections}
-            onChange={(p) => updateSection(selected.id, p)}
-          />
-        ) : (
-          <p className="text-sm text-muted-foreground">Selecione uma seção para editar.</p>
-        )}
-      </TabsContent>
-      <TabsContent value="aparencia" className="mt-3">
-        <AppearancePanel settings={quiz.settings} onChange={updateSettings} />
-      </TabsContent>
+    <Tabs value={propertyTab} onValueChange={setPropertyTab}>
+      <TabsList className="grid w-full grid-cols-3"><TabsTrigger value="elemento">Elemento</TabsTrigger><TabsTrigger value="secao">Seção</TabsTrigger><TabsTrigger value="tema">Tema</TabsTrigger></TabsList>
+      <TabsContent value="elemento" className="mt-5">{selectedElement ? <ElementEditor key={selectedElement.id} el={selectedElement} settings={quiz.settings} allSections={sections} userId={user?.id??quiz.user_id} onContentChange={p=>updateElement(selectedElement.id,"content",p)} onSettingsChange={p=>updateElement(selectedElement.id,"settings",p)}/> : <p className="py-6 text-center text-sm text-muted-foreground">Nenhum elemento selecionado</p>}</TabsContent>
+      <TabsContent value="secao" className="mt-5">{selected&&<SectionProperties section={selected} onChange={p=>updateSection(selected.id,p)} onSelect={selectElement} onAction={elementAction} onAdd={addElement}/>}</TabsContent>
+      <TabsContent value="tema" className="mt-5"><ThemePanel settings={quiz.settings} onChange={updateSettings}/></TabsContent>
     </Tabs>
   );
 
@@ -453,10 +431,12 @@ function EditorContent() {
         index={selectedIndex}
         total={sections.length}
         selectedElementId={selectedElementId}
-        onSelectElement={setSelectedElementId}
+        onSelectElement={selectElement}
         onElementContentChange={(eid, p) => updateElement(eid, "content", p)}
-        replayKey={replay.n}
-        replayTarget={replay.id}
+        onElementSettingsChange={(eid,p)=>updateElement(eid,"settings",p)}
+        onElementAction={elementAction}
+        onAddElement={addElement}
+        onNavigate={index=>setSelectedId(sections[index]?.id??null)}
       />
     </div>
   );
@@ -538,7 +518,7 @@ function EditorContent() {
           </Button>
           <Button
             size="sm"
-            className="bg-gradient-brand text-white"
+            className="bg-gradient-brand"
             disabled={slugBlocked && quiz.status !== "published"}
             onClick={async () => {
               const publishing = quiz.status !== "published";
@@ -620,14 +600,14 @@ function EditorContent() {
       </div>
 
       {/* Desktop: três colunas */}
-      <div className="hidden gap-4 lg:grid lg:grid-cols-[260px_minmax(0,1fr)_320px]">
-        <aside className="max-h-[75vh] overflow-y-auto rounded-2xl border border-border bg-card p-3">
+      <div className="hidden gap-4 lg:grid lg:grid-cols-[210px_minmax(0,1fr)_280px] xl:grid-cols-[230px_minmax(0,1fr)_300px]">
+        <aside className="max-h-[80vh] overflow-y-auto border-r border-border bg-card/30 p-3">
           {sectionsPanel}
         </aside>
-        <section className="rounded-2xl border border-border bg-background/40 p-4">
+        <section className="min-w-0 bg-background/40 p-3">
           {previewPanel}
         </section>
-        <aside className="max-h-[75vh] overflow-y-auto rounded-2xl border border-border bg-card p-3">
+        <aside className="max-h-[80vh] overflow-y-auto border-r border-border bg-card/30 p-3">
           {propsPanel}
         </aside>
       </div>

@@ -15,3 +15,7 @@
 - Extension candidates are claimed atomically (claim_token + SKIP LOCKED) before processing; stale claims return to pending and become failed after 3 attempts, so retries never duplicate offers or touch the catalog.
 - Extension gallery renders keyed, data-only in-memory snapshots scoped to the current Meta search; exclude extension UI from discovery and observation to preserve Facebook-owned DOM and prevent feedback loops.
 - Sales page builder: one `sales_pages` row holds sections/settings as JSON, and one `PageRenderer` (inline styles + `PAGE_CSS`, container queries) feeds the editor, HTML export and the public page — keeps all outputs identical. Public `/p/$slug` renders the exported HTML in a sandboxed iframe without same-origin so user pixels/scripts can't reach the app session.
+
+- Quiz elements render through `QuizElementView` in editor and runner; session, navigation, scoring and lead submission stay in `QuizRunner` — prevents visual drift without changing execution rules.
+- Quiz creation defaults are separate from legacy normalization defaults — new styling never overwrites saved or missing legacy settings.
+- Quiz image uploads reuse the existing authenticated private asset upload helper — persist signed URLs rather than embedding file data in JSON.
