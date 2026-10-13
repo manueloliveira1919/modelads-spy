@@ -1,0 +1,703 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Check,
+  Cloud,
+  Copy,
+  Download,
+  Eye,
+  EyeOff,
+  GripVertical,
+  LayoutTemplate,
+  Link as LinkIcon,
+  Loader2,
+  Monitor,
+  Plus,
+  Redo2,
+  Smartphone,
+  Trash2,
+  Undo2,
+  Upload,
+  X,
+} from "lucide-react";
+import { toast } from "sonner";
+import { ProGate } from "@/components/pro-gate";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/lib/auth-context";
+import { cn } from "@/lib/utils";
+import { PageRenderer } from "@/components/sales-page/page-renderer";
+import { getPage, updatePage, uploadPageImage } from "@/lib/sales-page-api";
+import { buildPageHtml, downloadHtml, PAGE_FONTS, pageFontsHref } from "@/lib/sales-page-export";
+import {
+  BLOCKS,
+  BLOCK_MAP,
+  newSection,
+  slugify,
+  uid,
+  type FieldDef,
+  type PageSection,
+  type PageSettings,
+  type SalesPage,
+  type SectionStyle,
+} from "@/lib/sales-page-types";
+
+export const Route = createFileRoute("/criador-paginas/$id")({
+  ssr: false,
+  head: () => ({
+    meta: [
+      { title: "Editor de página de venda — Modelads" },
+      { name: "description", content: "Edite sua página de venda com preview ao vivo." },
+      { property: "og:title", content: "Editor de página de venda — Modelads" },
+      { property: "og:description", content: "Edite sua página de venda com preview ao vivo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: () => (
+    <ProGate icon={LayoutTemplate} title="Criador de Páginas de Venda" description="Edite sua página com preview ao vivo.">
+      <EditorLoader />
+    </ProGate>
+  ),
+});
+
+function EditorLoader() {
+  const { id } = Route.useParams();
+  const { data, isLoading, error } = useQuery({ queryKey: ["sales-page", id], queryFn: () => getPage(id), staleTime: Infinity, refetchOnWindowFocus: false });
+  if (isLoading) return <div className="grid h-60 place-items-center"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>;
+  if (error || !data)
+    return (
+      <div className="rounded-2xl border border-border bg-card p-10 text-center">
+        <p>Página não encontrada.</p>
+        <Button asChild className="mt-4" variant="outline"><Link to="/criador-paginas">Voltar</Link></Button>
+      </div>
+    );
+  return <Editor key={data.id} initial={data} />;
+}
+
+type Snap = { sections: PageSection[]; settings: PageSettings };
+
+function setPath(obj: Record<string, any>, path: string, value: unknown) {
+  const keys = path.split(".");
+  const root = Array.isArray(obj) ? [...obj] : { ...obj };
+  let cur: any = root;
+  for (let i = 0; i < keys.length - 1; i++) {
+    const k = keys[i];
+    cur[k] = Array.isArray(cur[k]) ? [...cur[k]] : { ...(cur[k] ?? {}) };
+    cur = cur[k];
+  }
+  cur[keys[keys.length - 1]] = value;
+  return root;
+}
+
+function Editor({ initial }: { initial: SalesPage }) {
+  const { user } = useAuth();
+  const [snap, setSnap] = useState<Snap>({ sections: initial.sections, settings: initial.settings });
+  const [past, setPast] = useState<Snap[]>([]);
+  const [future, setFuture] = useState<Snap[]>([]);
+  const lastPush = useRef<{ key: string; at: number }>({ key: "", at: 0 });
+  const [meta, setMeta] = useState({ name: initial.name, slug: initial.slug, status: initial.status });
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [tab, setTab] = useState<"section" | "page">("page");
+  const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [save, setSave] = useState<"saved" | "saving" | "error" | "dirty">("saved");
+  const [mobilePane, setMobilePane] = useState<"sections" | "preview" | "props">("preview");
+  const dragFrom = useRef<number | null>(null);
+
+  /** Aplica uma alteração registrando histórico (alterações seguidas no mesmo campo viram um passo). */
+  const commit = useCallback((fn: (s: Snap) => Snap, key = uid()) => {
+    setSnap((cur) => {
+      const next = fn(cur);
+      if (next === cur) return cur;
+      const now = Date.now();
+      if (!(lastPush.current.key === key && now - lastPush.current.at < 800)) {
+        setPast((p) => [...p.slice(-79), cur]);
+        setFuture([]);
+      }
+      lastPush.current = { key, at: now };
+      return next;
+    });
+  }, []);
+
+  const undo = useCallback(() => {
+    setPast((p) => {
+      if (!p.length) return p;
+      const prev = p[p.length - 1];
+      setSnap((cur) => (setFuture((f) => [cur, ...f]), prev));
+      lastPush.current = { key: "", at: 0 };
+      return p.slice(0, -1);
+    });
+  }, []);
+  const redo = useCallback(() => {
+    setFuture((f) => {
+      if (!f.length) return f;
+      const nxt = f[0];
+      setSnap((cur) => (setPast((p) => [...p, cur]), nxt));
+      lastPush.current = { key: "", at: 0 };
+      return f.slice(1);
+    });
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement;
+      if (t.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(t.tagName)) return;
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+        e.preventDefault();
+        e.shiftKey ? redo() : undo();
+      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [undo, redo]);
+
+  // Salvamento automático
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) return void (first.current = false);
+    setSave("dirty");
+    const t = setTimeout(async () => {
+      setSave("saving");
+      try {
+        await updatePage(initial.id, { sections: snap.sections, settings: snap.settings });
+        setSave("saved");
+      } catch {
+        setSave("error");
+      }
+    }, 900);
+    return () => clearTimeout(t);
+  }, [snap, initial.id]);
+
+  useEffect(() => {
+    const warn = (e: BeforeUnloadEvent) => {
+      if (save !== "saved") e.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [save]);
+
+  // Fontes do preview
+  const fontsHref = useMemo(() => pageFontsHref(snap.settings, snap.sections), [snap.settings, snap.sections]);
+  useEffect(() => {
+    if (!fontsHref) return;
+    const l = document.createElement("link");
+    l.rel = "stylesheet";
+    l.href = fontsHref;
+    document.head.appendChild(l);
+    return () => l.remove();
+  }, [fontsHref]);
+
+  const sections = snap.sections;
+  const selected = sections.find((s) => s.id === selectedId) ?? null;
+
+  const updateSection = (id: string, fn: (s: PageSection) => PageSection, key?: string) =>
+    commit((cur) => ({ ...cur, sections: cur.sections.map((s) => (s.id === id ? fn(s) : s)) }), key);
+  const setContent = (id: string, path: string, v: unknown) => updateSection(id, (s) => ({ ...s, content: setPath(s.content, path, v) }), `${id}:c:${path}`);
+  const setStyle = (id: string, patch: Partial<SectionStyle>) => updateSection(id, (s) => ({ ...s, style: { ...s.style, ...patch } }), `${id}:s:${Object.keys(patch).join()}`);
+  const setSettings = (path: string, v: unknown) => commit((cur) => ({ ...cur, settings: setPath(cur.settings, path, v) as PageSettings }), `settings:${path}`);
+
+  const move = (from: number, to: number) => {
+    if (to < 0 || to >= sections.length || from === to) return;
+    commit((cur) => {
+      const arr = [...cur.sections];
+      const [it] = arr.splice(from, 1);
+      arr.splice(to, 0, it);
+      return { ...cur, sections: arr };
+    });
+  };
+  const addSection = (type: PageSection["type"]) => {
+    const sec = newSection(type);
+    commit((cur) => {
+      const idx = selectedId ? cur.sections.findIndex((s) => s.id === selectedId) : -1;
+      const arr = [...cur.sections];
+      arr.splice(idx >= 0 ? idx + 1 : arr.length, 0, sec);
+      return { ...cur, sections: arr };
+    });
+    setSelectedId(sec.id);
+    setTab("section");
+    setLibraryOpen(false);
+    setTimeout(() => document.querySelector(`[data-section-id="${sec.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "center" }), 60);
+  };
+  const duplicate = (id: string) =>
+    commit((cur) => {
+      const i = cur.sections.findIndex((s) => s.id === id);
+      const copy = { ...structuredClone(cur.sections[i]), id: uid() };
+      const arr = [...cur.sections];
+      arr.splice(i + 1, 0, copy);
+      return { ...cur, sections: arr };
+    });
+  const remove = (id: string) => {
+    commit((cur) => ({ ...cur, sections: cur.sections.filter((s) => s.id !== id) }));
+    if (selectedId === id) setSelectedId(null);
+  };
+
+  const select = (id: string | null) => {
+    setSelectedId(id);
+    setTab(id ? "section" : "page");
+  };
+
+  const saveMeta = async (patch: Partial<typeof meta>) => {
+    try {
+      await updatePage(initial.id, patch);
+      setMeta((m) => ({ ...m, ...patch }));
+      return true;
+    } catch (e) {
+      toast.error((e as Error).message === "slug_taken" ? "Este endereço já está em uso." : "Não foi possível salvar.");
+      return false;
+    }
+  };
+
+  const publicUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/p/${meta.slug}`;
+  const togglePublish = async () => {
+    await updatePage(initial.id, { sections: snap.sections, settings: snap.settings });
+    const status = meta.status === "published" ? "draft" : "published";
+    if (await saveMeta({ status })) {
+      if (status === "published") {
+        void navigator.clipboard?.writeText(publicUrl).catch(() => {});
+        toast.success("Página publicada! Link copiado.", { description: publicUrl });
+      } else toast.success("Página voltou para rascunho.");
+    }
+  };
+
+  const exportHtml = () => {
+    downloadHtml(`${meta.slug || "pagina"}.html`, buildPageHtml(meta.name, snap.settings, snap.sections));
+    toast.success("HTML exportado.");
+  };
+
+  return (
+    <div className="-mx-4 -my-6 flex h-[calc(100dvh-57px)] flex-col sm:-mx-6 lg:-mx-10 lg:-my-10 lg:h-[100dvh]">
+      {/* Barra superior */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card/60 px-3 py-2">
+        <Button asChild size="icon" variant="ghost" className="h-8 w-8"><Link to="/criador-paginas" aria-label="Voltar"><ArrowLeft className="h-4 w-4" /></Link></Button>
+        <input
+          value={meta.name}
+          onChange={(e) => setMeta((m) => ({ ...m, name: e.target.value }))}
+          onBlur={() => meta.name.trim() && saveMeta({ name: meta.name.trim() })}
+          className="min-w-0 max-w-[220px] flex-1 rounded-md bg-transparent px-2 py-1 font-display text-sm font-bold outline-none hover:bg-accent focus:bg-accent"
+        />
+        <SaveBadge state={save} />
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          <Button size="icon" variant="ghost" className="h-8 w-8" disabled={!past.length} onClick={undo} title="Desfazer (Ctrl+Z)"><Undo2 className="h-4 w-4" /></Button>
+          <Button size="icon" variant="ghost" className="h-8 w-8" disabled={!future.length} onClick={redo} title="Refazer (Ctrl+Shift+Z)"><Redo2 className="h-4 w-4" /></Button>
+          <div className="mx-1 hidden rounded-lg border border-border p-0.5 sm:flex">
+            {(["desktop", "mobile"] as const).map((d) => (
+              <button key={d} onClick={() => setDevice(d)} className={cn("rounded-md px-2 py-1", device === d ? "bg-accent text-foreground" : "text-muted-foreground")} title={d === "desktop" ? "Computador" : "Celular"}>
+                {d === "desktop" ? <Monitor className="h-4 w-4" /> : <Smartphone className="h-4 w-4" />}
+              </button>
+            ))}
+          </div>
+          <Button size="sm" variant="outline" onClick={exportHtml}><Download className="mr-1 h-3.5 w-3.5" /> HTML</Button>
+          {meta.status === "published" && (
+            <Button size="sm" variant="outline" onClick={() => (navigator.clipboard.writeText(publicUrl), toast.success("Link copiado."))}><LinkIcon className="mr-1 h-3.5 w-3.5" /> Link</Button>
+          )}
+          <Button size="sm" onClick={togglePublish} className={meta.status === "published" ? "" : "bg-gradient-brand text-white"} variant={meta.status === "published" ? "secondary" : "default"}>
+            {meta.status === "published" ? "Despublicar" : "Publicar"}
+          </Button>
+        </div>
+      </div>
+
+      {/* Abas no celular */}
+      <div className="flex border-b border-border lg:hidden">
+        {([["sections", "Seções"], ["preview", "Preview"], ["props", "Editar"]] as const).map(([k, l]) => (
+          <button key={k} onClick={() => setMobilePane(k)} className={cn("flex-1 py-2 text-xs font-semibold", mobilePane === k ? "border-b-2 border-brand text-foreground" : "text-muted-foreground")}>{l}</button>
+        ))}
+      </div>
+
+      <div className="flex min-h-0 flex-1">
+        {/* Esquerda: seções */}
+        <aside className={cn("w-full shrink-0 overflow-y-auto border-r border-border bg-card/40 p-3 lg:block lg:w-64", mobilePane === "sections" ? "block" : "hidden")}>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Seções</span>
+            <Button size="sm" variant="secondary" className="h-7" onClick={() => setLibraryOpen((v) => !v)}>
+              {libraryOpen ? <X className="mr-1 h-3.5 w-3.5" /> : <Plus className="mr-1 h-3.5 w-3.5" />} {libraryOpen ? "Fechar" : "Adicionar"}
+            </Button>
+          </div>
+
+          {libraryOpen && (
+            <div className="mb-3 grid grid-cols-2 gap-1.5 rounded-xl border border-border bg-background p-2">
+              {BLOCKS.map((b) => (
+                <button key={b.type} onClick={() => addSection(b.type)} title={b.description} className="flex items-center gap-1.5 rounded-lg border border-transparent px-2 py-2 text-left text-xs hover:border-brand/50 hover:bg-accent">
+                  <span>{b.emoji}</span>
+                  <span className="truncate font-medium">{b.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {sections.length === 0 && !libraryOpen && <p className="px-1 py-6 text-center text-xs text-muted-foreground">Nenhuma seção ainda. Clique em “Adicionar”.</p>}
+
+          <ul className="space-y-1">
+            {sections.map((s, i) => {
+              const def = BLOCK_MAP[s.type];
+              return (
+                <li
+                  key={s.id}
+                  draggable
+                  onDragStart={() => (dragFrom.current = i)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    if (dragFrom.current !== null) move(dragFrom.current, i);
+                    dragFrom.current = null;
+                  }}
+                  onClick={() => {
+                    select(s.id);
+                    setTimeout(() => document.querySelector(`[data-section-id="${s.id}"]`)?.scrollIntoView({ behavior: "smooth", block: "start" }), 30);
+                  }}
+                  className={cn(
+                    "group flex cursor-pointer items-center gap-1 rounded-lg border px-1.5 py-1.5 text-xs transition-colors",
+                    selectedId === s.id ? "border-brand bg-brand/10" : "border-transparent hover:bg-accent",
+                    s.hidden && "opacity-50",
+                  )}
+                >
+                  <GripVertical className="h-3.5 w-3.5 shrink-0 cursor-grab text-muted-foreground" />
+                  <span>{def?.emoji}</span>
+                  <span className="min-w-0 flex-1 truncate font-medium">{def?.label}</span>
+                  <div className="flex opacity-60 group-hover:opacity-100" onClick={(e) => e.stopPropagation()}>
+                    <IconBtn title="Subir" onClick={() => move(i, i - 1)}><ArrowUp className="h-3 w-3" /></IconBtn>
+                    <IconBtn title="Descer" onClick={() => move(i, i + 1)}><ArrowDown className="h-3 w-3" /></IconBtn>
+                    <IconBtn title={s.hidden ? "Mostrar" : "Ocultar"} onClick={() => updateSection(s.id, (x) => ({ ...x, hidden: !x.hidden }))}>{s.hidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}</IconBtn>
+                    <IconBtn title="Duplicar" onClick={() => duplicate(s.id)}><Copy className="h-3 w-3" /></IconBtn>
+                    <IconBtn title="Remover" onClick={() => remove(s.id)}><Trash2 className="h-3 w-3" /></IconBtn>
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </aside>
+
+        {/* Centro: preview */}
+        <main className={cn("min-w-0 flex-1 overflow-y-auto bg-muted/30 p-3 sm:p-5 lg:block", mobilePane === "preview" ? "block" : "hidden")} onClick={() => select(null)}>
+          <div
+            className={cn("mx-auto overflow-hidden bg-white shadow-2xl transition-all duration-300", device === "mobile" ? "max-w-[390px] rounded-[28px] ring-8 ring-black/80" : "max-w-full rounded-lg")}
+          >
+            <PageRenderer
+              sections={sections}
+              settings={snap.settings}
+              editable
+              selectedId={selectedId}
+              onSelect={(id) => select(id)}
+              onText={(sid, path, v) => setContent(sid, path, v)}
+            />
+          </div>
+        </main>
+
+        {/* Direita: propriedades */}
+        <aside className={cn("w-full shrink-0 overflow-y-auto border-l border-border bg-card/40 lg:block lg:w-80", mobilePane === "props" ? "block" : "hidden")}>
+          <div className="sticky top-0 z-10 flex border-b border-border bg-card">
+            <button disabled={!selected} onClick={() => setTab("section")} className={cn("flex-1 py-2.5 text-xs font-semibold disabled:opacity-40", tab === "section" ? "border-b-2 border-brand" : "text-muted-foreground")}>Seção</button>
+            <button onClick={() => setTab("page")} className={cn("flex-1 py-2.5 text-xs font-semibold", tab === "page" ? "border-b-2 border-brand" : "text-muted-foreground")}>Página</button>
+          </div>
+          <div className="space-y-5 p-4">
+            {tab === "section" && selected ? (
+              <SectionPanel
+                key={selected.id}
+                section={selected}
+                userId={user!.id}
+                onContent={(p, v) => setContent(selected.id, p, v)}
+                onStyle={(p) => setStyle(selected.id, p)}
+                onItems={(items) => updateSection(selected.id, (s) => ({ ...s, content: { ...s.content, items } }))}
+              />
+            ) : (
+              <PagePanel settings={snap.settings} set={setSettings} userId={user!.id} slug={meta.slug} onSlug={(slug) => saveMeta({ slug })} />
+            )}
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function IconBtn({ children, title, onClick }: { children: React.ReactNode; title: string; onClick: () => void }) {
+  return (
+    <button type="button" title={title} aria-label={title} onClick={onClick} className="rounded p-1 text-muted-foreground hover:bg-background hover:text-foreground">
+      {children}
+    </button>
+  );
+}
+
+function SaveBadge({ state }: { state: "saved" | "saving" | "error" | "dirty" }) {
+  const map = {
+    saved: [<Check key="i" className="h-3 w-3" />, "Salvo"],
+    saving: [<Loader2 key="i" className="h-3 w-3 animate-spin" />, "Salvando..."],
+    dirty: [<Cloud key="i" className="h-3 w-3" />, "Alterações pendentes"],
+    error: [<X key="i" className="h-3 w-3" />, "Erro ao salvar"],
+  } as const;
+  return <span className={cn("hidden items-center gap-1 text-[11px] sm:flex", state === "error" ? "text-destructive" : "text-muted-foreground")}>{map[state][0]} {map[state][1]}</span>;
+}
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-3">
+      <div className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function ColorField({ label, value, onChange, tokens = true }: { label: string; value?: string; onChange: (v: string | undefined) => void; tokens?: boolean }) {
+  const isHex = !!value && value.startsWith("#");
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
+      <div className="flex items-center gap-1.5">
+        <input type="color" value={isHex ? value : "#ffffff"} onChange={(e) => onChange(e.target.value)} className="h-8 w-9 cursor-pointer rounded border border-border bg-transparent" />
+        <Input value={value ?? ""} placeholder="Padrão" onChange={(e) => onChange(e.target.value || undefined)} className="h-8 flex-1 text-xs" />
+        {tokens && value && (
+          <button onClick={() => onChange(undefined)} title="Usar padrão" className="rounded p-1 text-muted-foreground hover:text-foreground"><X className="h-3.5 w-3.5" /></button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NumberField({ label, value, onChange, min, max, step = 1, suffix = "px" }: { label: string; value: number; onChange: (v: number) => void; min: number; max: number; step?: number; suffix?: string }) {
+  return (
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs">
+        <Label className="text-xs">{label}</Label>
+        <span className="text-muted-foreground">{value}{suffix}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} className="w-full accent-[hsl(var(--brand,230_100%_71%))]" />
+    </div>
+  );
+}
+
+function FontSelect({ value, onChange, allowDefault }: { value?: string; onChange: (v: string | undefined) => void; allowDefault?: boolean }) {
+  return (
+    <select value={value ?? ""} onChange={(e) => onChange(e.target.value || undefined)} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
+      {allowDefault && <option value="">Padrão da página</option>}
+      {PAGE_FONTS.map((f) => <option key={f} value={f}>{f}</option>)}
+    </select>
+  );
+}
+
+function ImageField({ label, value, onChange, userId }: { label: string; value: string; onChange: (v: string) => void; userId: string }) {
+  const [busy, setBusy] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
+      {value && <img src={value} alt="" className="h-24 w-full rounded-md border border-border object-cover" />}
+      <div className="flex gap-1.5">
+        <Input value={value} placeholder="https://..." onChange={(e) => onChange(e.target.value)} className="h-8 flex-1 text-xs" />
+        <Button type="button" size="sm" variant="secondary" className="h-8" disabled={busy} onClick={() => ref.current?.click()}>
+          {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
+        </Button>
+        {value && <Button type="button" size="sm" variant="ghost" className="h-8 px-2" onClick={() => onChange("")}><X className="h-3.5 w-3.5" /></Button>}
+      </div>
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = "";
+          if (!f) return;
+          if (f.size > 5 * 1024 * 1024) return void toast.error("Imagem muito grande (máx. 5 MB).");
+          setBusy(true);
+          try {
+            onChange(await uploadPageImage(userId, f));
+          } catch {
+            toast.error("Não foi possível enviar a imagem.");
+          } finally {
+            setBusy(false);
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+function Field({ def, value, onChange, userId }: { def: FieldDef; value: string; onChange: (v: string) => void; userId: string }) {
+  if (def.kind === "image") return <ImageField label={def.label} value={value ?? ""} onChange={onChange} userId={userId} />;
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs">{def.label}</Label>
+      {def.kind === "textarea" ? (
+        <Textarea value={value ?? ""} onChange={(e) => onChange(e.target.value)} rows={3} className="text-sm" />
+      ) : (
+        <Input
+          type={def.kind === "datetime" ? "datetime-local" : "text"}
+          value={value ?? ""}
+          placeholder={def.kind === "url" ? "https://pay.exemplo.com/..." : def.kind === "video" ? "Link do YouTube, Vimeo ou .mp4" : undefined}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-9 text-sm"
+        />
+      )}
+      {def.kind === "url" && <p className="text-[10px] text-muted-foreground">Use #oferta para rolar até a seção de oferta.</p>}
+    </div>
+  );
+}
+
+function SectionPanel({
+  section,
+  userId,
+  onContent,
+  onStyle,
+  onItems,
+}: {
+  section: PageSection;
+  userId: string;
+  onContent: (path: string, v: unknown) => void;
+  onStyle: (p: Partial<SectionStyle>) => void;
+  onItems: (items: Record<string, string>[]) => void;
+}) {
+  const def = BLOCK_MAP[section.type];
+  const st = section.style ?? {};
+  const items = (section.content.items ?? []) as Record<string, string>[];
+  return (
+    <>
+      <div className="flex items-center gap-2">
+        <span className="text-xl">{def.emoji}</span>
+        <div>
+          <div className="text-sm font-bold">{def.label}</div>
+          <div className="text-[11px] text-muted-foreground">Dica: clique nos textos do preview para editar.</div>
+        </div>
+      </div>
+
+      <Group title="Conteúdo">
+        {def.fields.map((f) => (
+          <Field key={f.key} def={f} value={section.content[f.key]} onChange={(v) => onContent(f.key, v)} userId={userId} />
+        ))}
+      </Group>
+
+      {def.items && (
+        <Group title={`${def.items.label}s`}>
+          {items.map((it, i) => (
+            <div key={i} className="space-y-2 rounded-lg border border-border bg-background/50 p-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold">{def.items!.label} {i + 1}</span>
+                <div className="flex">
+                  <IconBtn title="Subir" onClick={() => { if (i > 0) { const a = [...items]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; onItems(a); } }}><ArrowUp className="h-3 w-3" /></IconBtn>
+                  <IconBtn title="Duplicar" onClick={() => { const a = [...items]; a.splice(i + 1, 0, { ...it }); onItems(a); }}><Copy className="h-3 w-3" /></IconBtn>
+                  <IconBtn title="Remover" onClick={() => onItems(items.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></IconBtn>
+                </div>
+              </div>
+              {def.items!.fields.map((f) => (
+                <Field key={f.key} def={f} value={it[f.key]} onChange={(v) => onContent(`items.${i}.${f.key}`, v)} userId={userId} />
+              ))}
+            </div>
+          ))}
+          <Button size="sm" variant="outline" className="w-full" onClick={() => onItems([...items, { ...def.items!.blank }])}>
+            <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar {def.items.label.toLowerCase()}
+          </Button>
+        </Group>
+      )}
+
+      <Group title="Texto">
+        <div className="space-y-1">
+          <Label className="text-xs">Fonte</Label>
+          <FontSelect value={st.font} onChange={(v) => onStyle({ font: v })} allowDefault />
+        </div>
+        <NumberField label="Tamanho do título" value={st.titleSize ?? (section.type === "hero" ? 48 : 34)} min={18} max={80} onChange={(v) => onStyle({ titleSize: v })} />
+        <NumberField label="Tamanho do texto" value={st.textSize ?? 17} min={12} max={26} onChange={(v) => onStyle({ textSize: v })} />
+        <div className="space-y-1">
+          <Label className="text-xs">Alinhamento</Label>
+          <div className="grid grid-cols-3 gap-1 rounded-lg border border-border p-0.5">
+            {(["left", "center", "right"] as const).map((a) => (
+              <button key={a} onClick={() => onStyle({ align: a })} className={cn("rounded-md py-1 text-xs", (st.align ?? "center") === a ? "bg-accent font-semibold" : "text-muted-foreground")}>
+                {a === "left" ? "Esquerda" : a === "center" ? "Centro" : "Direita"}
+              </button>
+            ))}
+          </div>
+        </div>
+      </Group>
+
+      <Group title="Cores e fundo">
+        <ColorField label="Fundo da seção" value={st.bg} onChange={(v) => onStyle({ bg: v })} />
+        <div className="flex gap-1.5">
+          {(["bg", "surface", "primary"] as const).map((t) => (
+            <button key={t} onClick={() => onStyle({ bg: t })} className={cn("flex-1 rounded-md border px-1 py-1 text-[10px]", st.bg === t ? "border-brand" : "border-border")}>
+              {t === "bg" ? "Fundo" : t === "surface" ? "Superfície" : "Cor principal"}
+            </button>
+          ))}
+        </div>
+        <ColorField label="Cor do texto" value={st.color} onChange={(v) => onStyle({ color: v })} />
+        <ColorField label="Cor de destaque" value={st.accent} onChange={(v) => onStyle({ accent: v })} />
+        {def.hasButton && (
+          <>
+            <ColorField label="Cor do botão" value={st.buttonBg} onChange={(v) => onStyle({ buttonBg: v })} />
+            <ColorField label="Texto do botão" value={st.buttonColor} onChange={(v) => onStyle({ buttonColor: v })} />
+          </>
+        )}
+      </Group>
+
+      <Group title="Espaçamento">
+        <NumberField label="Espaço vertical" value={st.paddingY ?? 64} min={0} max={160} step={4} onChange={(v) => onStyle({ paddingY: v })} />
+      </Group>
+    </>
+  );
+}
+
+function PagePanel({ settings, set, userId, slug, onSlug }: { settings: PageSettings; set: (p: string, v: unknown) => void; userId: string; slug: string; onSlug: (s: string) => Promise<boolean> }) {
+  const [slugDraft, setSlugDraft] = useState(slug);
+  useEffect(() => setSlugDraft(slug), [slug]);
+  const palette: [keyof PageSettings["colors"], string][] = [
+    ["primary", "Cor principal (botões)"],
+    ["buttonText", "Texto dos botões"],
+    ["bg", "Fundo"],
+    ["surface", "Superfície (cards)"],
+    ["text", "Texto"],
+    ["muted", "Texto secundário"],
+  ];
+  return (
+    <>
+      <Group title="Endereço público">
+        <div className="flex gap-1.5">
+          <div className="flex flex-1 items-center rounded-md border border-input bg-background pl-2 text-xs text-muted-foreground">
+            /p/
+            <input value={slugDraft} onChange={(e) => setSlugDraft(slugify(e.target.value))} className="h-8 min-w-0 flex-1 bg-transparent px-1 text-foreground outline-none" />
+          </div>
+          <Button size="sm" variant="secondary" className="h-8" disabled={!slugDraft || slugDraft === slug} onClick={async () => (await onSlug(slugDraft)) && toast.success("Endereço atualizado.")}>Salvar</Button>
+        </div>
+      </Group>
+
+      <Group title="Fontes">
+        <div className="space-y-1"><Label className="text-xs">Títulos</Label><FontSelect value={settings.headingFont} onChange={(v) => set("headingFont", v ?? "Poppins")} /></div>
+        <div className="space-y-1"><Label className="text-xs">Textos</Label><FontSelect value={settings.font} onChange={(v) => set("font", v ?? "Inter")} /></div>
+      </Group>
+
+      <Group title="Paleta de cores">
+        {palette.map(([k, l]) => (
+          <ColorField key={k} label={l} value={settings.colors[k]} tokens={false} onChange={(v) => v && set(`colors.${k}`, v)} />
+        ))}
+      </Group>
+
+      <Group title="Layout">
+        <NumberField label="Largura máxima do conteúdo" value={settings.maxWidth} min={640} max={1400} step={20} onChange={(v) => set("maxWidth", v)} />
+        <NumberField label="Arredondamento" value={settings.radius} min={0} max={32} onChange={(v) => set("radius", v)} />
+      </Group>
+
+      <Group title="SEO e compartilhamento">
+        <div className="space-y-1"><Label className="text-xs">Título da aba</Label><Input value={settings.seo.title} onChange={(e) => set("seo.title", e.target.value)} className="h-9 text-sm" /></div>
+        <div className="space-y-1"><Label className="text-xs">Descrição</Label><Textarea value={settings.seo.description} onChange={(e) => set("seo.description", e.target.value)} rows={2} className="text-sm" /></div>
+        <ImageField label="Imagem de compartilhamento" value={settings.seo.image} onChange={(v) => set("seo.image", v)} userId={userId} />
+        <ImageField label="Favicon" value={settings.favicon} onChange={(v) => set("favicon", v)} userId={userId} />
+      </Group>
+
+      <Group title="Pixel e scripts (opcional)">
+        <div className="space-y-1">
+          <Label className="text-xs">No cabeçalho (head)</Label>
+          <Textarea value={settings.headScripts} onChange={(e) => set("headScripts", e.target.value)} rows={4} placeholder="<!-- Meta Pixel, Google Tag... -->" className="font-mono text-[11px]" />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">Antes de fechar o body</Label>
+          <Textarea value={settings.bodyScripts} onChange={(e) => set("bodyScripts", e.target.value)} rows={3} className="font-mono text-[11px]" />
+        </div>
+        <p className="text-[10px] text-muted-foreground">Os scripts rodam apenas na página publicada e no HTML exportado.</p>
+      </Group>
+    </>
+  );
+}

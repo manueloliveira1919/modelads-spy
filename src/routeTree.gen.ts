@@ -47,6 +47,7 @@ import { Route as AdminMineracaoRouteImport } from './routes/admin.mineracao'
 import { Route as AdminPalavrasChaveRouteImport } from './routes/admin.palavras-chave'
 import { Route as AdminQualidadeRouteImport } from './routes/admin.qualidade'
 import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
+import { Route as CriadorPaginasIndexRouteImport } from './routes/criador-paginas.index'
 import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
 import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
@@ -249,6 +250,11 @@ const AdminSuporteRoute = AdminSuporteRouteImport.update({
   path: '/suporte',
   getParentRoute: () => AdminRoute,
 } as any)
+const CriadorPaginasIndexRoute = CriadorPaginasIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CriadorPaginasRoute,
+} as any)
 const ModelarQuizIndexRoute = ModelarQuizIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -318,7 +324,7 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
-  '/criador-paginas': typeof CriadorPaginasRoute
+  '/criador-paginas': typeof CriadorPaginasRouteWithChildren
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/criador-paginas/': typeof CriadorPaginasIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
@@ -368,7 +375,6 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
-  '/criador-paginas': typeof CriadorPaginasRoute
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
@@ -402,6 +408,7 @@ export interface FileRoutesByTo {
   '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/criador-paginas': typeof CriadorPaginasIndexRoute
   '/modelar-quiz': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
@@ -419,7 +426,7 @@ export interface FileRoutesById {
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
-  '/criador-paginas': typeof CriadorPaginasRoute
+  '/criador-paginas': typeof CriadorPaginasRouteWithChildren
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
@@ -454,6 +461,7 @@ export interface FileRoutesById {
   '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/criador-paginas/': typeof CriadorPaginasIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
@@ -507,6 +515,7 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/quiz/$slug'
     | '/admin/'
+    | '/criador-paginas/'
     | '/modelar-quiz/'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
@@ -522,7 +531,6 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
-    | '/criador-paginas'
     | '/criador-vsl'
     | '/em-breve'
     | '/exclusao-de-dados'
@@ -556,6 +564,7 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/quiz/$slug'
     | '/admin'
+    | '/criador-paginas'
     | '/modelar-quiz'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
@@ -607,6 +616,7 @@ export interface FileRouteTypes {
     | '/p/$slug'
     | '/quiz/$slug'
     | '/admin/'
+    | '/criador-paginas/'
     | '/modelar-quiz/'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
@@ -624,7 +634,7 @@ export interface RootRouteChildren {
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   CriadorAudiosRoute: typeof CriadorAudiosRoute
   CriadorCriativosRoute: typeof CriadorCriativosRoute
-  CriadorPaginasRoute: typeof CriadorPaginasRoute
+  CriadorPaginasRoute: typeof CriadorPaginasRouteWithChildren
   CriadorVslRoute: typeof CriadorVslRoute
   EmBreveRoute: typeof EmBreveRoute
   ExclusaoDeDadosRoute: typeof ExclusaoDeDadosRoute
@@ -923,6 +933,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSuporteRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/criador-paginas/': {
+      id: '/criador-paginas/'
+      path: '/'
+      fullPath: '/criador-paginas/'
+      preLoaderRoute: typeof CriadorPaginasIndexRouteImport
+      parentRoute: typeof CriadorPaginasRoute
+    }
     '/modelar-quiz/': {
       id: '/modelar-quiz/'
       path: '/'
@@ -1031,6 +1048,18 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CriadorPaginasRouteChildren {
+  CriadorPaginasIndexRoute: typeof CriadorPaginasIndexRoute
+}
+
+const CriadorPaginasRouteChildren: CriadorPaginasRouteChildren = {
+  CriadorPaginasIndexRoute: CriadorPaginasIndexRoute,
+}
+
+const CriadorPaginasRouteWithChildren = CriadorPaginasRoute._addFileChildren(
+  CriadorPaginasRouteChildren,
+)
+
 interface ModelarQuizRouteChildren {
   ModelarQuizIdRoute: typeof ModelarQuizIdRoute
   ModelarQuizIndexRoute: typeof ModelarQuizIndexRoute
@@ -1055,7 +1084,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracoesRoute: ConfiguracoesRoute,
   CriadorAudiosRoute: CriadorAudiosRoute,
   CriadorCriativosRoute: CriadorCriativosRoute,
-  CriadorPaginasRoute: CriadorPaginasRoute,
+  CriadorPaginasRoute: CriadorPaginasRouteWithChildren,
   CriadorVslRoute: CriadorVslRoute,
   EmBreveRoute: EmBreveRoute,
   ExclusaoDeDadosRoute: ExclusaoDeDadosRoute,
