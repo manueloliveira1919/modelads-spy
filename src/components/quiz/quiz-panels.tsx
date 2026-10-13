@@ -608,6 +608,9 @@ export function ThemePanel({
           </Button>
         ))}
       </div>
+      <details className="q-panel-details">
+        <summary>Personalizar tema</summary>
+        <div data-rich-controls className="space-y-4 pt-4">
       <ColorField
         label="Cor principal"
         value={s.colors.primary}
@@ -624,13 +627,13 @@ export function ThemePanel({
         }
       />
       <SelectField
-        label="Fonte"
+        label="Fonte padrão do quiz"
         value={s.font}
         options={[
           ...QUIZ_FONTS.map((f) => ({ value: f, label: f })),
           { value: "system-ui", label: "Sistema" },
         ]}
-        onChange={(font) => onChange({ font })}
+        onChange={async (font) => { await loadQuizFont(font); onChange({ font }); }}
       />
       <Chips
         label="Cantos"
@@ -647,9 +650,6 @@ export function ThemePanel({
         value={s.progress.enabled}
         onChange={(enabled) => onChange({ progress: { ...s.progress, enabled } })}
       />
-      <details className="q-panel-details">
-        <summary>Mais opções</summary>
-        <div className="space-y-4 pt-4">
           <SelectField
             label="Fundo"
             value={s.background.type}
@@ -764,23 +764,18 @@ function ResultEditor({
   };
   return (
     <div className="space-y-3">
-      <div>
-        <SelectField
-          label="Gráfico"
-          value={String(st.chart ?? "bar")}
-          options={[
-            { value: "bar", label: "Barra" },
-            { value: "circle", label: "Circular" },
-            { value: "none", label: "Nenhum" },
-          ]}
-          onChange={(v) => setSt({ chart: v })}
-        />
-      </div>
-      <Toggle
-        label="Confete"
-        value={st.confetti !== false}
-        onChange={(confetti) => setSt({ confetti })}
-      />
+      <Label>O que mostrar</Label>
+      <Toggle label="Pontuação" value={st.showScore !== false} onChange={showScore => setSt({ showScore })} />
+      <Toggle label="Percentual" value={st.showPercent !== false} onChange={showPercent => setSt({ showPercent })} />
+      <Toggle label="Medidor" value={st.chart !== "none"} onChange={v => setSt({ chart: v ? "bar" : "none" })} />
+      {st.chart !== "none" && <Chips label="Tipo de medidor" value={String(st.chart || "bar")} items={[["bar", "Barra"], ["circle", "Circular"]]} onChange={chart => setSt({ chart })} />}
+      <Toggle label="Barras de indicadores" value={st.showBars === true} onChange={showBars => setSt({ showBars })} />
+      {st.showBars === true && ((ct.bars || []) as { id: string; label: string; value: number; followScore?: boolean }[]).map((item, i) => <div key={item.id} className="space-y-2 border-t border-border pt-2"><Label>{item.label || `Indicador ${i + 1}`}</Label><Input aria-label={`Valor do indicador ${i + 1}`} type="number" min={0} max={100} disabled={item.followScore} value={item.value} onChange={e => setCt({ bars: ct.bars.map((x: typeof item) => x.id === item.id ? { ...x, value: Math.min(100, Math.max(0, Number(e.target.value) || 0)) } : x) })} /><Toggle label={`Seguir a pontuação: ${item.label}`} value={item.followScore === true} onChange={followScore => setCt({ bars: ct.bars.map((x: typeof item) => x.id === item.id ? { ...x, followScore } : x) })} /></div>)}
+      <Toggle label="Lista de destaques" value={st.showChecklist === true} onChange={showChecklist => setSt({ showChecklist })} />
+      <Toggle label="Selo" value={st.showBadge === true} onChange={showBadge => setSt({ showBadge })} />
+      <Toggle label="Tela de análise" value={st.loading === true} onChange={loading => setSt({ loading })} />
+      {st.loading === true && <Chips label="Duração da análise" value={Number(st.loadingSeconds || 5)} items={[[3, "3s"], [5, "5s"], [8, "8s"]]} onChange={loadingSeconds => setSt({ loadingSeconds })} />}
+      <Toggle label="Confete" value={st.confetti !== false} onChange={confetti => setSt({ confetti })} />
       <details className="q-panel-details">
         <summary>Avançado</summary>
         <div className="space-y-2 pt-3">
@@ -790,16 +785,6 @@ function ResultEditor({
               onChange={(e) => setSt({ scoreSuffix: e.target.value })}
             />
           </Field>
-          <Toggle
-            label="Mostrar pontuação"
-            value={st.showScore !== false}
-            onChange={(showScore) => setSt({ showScore })}
-          />
-          <Toggle
-            label="Mostrar percentual"
-            value={st.showPercent !== false}
-            onChange={(showPercent) => setSt({ showPercent })}
-          />
           <Field label="Imagem do resultado">
             <Input value={ct.image ?? ""} onChange={(e) => setCt({ image: e.target.value })} />
           </Field>
