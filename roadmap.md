@@ -14,3 +14,10 @@
 - [x] Preservar tipografia/animações antigas e fontes sob demanda sem controles avançados obsoletos
 - [x] Sete testes de compatibilidade e checagem automática sem erros
 - [x] Remover quiz, lead e imagem temporários de teste
+
+# Modelar Quiz — fontes, trechos e Resultado
+- [ ] Estabilizar fontes e aguardar carregamento antes de aplicar
+- [ ] Formatação segura por trecho e painel contextual
+- [ ] Reorganizar Tema e Elemento
+- [ ] Resultado com análise, indicadores, selo e destaques
+- [ ] Validar persistência, público, navegação, pontuação e leads
