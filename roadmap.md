@@ -21,3 +21,10 @@
 - [x] Reorganizar Tema e Elemento
 - [x] Resultado com análise, indicadores, selo e destaques
 - [x] Validar persistência, público, navegação, pontuação e leads
+
+# Criador de Páginas — edição ampliada
+- [ ] Botões independentes e elementos reordenáveis na seção
+- [ ] Painel Seção com Conteúdo, Fonte, Cor e Layout
+- [ ] Fundo sólido, degradê e imagem compartilhado entre saídas
+- [ ] Links publicados e tela Gerar com IA sem integração
+- [ ] Validar salvamento, histórico, publicação, exportação e celular
