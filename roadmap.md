@@ -16,8 +16,8 @@
 - [x] Remover quiz, lead e imagem temporários de teste
 
 # Modelar Quiz — fontes, trechos e Resultado
-- [ ] Estabilizar fontes e aguardar carregamento antes de aplicar
-- [ ] Formatação segura por trecho e painel contextual
-- [ ] Reorganizar Tema e Elemento
-- [ ] Resultado com análise, indicadores, selo e destaques
-- [ ] Validar persistência, público, navegação, pontuação e leads
+- [x] Estabilizar fontes e aguardar carregamento antes de aplicar
+- [x] Formatação segura por trecho e painel contextual
+- [x] Reorganizar Tema e Elemento
+- [x] Resultado com análise, indicadores, selo e destaques
+- [x] Validar persistência, público, navegação, pontuação e leads
