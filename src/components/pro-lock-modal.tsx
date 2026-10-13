@@ -13,7 +13,7 @@ export function ProLockProvider({ children }: { children: ReactNode }) {
 
   const features = [
     "Modelar Ofertas",
-    "Modelar Funis WhatsApp",
+    "Criador de Páginas de Venda",
     "Modelar Quiz",
     "Criador de Criativos",
     "Criador de Áudios",

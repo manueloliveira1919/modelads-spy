@@ -26,7 +26,6 @@ import { Route as MinhaContaRouteImport } from './routes/minha-conta'
 import { Route as ModelaSpyAiRouteImport } from './routes/modela-spy-ai'
 import { Route as ModelarOfertaRouteImport } from './routes/modelar-oferta'
 import { Route as ModelarQuizRouteImport } from './routes/modelar-quiz'
-import { Route as ModelarWhatsappRouteImport } from './routes/modelar-whatsapp'
 import { Route as OfertasRouteImport } from './routes/ofertas'
 import { Route as OfertasDoDiaRouteImport } from './routes/ofertas-do-dia'
 import { Route as PalavrasBloqueadasRouteImport } from './routes/palavras-bloqueadas'
@@ -144,11 +143,6 @@ const ModelarOfertaRoute = ModelarOfertaRouteImport.update({
 const ModelarQuizRoute = ModelarQuizRouteImport.update({
   id: '/modelar-quiz',
   path: '/modelar-quiz',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ModelarWhatsappRoute = ModelarWhatsappRouteImport.update({
-  id: '/modelar-whatsapp',
-  path: '/modelar-whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfertasRoute = OfertasRouteImport.update({
@@ -340,7 +334,6 @@ export interface FileRoutesByFullPath {
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
   '/modelar-quiz': typeof ModelarQuizRouteWithChildren
-  '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -390,7 +383,6 @@ export interface FileRoutesByTo {
   '/minha-conta': typeof MinhaContaRoute
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
-  '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -444,7 +436,6 @@ export interface FileRoutesById {
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
   '/modelar-quiz': typeof ModelarQuizRouteWithChildren
-  '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -499,7 +490,6 @@ export interface FileRouteTypes {
     | '/modela-spy-ai'
     | '/modelar-oferta'
     | '/modelar-quiz'
-    | '/modelar-whatsapp'
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
@@ -549,7 +539,6 @@ export interface FileRouteTypes {
     | '/minha-conta'
     | '/modela-spy-ai'
     | '/modelar-oferta'
-    | '/modelar-whatsapp'
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
@@ -602,7 +591,6 @@ export interface FileRouteTypes {
     | '/modela-spy-ai'
     | '/modelar-oferta'
     | '/modelar-quiz'
-    | '/modelar-whatsapp'
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
@@ -656,7 +644,6 @@ export interface RootRouteChildren {
   ModelaSpyAiRoute: typeof ModelaSpyAiRoute
   ModelarOfertaRoute: typeof ModelarOfertaRoute
   ModelarQuizRoute: typeof ModelarQuizRouteWithChildren
-  ModelarWhatsappRoute: typeof ModelarWhatsappRoute
   OfertasRoute: typeof OfertasRoute
   OfertasDoDiaRoute: typeof OfertasDoDiaRoute
   PalavrasBloqueadasRoute: typeof PalavrasBloqueadasRoute
@@ -796,13 +783,6 @@ declare module '@tanstack/react-router' {
       path: '/modelar-quiz'
       fullPath: '/modelar-quiz'
       preLoaderRoute: typeof ModelarQuizRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/modelar-whatsapp': {
-      id: '/modelar-whatsapp'
-      path: '/modelar-whatsapp'
-      fullPath: '/modelar-whatsapp'
-      preLoaderRoute: typeof ModelarWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ofertas': {
@@ -1115,7 +1095,6 @@ const rootRouteChildren: RootRouteChildren = {
   ModelaSpyAiRoute: ModelaSpyAiRoute,
   ModelarOfertaRoute: ModelarOfertaRoute,
   ModelarQuizRoute: ModelarQuizRouteWithChildren,
-  ModelarWhatsappRoute: ModelarWhatsappRoute,
   OfertasRoute: OfertasRoute,
   OfertasDoDiaRoute: OfertasDoDiaRoute,
   PalavrasBloqueadasRoute: PalavrasBloqueadasRoute,
