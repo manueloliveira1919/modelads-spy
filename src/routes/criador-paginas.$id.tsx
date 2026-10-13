@@ -276,7 +276,7 @@ function Editor({ initial }: { initial: SalesPage }) {
   };
 
   return (
-    <div className="-mx-4 -my-6 flex h-[calc(100dvh-57px)] flex-col sm:-mx-6 lg:-mx-10 lg:-my-10 lg:h-[100dvh]">
+    <div className="fixed inset-0 z-50 flex flex-col bg-background">
       {/* Barra superior */}
       <div className="flex flex-wrap items-center gap-2 border-b border-border bg-card/60 px-3 py-2">
         <Button asChild size="icon" variant="ghost" className="h-8 w-8"><Link to="/criador-paginas" aria-label="Voltar"><ArrowLeft className="h-4 w-4" /></Link></Button>
