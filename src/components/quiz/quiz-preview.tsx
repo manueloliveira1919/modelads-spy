@@ -83,7 +83,6 @@ export function QuizPreview({
         }}
         onClick={() => onSelectElement?.(null)}
       >
-        <QuizFonts settings={settings} elements={[]} editor />
         <div className="q-card" style={{ maxWidth: settings.layout.contentWidth }}>
           <div className="q-step-header">
             <span>

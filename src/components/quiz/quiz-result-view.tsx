@@ -62,7 +62,7 @@ function BarChart({ percent, settings }: { percent: number; settings: QuizSettin
   );
 }
 
-function CircleChart({ percent, settings }: { percent: number; settings: QuizSettings }) {
+function CircleChart({ percent, settings, showPercent = true }: { percent: number; settings: QuizSettings; showPercent?: boolean }) {
   const r = 52;
   const c = 2 * Math.PI * r;
   const gid = useId();
@@ -96,7 +96,7 @@ function CircleChart({ percent, settings }: { percent: number; settings: QuizSet
           style={{ transition: "stroke-dashoffset .9s ease" }}
         />
       </svg>
-      <div className="absolute inset-0 grid place-items-center text-2xl font-bold">{percent}%</div>
+      {showPercent && <div className="absolute inset-0 grid place-items-center text-2xl font-bold">{percent}%</div>}
     </div>
   );
 }
@@ -195,7 +195,7 @@ function ResultPresentation({ el, settings, score, percent, hasScoring, editor, 
   const image = (editor ? "" : range?.image?.trim()) || String(ct.image ?? "").trim();
   const chart = pct === null ? "none" : String(st.chart ?? "bar");
   const setCt = (patch: Record<string, unknown>) => editor?.onTextChange?.(patch);
-  const editable = !!editor && !previewAnimation;
+  const editable = !!editor && (!previewAnimation || ready);
   const part = (key: ResultTextPart, text: string, field?: "title" | "subtitle" | "description", extra?: React.CSSProperties) => {
     const ps = { ...st, ...resultPartSettings(st, key) }, def = RESULT_TEXT_PARTS[key];
     // A matching range's text must never borrow default-content runs.
@@ -206,7 +206,7 @@ function ResultPresentation({ el, settings, score, percent, hasScoring, editor, 
   const bars = (Array.isArray(ct.bars) ? ct.bars : []) as ResultItem[];
   const checklist = (Array.isArray(ct.checklist) ? ct.checklist : []) as ResultItem[];
   const listChange = (key: string, list: ResultItem[], id: string, patch: Partial<ResultItem>) => setCt({ [key]: list.map(x => x.id === id ? { ...x, ...patch } : x) });
-  const editLoading = editable && st.loading === true;
+  const editLoading = editable && st.loading === true && !previewAnimation;
   return <div className="q-result-shell">
     {(!ready || editLoading) && <div className="q-result-analysis" role={!ready ? "status" : undefined}>
       <EditableText as="h2" value={String(ct.loadingTitle || "Analisando suas respostas...")} editable={editable} onChange={v => setCt({ loadingTitle: v })} />
@@ -219,8 +219,8 @@ function ResultPresentation({ el, settings, score, percent, hasScoring, editor, 
       {(title || editor) && part("title", title || DEFAULT_RESULT_TITLE, "title")}
       {(ct.subtitle || editor) && part("subtitle", String(ct.subtitle || ""), "subtitle")}
       {image && <img src={image} alt="" loading="lazy" className="q-media max-h-64 w-full rounded-2xl object-cover" />}
-      {st.showScore !== false && hasScoring && part("score", `${Math.round(score * count)} ${String(st.scoreSuffix ?? "pontos")}`, undefined, { color: settings.colors.secondary })}
-      {chart === "circle" && pct !== null && <CircleChart percent={Math.round(pct * count)} settings={settings} />}
+      {st.showScore !== false && hasScoring && part("score", `${Math.round(score * count)} ${String(st.scoreSuffix ?? "pontos")}`, undefined, resultPartSettings(st, "score").color || st.color ? {} : { color: settings.colors.secondary })}
+      {chart === "circle" && pct !== null && <CircleChart percent={Math.round(pct * count)} settings={settings} showPercent={st.showPercent !== false} />}
       {chart === "bar" && pct !== null && <BarChart percent={Math.round(pct * count)} settings={settings} />}
       {st.showPercent !== false && pct !== null && chart !== "circle" && part("percent", `${Math.round(pct * count)}%`)}
       {(description || editor) && part("description", description, "description")}

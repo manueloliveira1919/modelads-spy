@@ -19,3 +19,6 @@
 - Quiz elements render through `QuizElementView` in editor and runner; session, navigation, scoring and lead submission stay in `QuizRunner` — prevents visual drift without changing execution rules.
 - Quiz creation defaults are separate from legacy normalization defaults — new styling never overwrites saved or missing legacy settings.
 - Quiz image uploads reuse the existing authenticated private asset upload helper — persist signed URLs rather than embedding file data in JSON.
+- Quiz rich text is data-only validated runs with synchronized plain text; selection edits update the focused DOM before autosave to preserve the cursor and avoid user HTML execution.
+- Quiz font stylesheets are stable per editor or complete runner dataset; await font faces before applying selections to prevent fallback flashes.
+- Result presentation owns analysis/count-up timing and signals readiness to the runner; session navigation, scoring and lead writes remain unchanged.

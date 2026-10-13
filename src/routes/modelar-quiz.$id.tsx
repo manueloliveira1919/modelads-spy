@@ -41,6 +41,8 @@ import { cn } from "@/lib/utils";
 import { QuizPreview, type PreviewDevice } from "@/components/quiz/quiz-preview";
 import { QuizRunner } from "@/components/quiz/quiz-runner";
 import { QuizRichTextProvider } from "@/components/quiz/quiz-rich-toolbar";
+import { QuizFonts } from "@/components/quiz/quiz-element-view";
+import { DEFAULT_QUIZ_SETTINGS } from "@/lib/quiz-types";
 import { ThemePanel, ElementEditor, SectionProperties } from "@/components/quiz/quiz-panels";
 import { isSlugAvailable, loadQuiz, saveQuiz, SlugTakenError } from "@/lib/quiz-api";
 import { useSlugAvailability } from "@/lib/use-slug-availability";
@@ -92,7 +94,7 @@ type SaveState = "idle" | "saving" | "saved" | "error";
 function EditorPage() {
   return (
     <ProGate icon={HelpCircle} title="Modelar Quiz" description="Editor visual do seu quiz.">
-      <QuizRichTextProvider><EditorContent /></QuizRichTextProvider>
+      <QuizRichTextProvider><QuizFonts editor settings={DEFAULT_QUIZ_SETTINGS} elements={[]} /><EditorContent /></QuizRichTextProvider>
     </ProGate>
   );
 }
