@@ -107,6 +107,8 @@ function Editor({ initial }: { initial: SalesPage }) {
   const [snap, setSnap] = useState<Snap>({ sections: initial.sections, settings: initial.settings });
   const [past, setPast] = useState<Snap[]>([]);
   const [future, setFuture] = useState<Snap[]>([]);
+  const currentSnap = useRef(snap);
+  const history = useRef<{ past: Snap[]; future: Snap[] }>({ past: [], future: [] });
   const lastPush = useRef<{ key: string; at: number }>({ key: "", at: 0 });
   const [meta, setMeta] = useState({ name: initial.name, slug: initial.slug, status: initial.status });
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -119,36 +121,41 @@ function Editor({ initial }: { initial: SalesPage }) {
 
   /** Aplica uma alteração registrando histórico (alterações seguidas no mesmo campo viram um passo). */
   const commit = useCallback((fn: (s: Snap) => Snap, key = uid()) => {
-    setSnap((cur) => {
+      const cur = currentSnap.current;
       const next = fn(cur);
-      if (next === cur) return cur;
+      if (next === cur) return;
       const now = Date.now();
       if (!(lastPush.current.key === key && now - lastPush.current.at < 800)) {
-        setPast((p) => [...p.slice(-79), cur]);
-        setFuture([]);
+        history.current = { past: [...history.current.past.slice(-79), cur], future: [] };
       }
       lastPush.current = { key, at: now };
-      return next;
-    });
+      currentSnap.current = next;
+      setSnap(next);
+      setPast(history.current.past);
+      setFuture(history.current.future);
   }, []);
 
   const undo = useCallback(() => {
-    setPast((p) => {
-      if (!p.length) return p;
-      const prev = p[p.length - 1];
-      setSnap((cur) => (setFuture((f) => [cur, ...f]), prev));
+      const h = history.current;
+      const prev = h.past.at(-1);
+      if (!prev) return;
+      history.current = { past: h.past.slice(0, -1), future: [currentSnap.current, ...h.future] };
+      currentSnap.current = prev;
+      setSnap(prev);
+      setPast(history.current.past);
+      setFuture(history.current.future);
       lastPush.current = { key: "", at: 0 };
-      return p.slice(0, -1);
-    });
   }, []);
   const redo = useCallback(() => {
-    setFuture((f) => {
-      if (!f.length) return f;
-      const nxt = f[0];
-      setSnap((cur) => (setPast((p) => [...p, cur]), nxt));
+      const h = history.current;
+      const nxt = h.future[0];
+      if (!nxt) return;
+      history.current = { past: [...h.past, currentSnap.current], future: h.future.slice(1) };
+      currentSnap.current = nxt;
+      setSnap(nxt);
+      setPast(history.current.past);
+      setFuture(history.current.future);
       lastPush.current = { key: "", at: 0 };
-      return f.slice(1);
-    });
   }, []);
 
   useEffect(() => {
