@@ -300,7 +300,9 @@ export function QuizRunner({
           "relative",
         )}
         style={
-          fullScreen ? quizSurfaceStyle(settings) : { maxWidth: DEVICE_WIDTH[device], ...quizSurfaceStyle(settings) }
+          fullScreen
+            ? quizSurfaceStyle(settings)
+            : { maxWidth: DEVICE_WIDTH[device], ...quizSurfaceStyle(settings) }
         }
       >
         {showConfetti && confettiKey === `${session.session_id}-${section.id}` && (
