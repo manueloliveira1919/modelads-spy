@@ -387,8 +387,9 @@ function EditorContent() {
             <span className="hidden 2xl:inline shrink-0 text-[10px] uppercase text-muted-foreground">
               {SECTION_LABEL[s.type]}
             </span>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               aria-label="Duplicar seção"
               onClick={(e) => {
                 e.stopPropagation();
@@ -397,9 +398,10 @@ function EditorContent() {
               className="rounded p-1 text-muted-foreground hover:text-foreground"
             >
               <Copy className="h-3.5 w-3.5" />
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               aria-label="Excluir seção"
               onClick={(e) => {
                 e.stopPropagation();
@@ -408,7 +410,7 @@ function EditorContent() {
               className="rounded p-1 text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
-            </button>
+            </Button>
           </div>
         );
       })}
@@ -523,13 +525,14 @@ function EditorContent() {
                 ✕ Este endereço já está sendo utilizado
               </span>
               {slugCheck.suggestion && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="text-[11px] font-semibold text-brand underline"
                   onClick={() => updateQuiz({ slug: slugCheck.suggestion! })}
                 >
                   Usar {slugCheck.suggestion}
-                </button>
+                </Button>
               )}
             </div>
           )}
@@ -681,9 +684,10 @@ function DeviceSwitch({
   return (
     <div className="inline-flex rounded-lg border border-border p-0.5">
       {items.map((it) => (
-        <button
+        <Button
           key={it.key}
-          type="button"
+          variant="ghost"
+          size="icon"
           aria-label={it.label}
           onClick={() => onChange(it.key)}
           className={cn(
@@ -694,7 +698,7 @@ function DeviceSwitch({
           )}
         >
           <it.icon className="h-4 w-4" />
-        </button>
+        </Button>
       ))}
     </div>
   );
