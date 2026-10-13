@@ -15,7 +15,7 @@ describe("Sales page compatibility and output parity", () => {
     expect(renderToStaticMarkup(createElement(PageRenderer, { sections: [section], settings: DEFAULT_PAGE_SETTINGS }))).not.toContain('class="sp-btn"');
   });
   it("uses independent button settings, order and links in exported HTML", () => {
-    const section = newSection("hero", { title: "TITLE_MARKER", subtitle: "SUBTITLE_MARKER", buttons: [
+    const section = newSection("hero", { title: "HEADLINE_MARKER", subtitle: "SUBTITLE_MARKER", buttons: [
       { id: "a", text: "FIRST_BUTTON", url: "https://example.com/a", bg: "#123456", color: "#abcdef", variant: "outline" },
       { id: "b", text: "SECOND_BUTTON", url: "#oferta", variant: "text" },
     ] });
@@ -23,7 +23,7 @@ describe("Sales page compatibility and output parity", () => {
     const html = buildPageHtml("Test", DEFAULT_PAGE_SETTINGS, [section]);
     expect(html.indexOf("SECOND_BUTTON")).toBeLessThan(html.indexOf("SUBTITLE_MARKER"));
     expect(html.indexOf("SUBTITLE_MARKER")).toBeLessThan(html.indexOf("FIRST_BUTTON"));
-    expect(html.indexOf("FIRST_BUTTON")).toBeLessThan(html.indexOf("TITLE_MARKER"));
+    expect(html.indexOf("FIRST_BUTTON")).toBeLessThan(html.indexOf("HEADLINE_MARKER"));
     expect(html).toContain("2px solid #123456");
     expect(html).toContain('href="https://example.com/a"');
     expect(html).not.toContain('class="sp-element-tools"');
