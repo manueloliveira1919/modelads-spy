@@ -61,12 +61,15 @@ export const Route = createFileRoute("/criador-paginas/$id")({
       { name: "robots", content: "noindex" },
     ],
   }),
-  component: () => (
-    <ProGate icon={LayoutTemplate} title="Criador de Páginas de Venda" description="Edite sua página com preview ao vivo.">
-      <EditorLoader />
-    </ProGate>
-  ),
+  component: EditorGate,
 });
+
+function EditorGate() {
+  const { isPro, loading } = useAuth();
+  // Editor em tela cheia: fora do layout padrão para aproveitar todo o espaço.
+  if (!loading && isPro) return <EditorLoader />;
+  return <ProGate icon={LayoutTemplate} title="Criador de Páginas de Venda" description="Edite sua página com preview ao vivo." />;
+}
 
 function EditorLoader() {
   const { id } = Route.useParams();
