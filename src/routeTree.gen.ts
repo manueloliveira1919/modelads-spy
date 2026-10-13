@@ -16,6 +16,7 @@ import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as CriadorAudiosRouteImport } from './routes/criador-audios'
 import { Route as CriadorCriativosRouteImport } from './routes/criador-criativos'
+import { Route as CriadorPaginasRouteImport } from './routes/criador-paginas'
 import { Route as CriadorVslRouteImport } from './routes/criador-vsl'
 import { Route as EmBreveRouteImport } from './routes/em-breve'
 import { Route as ExclusaoDeDadosRouteImport } from './routes/exclusao-de-dados'
@@ -49,6 +50,7 @@ import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
 import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
 import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as QuizSlugRouteImport } from './routes/quiz.$slug'
 import { Route as ModelarQuizLeadsIdRouteImport } from './routes/modelar-quiz.leads.$id'
 import { Route as ApiPublicExtensionStatusRouteImport } from './routes/api/public/extension/status'
@@ -90,6 +92,11 @@ const CriadorAudiosRoute = CriadorAudiosRouteImport.update({
 const CriadorCriativosRoute = CriadorCriativosRouteImport.update({
   id: '/criador-criativos',
   path: '/criador-criativos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadorPaginasRoute = CriadorPaginasRouteImport.update({
+  id: '/criador-paginas',
+  path: '/criador-paginas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CriadorVslRoute = CriadorVslRouteImport.update({
@@ -257,6 +264,11 @@ const OfertaIdRoute = OfertaIdRouteImport.update({
   path: '/oferta/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const QuizSlugRoute = QuizSlugRouteImport.update({
   id: '/quiz/$slug',
   path: '/quiz/$slug',
@@ -306,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
+  '/criador-paginas': typeof CriadorPaginasRoute
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
@@ -337,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/admin/suporte': typeof AdminSuporteRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
@@ -354,6 +368,7 @@ export interface FileRoutesByTo {
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
+  '/criador-paginas': typeof CriadorPaginasRoute
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
@@ -384,6 +399,7 @@ export interface FileRoutesByTo {
   '/admin/suporte': typeof AdminSuporteRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
   '/admin': typeof AdminIndexRoute
   '/modelar-quiz': typeof ModelarQuizIndexRoute
@@ -403,6 +419,7 @@ export interface FileRoutesById {
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
+  '/criador-paginas': typeof CriadorPaginasRoute
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
@@ -434,6 +451,7 @@ export interface FileRoutesById {
   '/admin/suporte': typeof AdminSuporteRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
@@ -454,6 +472,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
+    | '/criador-paginas'
     | '/criador-vsl'
     | '/em-breve'
     | '/exclusao-de-dados'
@@ -485,6 +504,7 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/p/$slug'
     | '/quiz/$slug'
     | '/admin/'
     | '/modelar-quiz/'
@@ -502,6 +522,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
+    | '/criador-paginas'
     | '/criador-vsl'
     | '/em-breve'
     | '/exclusao-de-dados'
@@ -532,6 +553,7 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/p/$slug'
     | '/quiz/$slug'
     | '/admin'
     | '/modelar-quiz'
@@ -550,6 +572,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
+    | '/criador-paginas'
     | '/criador-vsl'
     | '/em-breve'
     | '/exclusao-de-dados'
@@ -581,6 +604,7 @@ export interface FileRouteTypes {
     | '/admin/suporte'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/p/$slug'
     | '/quiz/$slug'
     | '/admin/'
     | '/modelar-quiz/'
@@ -600,6 +624,7 @@ export interface RootRouteChildren {
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   CriadorAudiosRoute: typeof CriadorAudiosRoute
   CriadorCriativosRoute: typeof CriadorCriativosRoute
+  CriadorPaginasRoute: typeof CriadorPaginasRoute
   CriadorVslRoute: typeof CriadorVslRoute
   EmBreveRoute: typeof EmBreveRoute
   ExclusaoDeDadosRoute: typeof ExclusaoDeDadosRoute
@@ -621,6 +646,7 @@ export interface RootRouteChildren {
   UpgradeRoute: typeof UpgradeRoute
   UtmRoute: typeof UtmRoute
   OfertaIdRoute: typeof OfertaIdRoute
+  PSlugRoute: typeof PSlugRoute
   QuizSlugRoute: typeof QuizSlugRoute
   ApiPublicExtensionStatusRoute: typeof ApiPublicExtensionStatusRoute
   ApiPublicExtensionSubmitRoute: typeof ApiPublicExtensionSubmitRoute
@@ -678,6 +704,13 @@ declare module '@tanstack/react-router' {
       path: '/criador-criativos'
       fullPath: '/criador-criativos'
       preLoaderRoute: typeof CriadorCriativosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criador-paginas': {
+      id: '/criador-paginas'
+      path: '/criador-paginas'
+      fullPath: '/criador-paginas'
+      preLoaderRoute: typeof CriadorPaginasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/criador-vsl': {
@@ -911,6 +944,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OfertaIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/quiz/$slug': {
       id: '/quiz/$slug'
       path: '/quiz/$slug'
@@ -1015,6 +1055,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracoesRoute: ConfiguracoesRoute,
   CriadorAudiosRoute: CriadorAudiosRoute,
   CriadorCriativosRoute: CriadorCriativosRoute,
+  CriadorPaginasRoute: CriadorPaginasRoute,
   CriadorVslRoute: CriadorVslRoute,
   EmBreveRoute: EmBreveRoute,
   ExclusaoDeDadosRoute: ExclusaoDeDadosRoute,
@@ -1036,6 +1077,7 @@ const rootRouteChildren: RootRouteChildren = {
   UpgradeRoute: UpgradeRoute,
   UtmRoute: UtmRoute,
   OfertaIdRoute: OfertaIdRoute,
+  PSlugRoute: PSlugRoute,
   QuizSlugRoute: QuizSlugRoute,
   ApiPublicExtensionStatusRoute: ApiPublicExtensionStatusRoute,
   ApiPublicExtensionSubmitRoute: ApiPublicExtensionSubmitRoute,
