@@ -8,7 +8,9 @@ import {
   ChevronRight,
   Copy,
   Trash2,
+  Play,
 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { QuizSection, QuizSettings } from "@/lib/quiz-types";
@@ -46,6 +48,7 @@ export function QuizPreview({
   onNavigate?: (index: number) => void;
 }) {
   const editable = !!onElementContentChange;
+  const [resultAnimations, setResultAnimations] = useState<Record<string, number>>({});
   const percent = total ? Math.round(((index + 1) / total) * 100) : 0;
   return (
     <div className={cn("flex w-full flex-col items-center gap-3", className)}>
@@ -80,7 +83,7 @@ export function QuizPreview({
         }}
         onClick={() => onSelectElement?.(null)}
       >
-        <QuizFonts settings={settings} elements={section?.elements ?? []} />
+        <QuizFonts settings={settings} elements={[]} editor />
         <div className="q-card" style={{ maxWidth: settings.layout.contentWidth }}>
           <div className="q-step-header">
             <span>
@@ -189,6 +192,7 @@ export function QuizPreview({
                             })}
                           </>
                         )}
+                        {el.type === "result" && <Button variant="ghost" size="icon" aria-label="Ver animação" title="Ver animação" onClick={() => setResultAnimations(prev => ({ ...prev, [el.id]: (prev[el.id] || 0) + 1 }))}><Play className="h-3.5 w-3.5" /></Button>}
                       </div>
                     </>
                   )}
@@ -197,6 +201,7 @@ export function QuizPreview({
                     settings={settings}
                     percent={percent}
                     editable={editable}
+                    resultAnimationKey={resultAnimations[el.id] || 0}
                     onContentChange={(p) => onElementContentChange?.(el.id, p)}
                   />
                 </div>
