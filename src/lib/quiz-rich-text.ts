@@ -23,7 +23,7 @@ export function runStyle(r: TextRun): CSSProperties {
   return { color: r.color, fontFamily: r.font ? `"${r.font}",system-ui,sans-serif` : undefined, fontWeight: r.b ? 700 : undefined, fontStyle: r.i ? "italic" : undefined, textDecoration: r.u ? "underline" : undefined };
 }
 function cssColor(value: string): string | undefined {
-  if (validColor(value)) return value;
+  if (/^#[0-9a-f]{6}$/i.test(value)) return value;
   const rgb = value.match(/^rgb\(\s*(\d+)[, ]+\s*(\d+)[, ]+\s*(\d+)\s*\)$/);
   return rgb ? `#${rgb.slice(1).map(v => Math.min(255, Number(v)).toString(16).padStart(2, "0")).join("")}` : undefined;
 }

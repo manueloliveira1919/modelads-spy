@@ -337,7 +337,7 @@ export function ElementEditor({
               </Field>
             </>
           )}
-          {st.cta && st.cta !== "none" && (
+          {!!st.cta && st.cta !== "none" && (
             <Toggle
               label="Abrir em nova aba"
               value={st.ctaTarget !== "_self"}

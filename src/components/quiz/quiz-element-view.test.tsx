@@ -90,6 +90,7 @@ describe("Shared quiz renderer compatibility", () => {
         },
       ],
     });
+    el.settings.loading = false;
     const runtime = renderToStaticMarkup(
       <QuizElementView el={el} settings={s} percent={100} score={15} resultPercent={75} />,
     );
