@@ -16,6 +16,7 @@ import { Route as BuscarRouteImport } from './routes/buscar'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as CriadorAudiosRouteImport } from './routes/criador-audios'
 import { Route as CriadorCriativosRouteImport } from './routes/criador-criativos'
+import { Route as CriadorPaginasRouteImport } from './routes/criador-paginas'
 import { Route as CriadorVslRouteImport } from './routes/criador-vsl'
 import { Route as EmBreveRouteImport } from './routes/em-breve'
 import { Route as ExclusaoDeDadosRouteImport } from './routes/exclusao-de-dados'
@@ -25,7 +26,6 @@ import { Route as MinhaContaRouteImport } from './routes/minha-conta'
 import { Route as ModelaSpyAiRouteImport } from './routes/modela-spy-ai'
 import { Route as ModelarOfertaRouteImport } from './routes/modelar-oferta'
 import { Route as ModelarQuizRouteImport } from './routes/modelar-quiz'
-import { Route as ModelarWhatsappRouteImport } from './routes/modelar-whatsapp'
 import { Route as OfertasRouteImport } from './routes/ofertas'
 import { Route as OfertasDoDiaRouteImport } from './routes/ofertas-do-dia'
 import { Route as PalavrasBloqueadasRouteImport } from './routes/palavras-bloqueadas'
@@ -46,9 +46,12 @@ import { Route as AdminMineracaoRouteImport } from './routes/admin.mineracao'
 import { Route as AdminPalavrasChaveRouteImport } from './routes/admin.palavras-chave'
 import { Route as AdminQualidadeRouteImport } from './routes/admin.qualidade'
 import { Route as AdminSuporteRouteImport } from './routes/admin.suporte'
+import { Route as CriadorPaginasIndexRouteImport } from './routes/criador-paginas.index'
+import { Route as CriadorPaginasIdRouteImport } from './routes/criador-paginas.$id'
 import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
 import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
+import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as QuizSlugRouteImport } from './routes/quiz.$slug'
 import { Route as ModelarQuizLeadsIdRouteImport } from './routes/modelar-quiz.leads.$id'
 import { Route as ApiPublicExtensionStatusRouteImport } from './routes/api/public/extension/status'
@@ -90,6 +93,11 @@ const CriadorAudiosRoute = CriadorAudiosRouteImport.update({
 const CriadorCriativosRoute = CriadorCriativosRouteImport.update({
   id: '/criador-criativos',
   path: '/criador-criativos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CriadorPaginasRoute = CriadorPaginasRouteImport.update({
+  id: '/criador-paginas',
+  path: '/criador-paginas',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CriadorVslRoute = CriadorVslRouteImport.update({
@@ -135,11 +143,6 @@ const ModelarOfertaRoute = ModelarOfertaRouteImport.update({
 const ModelarQuizRoute = ModelarQuizRouteImport.update({
   id: '/modelar-quiz',
   path: '/modelar-quiz',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ModelarWhatsappRoute = ModelarWhatsappRouteImport.update({
-  id: '/modelar-whatsapp',
-  path: '/modelar-whatsapp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfertasRoute = OfertasRouteImport.update({
@@ -242,6 +245,16 @@ const AdminSuporteRoute = AdminSuporteRouteImport.update({
   path: '/suporte',
   getParentRoute: () => AdminRoute,
 } as any)
+const CriadorPaginasIndexRoute = CriadorPaginasIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => CriadorPaginasRoute,
+} as any)
+const CriadorPaginasIdRoute = CriadorPaginasIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => CriadorPaginasRoute,
+} as any)
 const ModelarQuizIndexRoute = ModelarQuizIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -255,6 +268,11 @@ const ModelarQuizIdRoute = ModelarQuizIdRouteImport.update({
 const OfertaIdRoute = OfertaIdRouteImport.update({
   id: '/oferta/$id',
   path: '/oferta/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PSlugRoute = PSlugRouteImport.update({
+  id: '/p/$slug',
+  path: '/p/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const QuizSlugRoute = QuizSlugRouteImport.update({
@@ -306,6 +324,7 @@ export interface FileRoutesByFullPath {
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
+  '/criador-paginas': typeof CriadorPaginasRouteWithChildren
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
@@ -315,7 +334,6 @@ export interface FileRoutesByFullPath {
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
   '/modelar-quiz': typeof ModelarQuizRouteWithChildren
-  '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -335,10 +353,13 @@ export interface FileRoutesByFullPath {
   '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
+  '/criador-paginas/$id': typeof CriadorPaginasIdRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/criador-paginas/': typeof CriadorPaginasIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
@@ -362,7 +383,6 @@ export interface FileRoutesByTo {
   '/minha-conta': typeof MinhaContaRoute
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
-  '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -382,10 +402,13 @@ export interface FileRoutesByTo {
   '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
+  '/criador-paginas/$id': typeof CriadorPaginasIdRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
   '/admin': typeof AdminIndexRoute
+  '/criador-paginas': typeof CriadorPaginasIndexRoute
   '/modelar-quiz': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
@@ -403,6 +426,7 @@ export interface FileRoutesById {
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
+  '/criador-paginas': typeof CriadorPaginasRouteWithChildren
   '/criador-vsl': typeof CriadorVslRoute
   '/em-breve': typeof EmBreveRoute
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
@@ -412,7 +436,6 @@ export interface FileRoutesById {
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
   '/modelar-quiz': typeof ModelarQuizRouteWithChildren
-  '/modelar-whatsapp': typeof ModelarWhatsappRoute
   '/ofertas': typeof OfertasRoute
   '/ofertas-do-dia': typeof OfertasDoDiaRoute
   '/palavras-bloqueadas': typeof PalavrasBloqueadasRoute
@@ -432,10 +455,13 @@ export interface FileRoutesById {
   '/admin/palavras-chave': typeof AdminPalavrasChaveRoute
   '/admin/qualidade': typeof AdminQualidadeRoute
   '/admin/suporte': typeof AdminSuporteRoute
+  '/criador-paginas/$id': typeof CriadorPaginasIdRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
   '/oferta/$id': typeof OfertaIdRoute
+  '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
   '/admin/': typeof AdminIndexRoute
+  '/criador-paginas/': typeof CriadorPaginasIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
@@ -454,6 +480,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
+    | '/criador-paginas'
     | '/criador-vsl'
     | '/em-breve'
     | '/exclusao-de-dados'
@@ -463,7 +490,6 @@ export interface FileRouteTypes {
     | '/modela-spy-ai'
     | '/modelar-oferta'
     | '/modelar-quiz'
-    | '/modelar-whatsapp'
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
@@ -483,10 +509,13 @@ export interface FileRouteTypes {
     | '/admin/palavras-chave'
     | '/admin/qualidade'
     | '/admin/suporte'
+    | '/criador-paginas/$id'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/p/$slug'
     | '/quiz/$slug'
     | '/admin/'
+    | '/criador-paginas/'
     | '/modelar-quiz/'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
@@ -510,7 +539,6 @@ export interface FileRouteTypes {
     | '/minha-conta'
     | '/modela-spy-ai'
     | '/modelar-oferta'
-    | '/modelar-whatsapp'
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
@@ -530,10 +558,13 @@ export interface FileRouteTypes {
     | '/admin/palavras-chave'
     | '/admin/qualidade'
     | '/admin/suporte'
+    | '/criador-paginas/$id'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/p/$slug'
     | '/quiz/$slug'
     | '/admin'
+    | '/criador-paginas'
     | '/modelar-quiz'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
@@ -550,6 +581,7 @@ export interface FileRouteTypes {
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
+    | '/criador-paginas'
     | '/criador-vsl'
     | '/em-breve'
     | '/exclusao-de-dados'
@@ -559,7 +591,6 @@ export interface FileRouteTypes {
     | '/modela-spy-ai'
     | '/modelar-oferta'
     | '/modelar-quiz'
-    | '/modelar-whatsapp'
     | '/ofertas'
     | '/ofertas-do-dia'
     | '/palavras-bloqueadas'
@@ -579,10 +610,13 @@ export interface FileRouteTypes {
     | '/admin/palavras-chave'
     | '/admin/qualidade'
     | '/admin/suporte'
+    | '/criador-paginas/$id'
     | '/modelar-quiz/$id'
     | '/oferta/$id'
+    | '/p/$slug'
     | '/quiz/$slug'
     | '/admin/'
+    | '/criador-paginas/'
     | '/modelar-quiz/'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
@@ -600,6 +634,7 @@ export interface RootRouteChildren {
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   CriadorAudiosRoute: typeof CriadorAudiosRoute
   CriadorCriativosRoute: typeof CriadorCriativosRoute
+  CriadorPaginasRoute: typeof CriadorPaginasRouteWithChildren
   CriadorVslRoute: typeof CriadorVslRoute
   EmBreveRoute: typeof EmBreveRoute
   ExclusaoDeDadosRoute: typeof ExclusaoDeDadosRoute
@@ -609,7 +644,6 @@ export interface RootRouteChildren {
   ModelaSpyAiRoute: typeof ModelaSpyAiRoute
   ModelarOfertaRoute: typeof ModelarOfertaRoute
   ModelarQuizRoute: typeof ModelarQuizRouteWithChildren
-  ModelarWhatsappRoute: typeof ModelarWhatsappRoute
   OfertasRoute: typeof OfertasRoute
   OfertasDoDiaRoute: typeof OfertasDoDiaRoute
   PalavrasBloqueadasRoute: typeof PalavrasBloqueadasRoute
@@ -621,6 +655,7 @@ export interface RootRouteChildren {
   UpgradeRoute: typeof UpgradeRoute
   UtmRoute: typeof UtmRoute
   OfertaIdRoute: typeof OfertaIdRoute
+  PSlugRoute: typeof PSlugRoute
   QuizSlugRoute: typeof QuizSlugRoute
   ApiPublicExtensionStatusRoute: typeof ApiPublicExtensionStatusRoute
   ApiPublicExtensionSubmitRoute: typeof ApiPublicExtensionSubmitRoute
@@ -678,6 +713,13 @@ declare module '@tanstack/react-router' {
       path: '/criador-criativos'
       fullPath: '/criador-criativos'
       preLoaderRoute: typeof CriadorCriativosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/criador-paginas': {
+      id: '/criador-paginas'
+      path: '/criador-paginas'
+      fullPath: '/criador-paginas'
+      preLoaderRoute: typeof CriadorPaginasRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/criador-vsl': {
@@ -741,13 +783,6 @@ declare module '@tanstack/react-router' {
       path: '/modelar-quiz'
       fullPath: '/modelar-quiz'
       preLoaderRoute: typeof ModelarQuizRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/modelar-whatsapp': {
-      id: '/modelar-whatsapp'
-      path: '/modelar-whatsapp'
-      fullPath: '/modelar-whatsapp'
-      preLoaderRoute: typeof ModelarWhatsappRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/ofertas': {
@@ -890,6 +925,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSuporteRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/criador-paginas/': {
+      id: '/criador-paginas/'
+      path: '/'
+      fullPath: '/criador-paginas/'
+      preLoaderRoute: typeof CriadorPaginasIndexRouteImport
+      parentRoute: typeof CriadorPaginasRoute
+    }
+    '/criador-paginas/$id': {
+      id: '/criador-paginas/$id'
+      path: '/$id'
+      fullPath: '/criador-paginas/$id'
+      preLoaderRoute: typeof CriadorPaginasIdRouteImport
+      parentRoute: typeof CriadorPaginasRoute
+    }
     '/modelar-quiz/': {
       id: '/modelar-quiz/'
       path: '/'
@@ -909,6 +958,13 @@ declare module '@tanstack/react-router' {
       path: '/oferta/$id'
       fullPath: '/oferta/$id'
       preLoaderRoute: typeof OfertaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/p/$slug': {
+      id: '/p/$slug'
+      path: '/p/$slug'
+      fullPath: '/p/$slug'
+      preLoaderRoute: typeof PSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/quiz/$slug': {
@@ -991,6 +1047,20 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface CriadorPaginasRouteChildren {
+  CriadorPaginasIdRoute: typeof CriadorPaginasIdRoute
+  CriadorPaginasIndexRoute: typeof CriadorPaginasIndexRoute
+}
+
+const CriadorPaginasRouteChildren: CriadorPaginasRouteChildren = {
+  CriadorPaginasIdRoute: CriadorPaginasIdRoute,
+  CriadorPaginasIndexRoute: CriadorPaginasIndexRoute,
+}
+
+const CriadorPaginasRouteWithChildren = CriadorPaginasRoute._addFileChildren(
+  CriadorPaginasRouteChildren,
+)
+
 interface ModelarQuizRouteChildren {
   ModelarQuizIdRoute: typeof ModelarQuizIdRoute
   ModelarQuizIndexRoute: typeof ModelarQuizIndexRoute
@@ -1015,6 +1085,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConfiguracoesRoute: ConfiguracoesRoute,
   CriadorAudiosRoute: CriadorAudiosRoute,
   CriadorCriativosRoute: CriadorCriativosRoute,
+  CriadorPaginasRoute: CriadorPaginasRouteWithChildren,
   CriadorVslRoute: CriadorVslRoute,
   EmBreveRoute: EmBreveRoute,
   ExclusaoDeDadosRoute: ExclusaoDeDadosRoute,
@@ -1024,7 +1095,6 @@ const rootRouteChildren: RootRouteChildren = {
   ModelaSpyAiRoute: ModelaSpyAiRoute,
   ModelarOfertaRoute: ModelarOfertaRoute,
   ModelarQuizRoute: ModelarQuizRouteWithChildren,
-  ModelarWhatsappRoute: ModelarWhatsappRoute,
   OfertasRoute: OfertasRoute,
   OfertasDoDiaRoute: OfertasDoDiaRoute,
   PalavrasBloqueadasRoute: PalavrasBloqueadasRoute,
@@ -1036,6 +1106,7 @@ const rootRouteChildren: RootRouteChildren = {
   UpgradeRoute: UpgradeRoute,
   UtmRoute: UtmRoute,
   OfertaIdRoute: OfertaIdRoute,
+  PSlugRoute: PSlugRoute,
   QuizSlugRoute: QuizSlugRoute,
   ApiPublicExtensionStatusRoute: ApiPublicExtensionStatusRoute,
   ApiPublicExtensionSubmitRoute: ApiPublicExtensionSubmitRoute,

@@ -12,7 +12,7 @@ import {
   Settings,
   Bot,
   FileText,
-  MessageCircle,
+  LayoutTemplate,
   HelpCircle,
   Image as ImageIcon,
   Mic,
@@ -46,7 +46,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
     items: [
       { to: "/modela-spy-ai", label: "Modela Spy AI", icon: Bot, pro: true },
       { to: "/modelar-oferta", label: "Modelar Oferta", icon: FileText, pro: true },
-      { to: "/modelar-whatsapp", label: "Modelar Funil WhatsApp", icon: MessageCircle, pro: true },
+      { to: "/criador-paginas", label: "Criador de Páginas de Venda", icon: LayoutTemplate, pro: true },
       { to: "/modelar-quiz", label: "Modelar Quiz", icon: HelpCircle, pro: true },
       { to: "/criador-criativos", label: "Criador de Criativos", icon: ImageIcon, pro: true },
       { to: "/criador-audios", label: "Criador de Áudios", icon: Mic, pro: true },

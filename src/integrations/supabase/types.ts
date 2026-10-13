@@ -1120,6 +1120,42 @@ export type Database = {
         }
         Relationships: []
       }
+      sales_pages: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          sections: Json
+          settings: Json
+          slug: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name?: string
+          sections?: Json
+          settings?: Json
+          slug: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          sections?: Json
+          settings?: Json
+          slug?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       search_keywords: {
         Row: {
           category: string | null
