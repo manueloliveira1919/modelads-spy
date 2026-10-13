@@ -4,8 +4,37 @@ import { QuizElementView, quizSurfaceStyle } from "./quiz-element-view";
 import { DEFAULT_QUIZ_SETTINGS, NEW_QUIZ_SETTINGS, makeElement } from "@/lib/quiz-types";
 import { applyQuizTheme, QUIZ_THEMES } from "@/lib/quiz-themes";
 import { mergeSettings } from "@/lib/quiz-api";
+import { collectQuizFonts } from "@/lib/quiz-visual";
+import { normalizeRuns, clearRunProperty } from "@/lib/quiz-rich-text";
 const s = DEFAULT_QUIZ_SETTINGS;
 describe("Shared quiz renderer compatibility", () => {
+  it("renders safe runs and rejects user markup, unknown colors and fonts", () => {
+    const runs = normalizeRuns([{ t: "safe", color: "#123456", font: "Oswald", b: true }, { t: "<script>alert(1)</script>", color: "url(evil)", font: "evil" }]);
+    const el = makeElement("s", "text", 0, { text: runs.map(r => r.t).join(""), runs });
+    const html = renderToStaticMarkup(<QuizElementView el={el} settings={s} percent={0} />);
+    expect(html).toContain("Oswald"); expect(html).toContain("#123456"); expect(html).toContain("&lt;script&gt;"); expect(html).not.toContain("url(evil)");
+  });
+  it("collects run fonts across labels and result parts", () => {
+    const fonts = collectQuizFonts(s, [{ settings: { fontFamily: "Lato" }, content: { options: [{ runs: [{ t: "a", font: "Oswald" }] }], titleRuns: [{ t: "b", font: "Nunito" }] } }]);
+    expect(fonts).toEqual(["Lato", "Nunito", "Oswald", "Poppins"]);
+  });
+  it("uses the same runs in button, option and result labels", () => {
+    const runs = [{ t: "Trecho", color: "#123456", font: "Oswald", i: true }];
+    for (const el of [makeElement("s", "button", 0, { label: "Trecho", runs }), makeElement("s", "options", 0, { options: [{ id: "x", label: "Trecho", runs }] }), makeElement("s", "result", 0, { title: "Trecho", titleRuns: runs }, { loading: false })]) {
+      const html = renderToStaticMarkup(<QuizElementView el={el} settings={s} percent={100} />);
+      expect(html).toContain("#123456"); expect(html).toContain("Oswald"); expect(html).toContain("font-style:italic");
+    }
+  });
+  it("clears only the requested run override", () => {
+    expect(clearRunProperty({ runs: [{ t: "x", color: "#123456", font: "Oswald", b: true }] }, "color")).toEqual({ runs: [{ t: "x", font: "Oswald", b: true }] });
+  });
+  it("keeps missing legacy result analysis off and enables analysis only in new blocks", () => {
+    const el = makeElement("s", "result", 0);
+    expect(el.settings.loading).toBe(true); expect(el.settings.loadingSeconds).toBe(5);
+    el.settings = { chart: "bar" };
+    const html = renderToStaticMarkup(<QuizElementView el={el} settings={s} percent={100} />);
+    expect(html).not.toContain('role="status"'); expect(html).toContain("Seu resultado");
+  });
   it("renders legacy text and styles without editor attributes", () => {
     const el = makeElement(
       "section",
@@ -90,6 +119,7 @@ describe("Shared quiz renderer compatibility", () => {
         },
       ],
     });
+    el.settings.loading = false;
     const runtime = renderToStaticMarkup(
       <QuizElementView el={el} settings={s} percent={100} score={15} resultPercent={75} />,
     );

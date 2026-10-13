@@ -93,12 +93,20 @@ export function buttonTextVisualStyle(settings: VisualSettings, quiz: QuizSettin
 /** Coleta as fontes usadas (global + por elemento) para carregar sob demanda. */
 export function collectQuizFonts(
   quiz: QuizSettings,
-  elements: { settings: Record<string, unknown> }[],
+  elements: { settings: Record<string, unknown>; content?: Record<string, unknown> }[],
 ): string[] {
   const set = new Set<string>();
   const known = new Set<string>(QUIZ_FONTS);
   if (known.has(quiz.font)) set.add(quiz.font);
   for (const el of elements) {
+    const visit = (value: unknown) => {
+      if (Array.isArray(value)) { value.forEach(visit); return; }
+      if (!value || typeof value !== "object") return;
+      const object = value as Record<string, unknown>;
+      if (typeof object.t === "string" && known.has(String(object.font))) set.add(String(object.font));
+      Object.values(object).forEach(visit);
+    };
+    visit(el.content);
     const f = String(el.settings?.fontFamily ?? "");
     if (known.has(f)) set.add(f);
     // Fase 7: estilos por parte do bloco Resultado (settings.styles[parte]).
@@ -119,4 +127,19 @@ export function quizFontsHref(fonts: string[]): string | null {
     )
     .join("&");
   return `https://fonts.googleapis.com/css2?${families}&display=swap`;
+}
+
+export const EDITOR_QUIZ_FONTS_HREF = quizFontsHref([...QUIZ_FONTS]);
+export async function loadQuizFont(font: string): Promise<void> {
+  if (!(QUIZ_FONTS as readonly string[]).includes(font) || typeof document === "undefined") return;
+  // Wait for the stable Google stylesheet before requesting its actual font face.
+  const links = Array.from(document.querySelectorAll<HTMLLinkElement>('link[href*="fonts.googleapis.com/css2"]'));
+  await Promise.all(links.filter(link => !link.sheet && !links.some(other => other.href === link.href && other.sheet)).map(link => new Promise<void>(resolve => {
+    const done = () => { clearTimeout(timer); resolve(); };
+    const timer = setTimeout(done, 8000);
+    link.addEventListener("load", done, { once: true });
+    link.addEventListener("error", done, { once: true });
+  })));
+  await document.fonts.load(`400 16px "${font}"`);
+  await document.fonts.load(`700 16px "${font}"`);
 }

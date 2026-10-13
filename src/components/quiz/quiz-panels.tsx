@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   AlignCenter,
   AlignLeft,
@@ -6,6 +6,8 @@ import {
   ArrowDown,
   ArrowUp,
   Bold,
+  Italic,
+  Underline,
   Copy,
   Plus,
   Trash2,
@@ -41,7 +43,9 @@ import {
   type OptionItem,
   type FieldsContent,
 } from "@/lib/quiz-types";
-import { QUIZ_FONTS } from "@/lib/quiz-visual";
+import { QUIZ_FONTS, loadQuizFont } from "@/lib/quiz-visual";
+import { clearRunProperty } from "@/lib/quiz-rich-text";
+import { useQuizRichText, type RichCommand } from "./quiz-rich-toolbar";
 import { QUIZ_THEMES, applyQuizTheme, readableQuizText } from "@/lib/quiz-themes";
 import { uploadPageImage } from "@/lib/sales-page-api";
 export const ELEMENT_LABEL: Record<ElementType, string> = {
@@ -135,6 +139,7 @@ function ColorField({
             size="icon"
             aria-label={`Usar cor ${c}`}
             onClick={() => onChange(c)}
+            onMouseDown={e => e.preventDefault()}
             style={{ backgroundColor: c }}
           />
         ))}
@@ -241,10 +246,22 @@ export function ElementEditor({
     ct = el.content;
   const [ruleErrors, setRuleErrors] = useState<Record<string, string>>({});
   const [uploading, setUploading] = useState(false);
+  const rich = useQuizRichText();
+  const formatVersion = useRef(0);
   const palette = Object.values(settings.colors);
   const setSt = onSettingsChange,
     setCt = onContentChange;
   const options = (ct.options ?? []) as (OptionItem & { emoji?: string })[];
+  const format = async (command: RichCommand, value?: string) => {
+    const version = ++formatVersion.current;
+    if (await rich.apply(command, value, el.id)) return;
+    if (version !== formatVersion.current) return;
+    if (command === "font") { await loadQuizFont(value || ""); if (version !== formatVersion.current) return; setCt(clearRunProperty(ct, "font")); setSt({ fontFamily: value }); }
+    if (command === "color") { setCt(clearRunProperty(ct, "color")); setSt({ color: value }); }
+    if (command === "b") { setCt(clearRunProperty(ct, "b")); setSt({ weight: Number(st.weight) >= 700 ? 400 : 700 }); }
+    if (command === "i") { setCt(clearRunProperty(ct, "i")); setSt({ fontStyle: st.fontStyle === "italic" ? "normal" : "italic" }); }
+    if (command === "u") { setCt(clearRunProperty(ct, "u")); setSt({ textDecoration: st.textDecoration === "underline" ? "none" : "underline" }); }
+  };
   const upload = async (file: File) => {
     setUploading(true);
     try {
@@ -258,8 +275,13 @@ export function ElementEditor({
   return (
     <div className="space-y-5">
       <h3 className="text-sm font-semibold">{ELEMENT_LABEL[el.type]}</h3>
+      {["text", "button", "options", "result"].includes(el.type) && <div data-rich-controls className="space-y-4">
+        <Field label="Fonte"><select className="h-11 w-full rounded-md border border-border px-3 text-sm" aria-label="Fonte do elemento" value={String(st.fontFamily || settings.font)} onChange={e => void format("font", e.target.value)}>{QUIZ_FONTS.map(f => <option key={f}>{f}</option>)}</select></Field>
+        <ColorField label="Cor do texto" value={String(st.color || "")} fallback={el.type === "button" ? settings.colors.buttonText : settings.colors.text} palette={palette} onChange={v => void format("color", v)} />
+        <div className="flex gap-2" onMouseDown={e => e.preventDefault()}>{([["b", Bold, "Negrito"], ["i", Italic, "Itálico"], ["u", Underline, "Sublinhado"]] as const).map(([cmd, Icon, label]) => <Button key={cmd} variant="outline" size="icon" aria-label={label} onClick={() => void format(cmd)}><Icon className="h-4 w-4" /></Button>)}</div>
+      </div>}
       {el.type === "text" && (
-        <>
+        <details className="q-panel-details"><summary>Mais opções</summary><div className="space-y-4 pt-4">
           <Chips
             label="Tamanho"
             value={Number(st.size) || 17}
@@ -277,26 +299,10 @@ export function ElementEditor({
               onChange={(align) => setSt({ align })}
             />
           </Field>
-          <ColorField
-            label="Cor"
-            value={String(st.color || "")}
-            fallback={settings.colors.text}
-            palette={palette}
-            onChange={(color) => setSt({ color })}
-          />
-          <Button
-            aria-label="Negrito"
-            aria-pressed={Number(st.weight) >= 700}
-            variant={Number(st.weight) >= 700 ? "default" : "outline"}
-            size="icon"
-            onClick={() => setSt({ weight: Number(st.weight) >= 700 ? 400 : 700 })}
-          >
-            <Bold className="h-4 w-4" />
-          </Button>
-        </>
+        </div></details>
       )}
       {el.type === "button" && (
-        <>
+        <details className="q-panel-details"><summary>Mais opções</summary><div className="space-y-4 pt-4">
           <SelectField
             label="Ação"
             value={String(st.cta || "none")}
@@ -334,7 +340,7 @@ export function ElementEditor({
               </Field>
             </>
           )}
-          {st.cta && st.cta !== "none" && (
+          {!!st.cta && st.cta !== "none" && (
             <Toggle
               label="Abrir em nova aba"
               value={st.ctaTarget !== "_self"}
@@ -348,7 +354,7 @@ export function ElementEditor({
             palette={palette}
             onChange={(bg) => setSt({ bg })}
           />
-        </>
+        </div></details>
       )}
       {el.type === "image" && (
         <>
@@ -399,7 +405,7 @@ export function ElementEditor({
         </Field>
       )}
       {el.type === "options" && (
-        <>
+        <details className="q-panel-details"><summary>Mais opções</summary><div className="space-y-4 pt-4">
           <Chips
             label="Seleção"
             value={String(st.selection || "single")}
@@ -420,7 +426,7 @@ export function ElementEditor({
             return (
               <div key={o.id} className="space-y-2 border-t border-border pt-3">
                 <Field label={`Opção ${i + 1}`}>
-                  <Input value={o.label} onChange={(e) => update({ label: e.target.value })} />
+                  <Input value={o.label} onChange={(e) => update({ label: e.target.value, text: e.target.value, runs: [] })} />
                 </Field>
                 <div className="grid grid-cols-[64px_1fr] gap-2">
                   <Input
@@ -485,7 +491,7 @@ export function ElementEditor({
               ))}
             </div>
           </details>
-        </>
+        </div></details>
       )}
       {el.type === "fields" &&
         ((ct.fields ?? []) as FieldsContent["fields"]).map((f) => {
@@ -605,6 +611,9 @@ export function ThemePanel({
           </Button>
         ))}
       </div>
+      <details className="q-panel-details">
+        <summary>Personalizar tema</summary>
+        <div data-rich-controls className="space-y-4 pt-4">
       <ColorField
         label="Cor principal"
         value={s.colors.primary}
@@ -621,13 +630,13 @@ export function ThemePanel({
         }
       />
       <SelectField
-        label="Fonte"
+        label="Fonte padrão do quiz"
         value={s.font}
         options={[
           ...QUIZ_FONTS.map((f) => ({ value: f, label: f })),
           { value: "system-ui", label: "Sistema" },
         ]}
-        onChange={(font) => onChange({ font })}
+        onChange={async (font) => { await loadQuizFont(font); onChange({ font }); }}
       />
       <Chips
         label="Cantos"
@@ -644,9 +653,6 @@ export function ThemePanel({
         value={s.progress.enabled}
         onChange={(enabled) => onChange({ progress: { ...s.progress, enabled } })}
       />
-      <details className="q-panel-details">
-        <summary>Mais opções</summary>
-        <div className="space-y-4 pt-4">
           <SelectField
             label="Fundo"
             value={s.background.type}
@@ -761,23 +767,18 @@ function ResultEditor({
   };
   return (
     <div className="space-y-3">
-      <div>
-        <SelectField
-          label="Gráfico"
-          value={String(st.chart ?? "bar")}
-          options={[
-            { value: "bar", label: "Barra" },
-            { value: "circle", label: "Circular" },
-            { value: "none", label: "Nenhum" },
-          ]}
-          onChange={(v) => setSt({ chart: v })}
-        />
-      </div>
-      <Toggle
-        label="Confete"
-        value={st.confetti !== false}
-        onChange={(confetti) => setSt({ confetti })}
-      />
+      <Label>O que mostrar</Label>
+      <Toggle label="Pontuação" value={st.showScore !== false} onChange={showScore => setSt({ showScore })} />
+      <Toggle label="Percentual" value={st.showPercent !== false} onChange={showPercent => setSt({ showPercent })} />
+      <Toggle label="Medidor" value={st.chart !== "none"} onChange={v => setSt({ chart: v ? "bar" : "none" })} />
+      {st.chart !== "none" && <Chips label="Tipo de medidor" value={String(st.chart || "bar")} items={[["bar", "Barra"], ["circle", "Circular"]]} onChange={chart => setSt({ chart })} />}
+      <Toggle label="Barras de indicadores" value={st.showBars === true} onChange={showBars => setSt({ showBars })} />
+      {st.showBars === true && ((ct.bars || []) as { id: string; label: string; value: number; followScore?: boolean }[]).map((item, i) => <div key={item.id} className="space-y-2 border-t border-border pt-2"><Label>{item.label || `Indicador ${i + 1}`}</Label><Input aria-label={`Valor do indicador ${i + 1}`} type="number" min={0} max={100} disabled={item.followScore} value={item.value} onChange={e => setCt({ bars: ct.bars.map((x: typeof item) => x.id === item.id ? { ...x, value: Math.min(100, Math.max(0, Number(e.target.value) || 0)) } : x) })} /><Toggle label={`Seguir a pontuação: ${item.label}`} value={item.followScore === true} onChange={followScore => setCt({ bars: ct.bars.map((x: typeof item) => x.id === item.id ? { ...x, followScore } : x) })} /></div>)}
+      <Toggle label="Lista de destaques" value={st.showChecklist === true} onChange={showChecklist => setSt({ showChecklist })} />
+      <Toggle label="Selo" value={st.showBadge === true} onChange={showBadge => setSt({ showBadge })} />
+      <Toggle label="Tela de análise" value={st.loading === true} onChange={loading => setSt({ loading })} />
+      {st.loading === true && <Chips label="Duração da análise" value={Number(st.loadingSeconds || 5)} items={[[3, "3s"], [5, "5s"], [8, "8s"]]} onChange={loadingSeconds => setSt({ loadingSeconds })} />}
+      <Toggle label="Confete" value={st.confetti !== false} onChange={confetti => setSt({ confetti })} />
       <details className="q-panel-details">
         <summary>Avançado</summary>
         <div className="space-y-2 pt-3">
@@ -787,16 +788,6 @@ function ResultEditor({
               onChange={(e) => setSt({ scoreSuffix: e.target.value })}
             />
           </Field>
-          <Toggle
-            label="Mostrar pontuação"
-            value={st.showScore !== false}
-            onChange={(showScore) => setSt({ showScore })}
-          />
-          <Toggle
-            label="Mostrar percentual"
-            value={st.showPercent !== false}
-            onChange={(showPercent) => setSt({ showPercent })}
-          />
           <Field label="Imagem do resultado">
             <Input value={ct.image ?? ""} onChange={(e) => setCt({ image: e.target.value })} />
           </Field>

@@ -237,19 +237,22 @@ export function QuizRunner({
   const showConfetti = !!section?.elements.some(
     (e) => e.type === "result" && (e.settings as Sx).confetti !== false,
   );
+  const [readyResults, setReadyResults] = useState<Set<string>>(() => new Set());
+  const resultReady = !!section?.elements.some(e => e.type === "result" && readyResults.has(`${session.session_id}-${section.id}-${e.id}`));
+  const allElements = useMemo(() => sections.flatMap(s => s.elements), [sections]);
 
   // Confete uma única vez por conclusão (sessão); Voltar/avançar de novo não repete.
   const confettiFiredRef = useRef<Set<string>>(new Set());
   const [confettiKey, setConfettiKey] = useState<string | null>(null);
   useEffect(() => {
-    if (!showConfetti || !section) {
+    if (!showConfetti || !section || !resultReady) {
       setConfettiKey(null);
       return;
     }
     if (confettiFiredRef.current.has(session.session_id)) return;
     confettiFiredRef.current.add(session.session_id);
     setConfettiKey(`${session.session_id}-${section.id}`);
-  }, [showConfetti, section, session.session_id]);
+  }, [showConfetti, resultReady, section, session.session_id]);
 
   const hasButton = useMemo(() => !!section?.elements.some((e) => e.type === "button"), [section]);
 
@@ -278,6 +281,7 @@ export function QuizRunner({
         score={score}
         resultPercent={resultPercent}
         hasScoring={maxScore > 0}
+        onResultReady={() => setReadyResults(prev => { const key = `${session.session_id}-${section.id}-${el.id}`; if (prev.has(key)) return prev; return new Set([...prev, key]); })}
       />
     );
   };
@@ -348,7 +352,7 @@ export function QuizRunner({
             </div>
           )}
 
-          <QuizFonts settings={settings} elements={section.elements} />
+          <QuizFonts settings={settings} elements={allElements} />
           <div
             key={section.id}
             className={cn(

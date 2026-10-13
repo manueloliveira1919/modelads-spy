@@ -10,6 +10,7 @@ import {
   textVisualStyle,
   collectQuizFonts,
   quizFontsHref,
+  EDITOR_QUIZ_FONTS_HREF,
 } from "@/lib/quiz-visual";
 import {
   uid,
@@ -24,11 +25,13 @@ import { cn } from "@/lib/utils";
 export function QuizFonts({
   settings,
   elements,
+  editor = false,
 }: {
   settings: QuizSettings;
-  elements: { settings: Record<string, unknown> }[];
+  elements: { settings: Record<string, unknown>; content?: Record<string, unknown> }[];
+  editor?: boolean;
 }) {
-  const href = quizFontsHref(collectQuizFonts(settings, elements));
+  const href = editor ? EDITOR_QUIZ_FONTS_HREF : quizFontsHref(collectQuizFonts(settings, elements));
   return href ? <link rel="stylesheet" href={href} precedence="default" /> : null;
 }
 export function quizSurfaceStyle(s: QuizSettings): CSSProperties {
@@ -79,6 +82,7 @@ export function QuizPrimaryButton({
   onClick,
   editable = false,
   onText,
+  runs,
 }: {
   label: string;
   settings: QuizSettings;
@@ -86,7 +90,8 @@ export function QuizPrimaryButton({
   loading?: boolean;
   onClick?: () => void;
   editable?: boolean;
-  onText?: (v: string) => void;
+  onText?: (v: string, runs: import("@/lib/quiz-rich-text").TextRun[]) => void;
+  runs?: unknown;
 }) {
   return (
     <div
@@ -111,7 +116,7 @@ export function QuizPrimaryButton({
         }}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        <EditableText as="span" value={label} editable={editable} onChange={onText} />
+        <EditableText as="span" value={label} runs={runs} editable={editable} onChange={onText} />
         <ArrowRight className="h-5 w-5 shrink-0" />
       </Button>
     </div>
@@ -132,6 +137,8 @@ export interface QuizElementViewProps {
   score?: number;
   resultPercent?: number | null;
   hasScoring?: boolean;
+  resultAnimationKey?: number;
+  onResultReady?: () => void;
 }
 /** Shared visual only: session, navigation, scoring and capture remain in QuizRunner. */
 export function QuizElementView({
@@ -149,6 +156,8 @@ export function QuizElementView({
   score = 75,
   resultPercent = 75,
   hasScoring = true,
+  resultAnimationKey = 0,
+  onResultReady,
 }: QuizElementViewProps) {
   const st = el.settings,
     ct = el.content;
@@ -159,8 +168,9 @@ export function QuizElementView({
   ) => (
     <EditableText
       value={value}
+      runs={ct[key === "text" ? "runs" : `${key}Runs`]}
       editable={editable}
-      onChange={(v) => onContentChange?.({ [key]: v })}
+      onChange={(v, runs) => onContentChange?.({ [key]: v, [key === "text" ? "runs" : `${key}Runs`]: runs, ...(key !== "text" ? { text: v } : {}) })}
       {...props}
     />
   );
@@ -185,8 +195,9 @@ export function QuizElementView({
           st={st}
           loading={loading}
           editable={editable}
+          runs={ct.runs}
           onClick={onAction}
-          onText={(v) => onContentChange?.({ label: v })}
+          onText={(v, runs) => onContentChange?.({ label: v, text: v, runs })}
         />
       );
     case "image":
@@ -260,8 +271,10 @@ export function QuizElementView({
                   as="span"
                   className="min-w-0 flex-1 whitespace-pre-line"
                   value={o.label}
+                  runs={o.runs}
                   editable={editable}
-                  onChange={(v) => update(o.id, { label: v })}
+                  style={{ ...textVisualStyle(st, settings, 16, 500), textAlign: (st.align as CSSProperties["textAlign"]) || "left" }}
+                  onChange={(v, runs) => update(o.id, { label: v, text: v, runs })}
                 />
                 <span className="q-check" data-multiple={st.selection === "multiple"}>
                   {active && <Check className="h-4 w-4" />}
@@ -388,6 +401,8 @@ export function QuizElementView({
           score={score}
           percent={resultPercent}
           hasScoring={hasScoring}
+          animationKey={resultAnimationKey}
+          onReady={onResultReady}
           editor={
             editable
               ? { selectedPart: null, onSelectPart: () => {}, onTextChange: onContentChange }

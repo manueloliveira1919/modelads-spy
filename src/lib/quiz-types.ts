@@ -74,6 +74,7 @@ export const NEW_QUIZ_SETTINGS: QuizSettings = {
 
 export interface TextContent {
   text: string;
+  runs?: import("./quiz-rich-text").TextRun[];
 }
 export interface ImageContent {
   url: string;
@@ -87,6 +88,8 @@ export interface ButtonContent {
 export interface OptionItem {
   id: string;
   label: string;
+  text?: string;
+  runs?: import("./quiz-rich-text").TextRun[];
   image?: string;
   /** Fase 6: id da seção de destino. Ausente = próxima seção normal. */
   next?: string;
@@ -237,6 +240,19 @@ export function makeElement(
         description: "Confira abaixo o resultado do seu quiz.",
         image: "",
         ranges: [],
+        badge: "PERFIL AVANÇADO",
+        bars: [
+          { id: uid(), label: "Energia", value: 82, followScore: false },
+          { id: uid(), label: "Metabolismo", value: 45, followScore: false },
+          { id: uid(), label: "Potencial", value: 75, followScore: true },
+        ],
+        checklist: [],
+        loadingTitle: "Analisando suas respostas...",
+        loadingSteps: [
+          { id: uid(), label: "Analisando suas respostas" },
+          { id: uid(), label: "Calculando seu perfil" },
+          { id: uid(), label: "Preparando seu resultado" },
+        ],
       },
       settings: {
         showScore: true,
@@ -244,6 +260,11 @@ export function makeElement(
         chart: "bar",
         confetti: true,
         scoreSuffix: "pontos",
+        loading: true,
+        loadingSeconds: 5,
+        showBars: true,
+        showBadge: true,
+        showChecklist: false,
       },
     },
   };

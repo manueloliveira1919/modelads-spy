@@ -337,3 +337,13 @@
 .q-element-tag{top:auto;bottom:calc(100% + 48px)}
 @container(max-width:450px){.q-element-tag{bottom:calc(100% + 8px)}}
 .q-editor-element:first-child.is-selected{margin-top:32px}
+
+/* Rich text and result presentation share saved quiz color roles. */
+.q-indicator-track{height:10px;background:var(--q-line);border-radius:999px;overflow:hidden}.q-indicator-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--q-primary),var(--q-secondary))}
+.q-rich-toolbar{position:fixed;z-index:100;display:flex;align-items:center;gap:3px;max-width:calc(100vw - 16px);padding:5px;border:1px solid var(--border);border-radius:8px;background:var(--popover);color:var(--popover-foreground);box-shadow:0 8px 30px color-mix(in srgb,var(--background) 45%,transparent)}
+.q-rich-toolbar button{width:28px;height:28px}.q-rich-toolbar input{width:28px;height:28px;border:0}.q-rich-toolbar select{max-width:95px;font-size:12px;border-radius:4px;height:28px}
+.q-result-shell{position:relative;padding:24px 20px;border:1px solid transparent;border-radius:28px;background:linear-gradient(150deg,var(--q-soft),transparent) padding-box,linear-gradient(135deg,color-mix(in srgb,var(--q-primary) 45%,transparent),var(--q-line),color-mix(in srgb,var(--q-secondary) 25%,transparent)) border-box;box-shadow:0 0 40px -14px color-mix(in srgb,var(--q-primary) 35%,transparent);overflow:hidden}
+.q-result-badge{display:inline-block;padding:7px 14px;border-radius:999px;background:color-mix(in srgb,var(--q-primary) 15%,transparent);border:1px solid color-mix(in srgb,var(--q-primary) 40%,transparent);color:var(--q-text);font-size:11px;font-weight:700}
+.q-result-list,.q-result-analysis{display:flex;flex-direction:column;gap:18px;width:100%}.q-result-analysis{padding:12px 0 24px}.q-result-analysis h2{font-size:22px;font-weight:700;text-align:center}.q-result-indicator{width:100%;font-size:13px}.q-result-indicator>div:first-child{margin-bottom:8px}.q-result-indicator strong{font-variant-numeric:tabular-nums}.q-result-check{color:var(--q-secondary)}.q-result-reveal{animation:quiz-fade-up .5s ease both}
+@media(prefers-reduced-motion:reduce){.q-result-reveal{animation:none}}
+@media(max-width:640px){.q-rich-toolbar{flex-wrap:wrap}.q-result-shell{padding:18px 14px}}
