@@ -10,6 +10,7 @@ export const useQuizRichText = () => useContext(Context);
 export function QuizRichTextProvider({ children }: { children: ReactNode }) {
   const range = useRef<Range | null>(null);
   const root = useRef<HTMLElement | null>(null);
+  const commandVersion = useRef(0);
   const scope = useRef<HTMLDivElement | null>(null);
   const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
   const [palette, setPalette] = useState<string[]>([]);
@@ -33,13 +34,16 @@ export function QuizRichTextProvider({ children }: { children: ReactNode }) {
     const dismiss = (e: Event) => { const el = e.target as Element; if (!el.closest?.('[data-rich-controls]') && !el.closest?.('[data-rich-text]')) { range.current = null; setPosition(null); } };
     document.addEventListener("selectionchange", update);
     document.addEventListener("pointerdown", dismiss);
-    window.addEventListener("scroll", () => setPosition(null), { once: true });
-    return () => { document.removeEventListener("selectionchange", update); document.removeEventListener("pointerdown", dismiss); };
+    const scroll = () => setPosition(null);
+    window.addEventListener("scroll", scroll, true);
+    return () => { document.removeEventListener("selectionchange", update); document.removeEventListener("pointerdown", dismiss); window.removeEventListener("scroll", scroll, true); };
   }, []);
   const apply = async (command: RichCommand, value?: string, elementId?: string) => {
+    const version = ++commandVersion.current;
     const saved = range.current?.cloneRange(), editable = root.current;
     if (!saved || saved.collapsed || !editable?.isConnected || (elementId && editable.closest('[data-element-id]')?.getAttribute('data-element-id') !== elementId)) return false;
     if (command === "font") { if (!validFont(value)) return false; await loadQuizFont(value); }
+    if (version !== commandVersion.current || !editable.isConnected) return true;
     if (command === "color" && !validColor(value)) return false;
     editable.focus(); const selection = document.getSelection();
     if (!selection) return false;
