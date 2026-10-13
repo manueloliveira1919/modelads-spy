@@ -23,6 +23,7 @@ export function EditableText({
     const node = ref.current;
     if (node && document.activeElement !== node && node.innerText !== value) node.innerText = value;
   }, [value]);
+  if (!editable) return <Tag className={className} style={style}>{value}</Tag>;
   return (
     <Tag
       ref={ref as never}
@@ -31,6 +32,7 @@ export function EditableText({
       contentEditable={editable || undefined}
       suppressContentEditableWarning
       spellCheck={editable}
+      data-placeholder="Digite..."
       onInput={editable ? (e) => onChange?.((e.currentTarget as HTMLElement).innerText) : undefined}
     />
   );

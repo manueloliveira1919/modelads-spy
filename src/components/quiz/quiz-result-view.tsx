@@ -38,7 +38,7 @@ function BarChart({ percent, settings }: { percent: number; settings: QuizSettin
     <div className="w-full">
       <div
         style={{
-          height: 14,
+          height: 18,
           borderRadius: 999,
           backgroundColor: `${settings.colors.text}1A`,
           overflow: "hidden",
@@ -63,8 +63,8 @@ function CircleChart({ percent, settings }: { percent: number; settings: QuizSet
   const c = 2 * Math.PI * r;
   const gid = `qg-${settings.colors.primary.replace("#", "")}`;
   return (
-    <div className="relative mx-auto" style={{ width: 140, height: 140 }}>
-      <svg viewBox="0 0 120 120" width="140" height="140" style={{ transform: "rotate(-90deg)" }}>
+    <div className="relative mx-auto" style={{ width: 140, height: 180 }}>
+      <svg viewBox="0 0 120 120" width="176" height="176" style={{ transform: "rotate(-90deg)" }}>
         <defs>
           <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor={settings.colors.primary} />
@@ -179,7 +179,7 @@ export function ResultBlockView({
     const ps = resultPartSettings(st, key);
     const def = RESULT_TEXT_PARTS[key];
     const isSel = editor?.selectedPart === key;
-    const editable = !!(isSel && field && editor?.onTextChange);
+    const editable = !!(field && editor?.onTextChange);
     return (
       <div
         key={key}
@@ -187,14 +187,14 @@ export function ResultBlockView({
         className={cn(
           "w-full min-w-0 rounded-md",
           animationClass(ps),
-          editor && "cursor-pointer outline-offset-4 hover:outline hover:outline-1 hover:outline-primary/40",
-          isSel && "outline outline-2 outline-primary hover:outline-2",
+
+
         )}
         style={{ ...animationStyle(ps), marginBottom: Number(ps.spacing) || 0 }}
         onClick={
           editor
             ? (e) => {
-                e.stopPropagation();
+
                 if (!isSel) editor.onSelectPart(key);
               }
             : undefined
@@ -214,7 +214,7 @@ export function ResultBlockView({
   const opacity = (key: ResultTextPart, o: number) => (resultPartSettings(st, key).color ? {} : { opacity: o });
 
   return (
-    <div className="flex w-full flex-col items-center gap-3 text-center animate-fade-in">
+    <div className="q-result flex w-full flex-col items-center gap-4 text-center">
       {(title || editor) && part("title", title || (editor ? DEFAULT_RESULT_TITLE : ""), "title", { lineHeight: resultPartSettings(st, "title").lineHeight ? undefined : 1.2 })}
       {(subtitle || editor) && part("subtitle", subtitle || (editor ? "" : ""), "subtitle", opacity("subtitle", 0.75))}
       {image && <img src={image} alt="" loading="lazy" className="max-h-64 w-full rounded-2xl object-cover" />}
