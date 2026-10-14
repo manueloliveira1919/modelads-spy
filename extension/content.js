@@ -728,6 +728,5 @@
   });
 
   window.addEventListener("error", (e) => { if (String(e.filename || "").startsWith("chrome-extension://")) logErr(e.error || e.message); });
-  globalThis.__mdlTest = { autoScrollLoop };
   init();
 })();
