@@ -12,7 +12,7 @@
   const START_RE = /(?:veiculacao iniciada em|started running on)\s*([^\n·]+)/i;
   const REPEAT_RE = /(\d+)\s+(?:anuncios usam esse criativo|anuncios usam este criativo|ads use this creative)/i;
 
-  let state = { token: null, plan: null, minDays: 0, minAds: 0, collapsed: false };
+  let state = { token: null, plan: null, minDays: 0, minAds: 0, collapsed: false, duration: 2, target: 0 };
   let panel, msgEl, mineBtn, countEl;
   const cache = new Map();
   const galleryItems = new Map();
@@ -294,7 +294,7 @@
     gallery = document.createElement("section");
     gallery.className = "mdl-gallery";
     gallery.setAttribute("aria-label", "Ofertas filtradas");
-    gallery.innerHTML = `<div class="mdl-gallery-head"><div><h3>Ofertas filtradas</h3><span class="mdl-gallery-count"></span></div>
+    gallery.innerHTML = `<div class="mdl-gallery-head"><div><h3>Ofertas filtradas</h3><span class="mdl-gallery-count"></span><div class="mdl-criteria"></div></div>
       <div class="mdl-gallery-tools"><select aria-label="Ordenar ofertas"><option value="scale">Mais escaladas</option><option value="days">Mais dias ativos</option><option value="ads">Mais anúncios</option></select>
       <button class="mdl-act mdl-view">Ver lista original da Meta</button></div></div>
       <div class="mdl-gallery-grid"></div><p class="mdl-gallery-empty">Nenhuma oferta corresponde aos filtros atuais.</p>`;
@@ -394,6 +394,7 @@
     if (!galleryActive) document.querySelectorAll(".mdl-original-hidden").forEach((e) => e.classList.remove("mdl-original-hidden"));
     diag.dated = [...cache.values()].filter((c) => cardData(c).days != null).length;
     renderGallery();
+    renderCriteria();
     if (!gallery && countEl) countEl.textContent = "0 carregados · 0 na galeria";
     renderDiag();
   }
@@ -435,15 +436,98 @@
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+  // Pure loop (tested in isolation): returns the reason it stopped.
+  async function autoScrollLoop(o) {
+    const end = o.now() + o.durationMs;
+    let idle = 0, last = o.getLoaded();
+    while (true) {
+      if (o.shouldAbort()) return o.abortReason() || "stopped";
+      if (o.now() >= end) return "time";
+      if (o.target > 0 && o.getGallery() >= o.target) return "target";
+      o.step();
+      await o.wait(1500);
+      if (o.shouldAbort()) return o.abortReason() || "stopped";
+      o.refresh();
+      const loaded = o.getLoaded();
+      idle = loaded > last ? 0 : idle + 1; last = loaded;
+      o.onTick(Math.max(0, end - o.now()), loaded, o.getGallery());
+      if (o.target > 0 && o.getGallery() >= o.target) return "target";
+      if (idle >= 6) return "idle";
+    }
+  }
+
+  let scrolling = null; // { stop: bool, reason }
+  const fmt = (ms) => { const t = Math.ceil(ms / 1000); return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };
+  function setBusy(v) {
+    panel?.querySelectorAll(".mdl-more").forEach((b) => (b.disabled = v));
+    const a = panel?.querySelector(".mdl-auto");
+    if (a) a.textContent = v && scrolling ? "Parar rolagem" : "Rolagem automática";
+  }
+  function scrollStep() {
+    // Originals stay in layout (visibility:hidden) during auto-scroll, so the
+    // page keeps its height; we also nudge to the last original card first.
+    const lastCard = [...cache.keys()].length ? findCards().at(-1)?.el : null;
+    lastCard?.scrollIntoView({ block: "end" });
+    window.scrollTo(0, document.documentElement.scrollHeight);
+  }
   async function loadMore(btn) {
-    btn.disabled = true;
+    if (scrolling) return;
+    scrolling = { stop: false, manualOnly: true };
+    setBusy(true);
+    document.body.classList.add("mdl-autoscroll");
     try {
-      for (let i = 0; i < 5; i++) {
-        window.scrollTo(0, document.body.scrollHeight);
-        await sleep(1500);
-        applyFilter();
-      }
-    } finally { btn.disabled = false; }
+      for (let i = 0; i < 5; i++) { scrollStep(); await sleep(1500); applyFilter(); }
+    } finally {
+      document.body.classList.remove("mdl-autoscroll");
+      scrolling = null; setBusy(false);
+    }
+  }
+  async function autoScroll() {
+    if (scrolling) { scrolling.stop = true; scrolling.reason = "stopped"; return; }
+    const durationMin = Math.min(30, Math.max(1, parseInt(panel.querySelector(".mdl-dur").value, 10) || 2));
+    const target = Math.max(0, parseInt(panel.querySelector(".mdl-target").value, 10) || 0);
+    const scope = queryScope();
+    const run = (scrolling = { stop: false, reason: null });
+    setBusy(true);
+    document.body.classList.add("mdl-autoscroll");
+    const status = panel.querySelector(".mdl-autostatus");
+    const startLoaded = cache.size;
+    let reason;
+    try {
+      reason = await autoScrollLoop({
+        durationMs: durationMin * 60000, target,
+        now: () => Date.now(), wait: sleep, step: scrollStep, refresh: applyFilter,
+        getLoaded: () => cache.size, getGallery: () => filteredCards().length,
+        shouldAbort: () => {
+          if (run.stop) return true;
+          if (!state.token) { run.reason = "disconnected"; return true; }
+          if (queryScope() !== scope) { run.reason = "scope"; return true; }
+          return false;
+        },
+        abortReason: () => run.reason,
+        onTick: (left, l, g) => { if (status) status.textContent = `Rolando… ${fmt(left)} restante · ${l} carregados · ${g} na galeria`; },
+      });
+    } catch (e) { logErr(e); reason = "error"; }
+    finally {
+      document.body.classList.remove("mdl-autoscroll");
+      scrolling = null; setBusy(false);
+    }
+    const texts = { time: "Tempo esgotado.", stopped: "Rolagem parada.", target: "Meta de ofertas atingida.",
+      idle: "Fim dos resultados ou a Meta parou de carregar.", scope: "Busca alterada — rolagem interrompida.",
+      disconnected: "Extensão desconectada — rolagem interrompida.", error: "Rolagem interrompida por erro." };
+    if (status?.isConnected) status.textContent = `${texts[reason] || ""} ${cache.size} carregados (+${Math.max(0, cache.size - startLoaded)}) · ${filteredCards().length} na galeria.`;
+    if (reason !== "disconnected" && reason !== "scope") { applyFilter(); gallery?.scrollIntoView({ behavior: "smooth", block: "start" }); }
+  }
+
+  function criteriaText() {
+    const p = [];
+    if (state.minDays > 0) p.push(`≥ ${state.minDays} dias ativos`);
+    if (state.minAds > 0) p.push(`≥ ${state.minAds} anúncios no mesmo criativo`);
+    return "Critérios do filtro: " + (p.length ? p.join(" · ") : "sem filtro ativo");
+  }
+  function renderCriteria() {
+    const t = criteriaText();
+    document.querySelectorAll(".mdl-criteria").forEach((e) => { if (e.textContent !== t) e.textContent = t; });
   }
 
   function msg(t) { if (msgEl) msgEl.textContent = t; }
@@ -515,7 +599,11 @@
       <div class="mdl-body">
         <label>Dias mínimos <input type="number" min="0" class="mdl-min" /></label>
         <label>Anúncios mínimos (mesmo criativo) <input type="number" min="0" class="mdl-minads" /></label>
-        <button class="mdl-more">Carregar mais</button>
+        <div class="mdl-criteria-row"><span class="mdl-criteria"></span><span class="mdl-help" tabindex="0" title="Filtro 100% local: usa dias ativos (data de início do anúncio) e nº de anúncios com o mesmo criativo/texto informado pela Meta. Não analisa a página de venda; isso é feito pelo Model Ads depois do envio.">?</span></div>
+        <div class="mdl-row"><button class="mdl-more">Carregar mais</button><button class="mdl-auto">Rolagem automática</button></div>
+        <div class="mdl-row"><label>Duração (min) <input type="number" min="1" max="30" class="mdl-dur" /></label>
+        <label>Parar ao chegar em (ofertas na galeria) <input type="number" min="1" class="mdl-target" placeholder="opcional" /></label></div>
+        <div class="mdl-autostatus"></div>
         ${state.plan === "admin" ? '<button class="mdl-primary mdl-mine">Minerar e enviar ao Model Ads</button>' : ""}
         <div class="mdl-msg"></div>
         <div class="mdl-diag"></div>
@@ -551,12 +639,30 @@
     panel.querySelector(".mdl-toggle").onclick = () => setCollapsed(!state.collapsed);
     const more = panel.querySelector(".mdl-more");
     more.onclick = () => loadMore(more);
+    panel.querySelector(".mdl-auto").onclick = autoScroll;
+    const dur = panel.querySelector(".mdl-dur");
+    dur.value = state.duration;
+    dur.onchange = () => {
+      state.duration = Math.min(30, Math.max(1, parseInt(dur.value, 10) || 2));
+      dur.value = state.duration;
+      chrome.storage.local.set({ mdlAutoMinutes: state.duration });
+    };
+    const target = panel.querySelector(".mdl-target");
+    target.value = state.target || "";
+    target.onchange = () => {
+      state.target = Math.max(0, parseInt(target.value, 10) || 0);
+      target.value = state.target || "";
+      chrome.storage.local.set({ mdlAutoTarget: state.target });
+    };
+    renderCriteria();
     mineBtn = panel.querySelector(".mdl-mine");
     if (mineBtn) mineBtn.onclick = mineAndSend;
     setCollapsed(state.collapsed);
   }
 
   function clearUi() {
+    if (scrolling) { scrolling.stop = true; scrolling.reason = "disconnected"; }
+    document.body.classList.remove("mdl-autoscroll");
     resetGallery();
     panel?.remove(); panel = null;
     observer?.disconnect(); observer = null;
@@ -570,7 +676,9 @@
     try { await initInner(); } catch (e) { logErr(e); }
   }
   async function initInner() {
-    const s = await chrome.storage.local.get(["mdlToken", "mdlMinDays", "mdlMinAds", "mdlCollapsed"]);
+    const s = await chrome.storage.local.get(["mdlToken", "mdlMinDays", "mdlMinAds", "mdlCollapsed", "mdlAutoMinutes", "mdlAutoTarget"]);
+    state.duration = Math.min(30, Math.max(1, s.mdlAutoMinutes || 2));
+    state.target = s.mdlAutoTarget || 0;
     state.minDays = s.mdlMinDays || 0;
     state.minAds = s.mdlMinAds || 0;
     state.collapsed = !!s.mdlCollapsed;
