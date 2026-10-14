@@ -56,3 +56,11 @@
 .mdl-gallery [hidden] { display: none !important; }
 .mdl-original-hidden { display: none !important; }
 .mdl-original-view .mdl-gallery-grid, .mdl-original-view .mdl-gallery-empty { display: none !important; }
+
+body.mdl-autoscroll .mdl-original-hidden { display: revert !important; visibility: hidden !important; }
+.mdl-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.mdl-row > * { flex: 1 1 0; }
+.mdl-criteria-row { display: flex; align-items: center; gap: 6px; font-size: 11px; opacity: .85; }
+.mdl-criteria { font-size: 11px; opacity: .85; }
+.mdl-help { display: inline-flex; width: 16px; height: 16px; border-radius: 50%; border: 1px solid currentColor; align-items: center; justify-content: center; font-size: 10px; cursor: help; flex: none; }
+.mdl-autostatus { font-size: 11px; min-height: 14px; }
