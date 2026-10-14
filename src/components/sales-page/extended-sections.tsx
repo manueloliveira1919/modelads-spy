@@ -1,0 +1,64 @@
+import type { CSSProperties, ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import type { PageSection } from "@/lib/sales-page-types";
+
+type Props = {
+  section: PageSection; editable: boolean; accent: string; buttonColor: string;
+  text: (path: string, value: string, props?: { as?: "p" | "h3" | "div"; style?: CSSProperties; className?: string }) => ReactNode;
+  title: () => ReactNode; buttons: () => ReactNode; image: (key: string, placeholder?: string) => ReactNode;
+};
+const enabled = (value: unknown) => value === true || value === "true";
+const lines = (value: string) => (value || "").split("\n").filter(line => line.trim());
+
+export function ExtendedSection({ section, editable, accent, buttonColor, text: P, title, buttons, image }: Props) {
+  const c = section.content;
+  const items = c.items ?? [];
+  const columns = Math.max(2, Math.min(4, Number(section.style.columns) || (section.type === "pricingPlans" ? items.length : 3)));
+  const gridStyle = { "--sp-columns": columns } as CSSProperties;
+  const itemImage = (it: Record<string, string>, i: number) => it.image ? <img data-sp-key={`items.${i}.image`} className="sp-item-image" src={it.image} alt={it.caption || it.title || ""} loading="lazy"/> : <div data-sp-key={`items.${i}.image`} className="sp-ph">{it.caption || "Votre image".replace("Votre", "Sua")}</div>;
+  const checks = (value: string) => lines(value).map((line, i) => <div key={i} className="sp-check"><span style={{ color: accent }}>✓</span><span>{line}</span></div>);
+  switch (section.type) {
+    case "benefitStrip": case "trustBadges": return <div className="sp-strip">{items.map((it, i) => <div key={i} data-sp-key={`items.${i}`} className="sp-strip-item"><span style={{ color: accent }}>{section.type === "trustBadges" ? P(`items.${i}.icon`, it.icon) : "✓"}</span>{P(`items.${i}.text`, it.text)}</div>)}</div>;
+    case "iconCards": return <>{title()}<div className="sp-flex-grid" style={gridStyle}>{items.map((it, i) => <article key={i} data-sp-key={`items.${i}`} className="sp-card"><div className="sp-card-icon" style={{ color: accent }}>{P(`items.${i}.icon`, it.icon)}</div>{P(`items.${i}.title`, it.title, { as: "h3" })}{P(`items.${i}.text`, it.text, { as: "p", className: "sp-p" })}</article>)}</div></>;
+    case "bonusCards": return <>{title()}<div className="sp-flex-grid" style={gridStyle}>{items.map((it, i) => <article key={i} className="sp-card"><div className="sp-bonus-image">{itemImage(it, i)}<span data-sp-key={`items.${i}.badge`} className="sp-label" style={{ background: accent, color: buttonColor }}>{P(`items.${i}.badge`, it.badge)}</span></div>{P(`items.${i}.title`, it.title, { as: "h3" })}{P(`items.${i}.text`, it.text, { as: "p", className: "sp-p" })}<p><s>{P(`items.${i}.value`, it.value)}</s></p></article>)}</div></>;
+    case "textPhoto": return <div className={`sp-photo ${enabled(c.reverse) ? "sp-photo-reverse" : ""}`}>{image("image", "Foto do seu material")}<div>{title()}{P("text", c.text, { as: "p", className: "sp-p" })}<div>{items.map((it, i) => <div key={i} className="sp-check"><span style={{ color: accent }}>✓</span>{P(`items.${i}.text`, it.text)}</div>)}</div>{buttons()}</div></div>;
+    case "materialIndex": return <div data-sp-key="index" className={`sp-index sp-card ${enabled(c.dark) ? "sp-index-dark" : ""}`}>{title()}{items.map((it, i) => <div key={i} className="sp-index-row"><span className="sp-index-number">{String(i + 1).padStart(2, "0")}</span>{P(`items.${i}.title`, it.title)}<span className="sp-index-page">{P(`items.${i}.page`, it.page)}</span></div>)}</div>;
+    case "checklistAccordion": return <>{title()}<div className="sp-faq">{items.map((it, i) => editable ? <div key={i} className="sp-card" style={{ marginTop: 12 }}>{P(`items.${i}.title`, it.title, { as: "h3" })}{P(`items.${i}.checklist`, it.checklist, { as: "p", className: "sp-p" })}</div> : <details key={i}><summary>{it.title}<span aria-hidden="true">＋</span></summary>{checks(it.checklist)}</details>)}</div></>;
+    case "pricingPlans": return <div id="oferta">{title()}<div className="sp-flex-grid" style={gridStyle}>{items.map((it, i) => {
+      const highlighted = enabled(it.highlighted);
+      const bg = /^#[0-9a-f]{6}$/i.test(it.buttonBg || "") ? it.buttonBg : accent;
+      const color = /^#[0-9a-f]{6}$/i.test(it.buttonColor || "") ? it.buttonColor : buttonColor;
+      const outline = (it.buttonVariant || (highlighted ? "solid" : "outline")) === "outline";
+      const raw = (it.buttonUrl || "").trim();
+      const href = /^(https?:\/\/|#|mailto:|tel:)/i.test(raw) ? raw : raw ? `https://${raw}` : "#";
+      return <article key={i} className="sp-card sp-plan" style={{ border: `2px solid ${highlighted ? accent : "transparent"}` }}>
+        {it.badge && <div className="sp-label" style={{ background: accent, color: buttonColor }}>{P(`items.${i}.badge`, it.badge)}</div>}
+        {P(`items.${i}.title`, it.title, { as: "h3" })}<p><s>{P(`items.${i}.oldPrice`, it.oldPrice)}</s></p>{P(`items.${i}.price`, it.price, { as: "p", style: { fontSize: 38, fontWeight: 900, color: accent } })}
+        {editable ? P(`items.${i}.features`, it.features, { as: "p", className: "sp-p" }) : checks(it.features)}
+        <a data-sp-key={`items.${i}.button`} className="sp-btn" href={href} target={raw.startsWith("#") ? undefined : "_top"} onClick={editable ? e => e.preventDefault() : undefined} style={{ background: outline ? "transparent" : bg, color: outline ? bg : color, border: `2px solid ${bg}`, marginTop: 24 }}>{P(`items.${i}.buttonText`, it.buttonText)}</a>
+      </article>;
+    })}</div></div>;
+    case "finalCta": return <>{title()}{P("text", c.text, { as: "p", className: "sp-p" })}{buttons()}</>;
+    case "printCarousel": return <>{title()}<div data-sp-key="carousel" data-sp-carousel data-index="0" className="sp-carousel">
+      {items.map((it, i) => <figure key={i} data-sp-slide hidden={!editable && i !== 0}>{itemImage(it, i)}<figcaption>{P(`items.${i}.caption`, it.caption)}</figcaption></figure>)}
+      {!items.length && <div className="sp-ph">Adicione seus prints</div>}
+      {items.length > 0 && !editable && <div className="sp-carousel-controls"><Button className="sp-control" variant="ghost" size="icon" data-sp-action="prev" aria-label="Print anterior">←</Button><div className="sp-dots">{items.map((_, i) => <Button key={i} className="sp-dot" variant="ghost" size="icon" data-sp-action="dot" data-slide={i} aria-label={`Ver print ${i + 1}`} aria-pressed={i === 0}>●</Button>)}</div><span data-sp-slide-counter>1 / {items.length}</span><Button className="sp-control" variant="ghost" size="icon" data-sp-action="next" aria-label="Próximo print">→</Button></div>}
+    </div></>;
+    case "embeddedQuiz": return <>{title()}<div data-sp-key="quiz" data-sp-quiz data-index="0" className="sp-quiz sp-card">
+      {!editable && <><p data-sp-counter>{items.length ? `Etapa 1 de ${items.length}` : "Concluído"}</p><div className="sp-progress" role="progressbar" aria-label="Progresso do quiz" aria-valuemin={0} aria-valuemax={100} aria-valuenow={0}><div data-sp-progress style={{ background: accent, width: "0%" }}/></div></>}
+      {items.map((it, i) => <div key={i} data-sp-question hidden={!editable && i !== 0}><h3 data-sp-focus tabIndex={-1}>{P(`items.${i}.title`, it.title)}</h3>{editable ? P(`items.${i}.options`, it.options, { as: "p", className: "sp-p" }) : <div className="sp-options">{lines(it.options).map((option, j) => <Button key={j} className="sp-option" variant="outline" data-sp-action="option" aria-pressed={false}>{option}</Button>)}</div>}</div>)}
+      <div data-sp-result hidden={!editable && items.length > 0}><h3 data-sp-focus tabIndex={-1}>{P("resultTitle", c.resultTitle)}</h3>{P("resultText", c.resultText, { as: "p", className: "sp-p" })}{buttons()}{!editable && <Button variant="ghost" className="sp-control" data-sp-action="restart">Recomeçar</Button>}</div>
+      {!editable && <Button variant="ghost" className="sp-control" data-sp-action="back" hidden>← Voltar</Button>}
+    </div></>;
+    default: return null;
+  }
+}
+
+export const EXTENDED_PAGE_CSS = `
+.sp-root{--sp-badge-light:#fff2bb;--sp-badge-base:#d4ad4f;--sp-badge-dark:#9d7123;--sp-badge-center:#f3d986;--sp-badge-ink:#4e3915;--sp-index-bg:#252035;--sp-index-ink:#faf6ff;--sp-progress-track:color-mix(in srgb,currentColor 12%,transparent)}
+.sp-guarantee{flex-shrink:0;display:block}.sp-badge-navy{--sp-badge-center:#172840;--sp-badge-ink:#f4d889}.sp-badge-green{--sp-badge-light:#bcecc8;--sp-badge-base:#318657;--sp-badge-dark:#1b5437;--sp-badge-center:#236b46;--sp-badge-ink:#ffffff}.sp-badge-purple{--sp-badge-light:#e6cdff;--sp-badge-base:#8446ad;--sp-badge-dark:#522773;--sp-badge-center:#663184;--sp-badge-ink:#ffffff}.sp-badge-custom{--sp-badge-light:color-mix(in srgb,var(--sp-badge-base) 40%,white);--sp-badge-dark:color-mix(in srgb,var(--sp-badge-base) 75%,black);--sp-badge-center:var(--sp-badge-base);--sp-badge-ink:#ffffff}
+.sp-strip{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}.sp-strip-item{display:flex;gap:8px;align-items:center;font-size:14px;font-weight:700}.sp-flex-grid{display:grid;grid-template-columns:repeat(var(--sp-columns,3),minmax(0,1fr));gap:20px;margin-top:28px;text-align:left}.sp-card h3{margin:16px 0 10px}.sp-card-icon{font-size:32px}.sp-item-image{width:100%;max-height:420px;object-fit:contain;border-radius:var(--sp-r)}.sp-bonus-image{position:relative}.sp-bonus-image .sp-label{position:absolute;right:10px;top:10px}.sp-label{display:inline-block;border-radius:999px;padding:5px 14px;font-size:11px;font-weight:900}.sp-photo{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:36px;text-align:left}.sp-photo-reverse>:first-child{order:2}.sp-index{max-width:800px;margin:auto;text-align:left}.sp-index-dark{background:var(--sp-index-bg)!important;color:var(--sp-index-ink)}.sp-index-row{display:flex;gap:16px;align-items:baseline;border-bottom:1px solid color-mix(in srgb,currentColor 15%,transparent);padding:16px 0}.sp-index-row>span:not(.sp-index-page){min-width:0;overflow-wrap:anywhere}.sp-index-page{margin-left:auto;flex-shrink:0}.sp-index-number{opacity:.5}.sp-plan{display:flex;flex-direction:column;align-items:flex-start}.sp-plan .sp-btn{margin-top:auto!important;width:100%;text-align:center;font-size:16px;padding:14px 18px}.sp-plan .sp-check:last-of-type{margin-bottom:24px}.sp-plan p{margin:8px 0}.sp-plan s{opacity:.6}.sp-carousel{max-width:660px;margin:24px auto}.sp-carousel figure{margin:0 0 20px}.sp-carousel figcaption{margin-top:12px;opacity:.75}.sp-carousel-controls{display:flex;align-items:center;justify-content:center;gap:10px}.sp-root [hidden]{display:none!important}.sp-root .sp-control,.sp-root .sp-dot{background:transparent;color:inherit;border:1px solid color-mix(in srgb,currentColor 18%,transparent);border-radius:6px;box-shadow:none;cursor:pointer}.sp-root .sp-control{padding:8px 12px;height:auto;min-width:36px;flex-shrink:0}.sp-root .sp-dot{border:0;font-size:12px;width:26px;height:30px;opacity:.35;padding:0}.sp-root .sp-dot[aria-pressed=true]{opacity:1}.sp-dots{display:flex;flex-wrap:wrap;justify-content:center}.sp-quiz{max-width:640px;margin:24px auto;text-align:left}.sp-progress{height:8px;border-radius:999px;overflow:hidden;background:var(--sp-progress-track);margin:18px 0 24px}.sp-progress>div{height:100%;transition:width .2s}.sp-options{display:grid;gap:10px}.sp-root .sp-option{width:100%;height:auto;min-height:54px;white-space:normal;justify-content:flex-start;text-align:left;border:1px solid color-mix(in srgb,currentColor 20%,transparent);border-radius:var(--sp-r);background:transparent;color:inherit;padding:14px 18px;font:inherit;cursor:pointer}.sp-root .sp-option:hover,.sp-root .sp-option[aria-pressed=true]{background:var(--sp-progress-track)}.sp-root .sp-option:focus-visible,.sp-root .sp-control:focus-visible,.sp-root .sp-dot:focus-visible{outline:2px solid currentColor;outline-offset:3px}.sp-root .sp-faq summary{display:flex;justify-content:space-between;gap:12px}.sp-root .sp-h,.sp-root .sp-p{overflow-wrap:anywhere}.sp-mini-badges{margin-top:20px}.sp-purchase-badge{display:flex;justify-content:center;margin-top:16px}.sp-today{display:inline-block;margin-left:8px}.sp-quiz [data-sp-focus]:focus{outline:none}
+@container(max-width:900px){.sp-flex-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@container(max-width:600px){.sp-flex-grid,.sp-photo{grid-template-columns:1fr}.sp-photo-reverse>:first-child{order:0}.sp-strip{gap:12px 18px}.sp-carousel-controls{flex-wrap:wrap}.sp-index{padding:20px}.sp-plan .sp-btn{margin-top:20px!important}}
+@media(prefers-reduced-motion:reduce){.sp-progress>div,.sp-btn{transition:none}}
+`;
