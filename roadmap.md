@@ -28,3 +28,9 @@
 - [x] Fundo sólido, degradê e imagem compartilhado entre saídas
 - [x] Links publicados e tela Gerar com IA sem integração
 - [x] Validar salvamento, histórico, publicação, exportação e celular
+
+# Criador de Páginas — biblioteca e templates
+- [x] Ampliar seções e controles manuais, incluindo quiz e carrossel
+- [x] Selo SVG configurável na garantia e perto da compra
+- [x] Templates Educação Kids e Moderno Roxo com placeholders
+- [x] Verificar histórico, persistência, interações, exportação e celular

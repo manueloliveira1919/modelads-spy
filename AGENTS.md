@@ -17,6 +17,7 @@
 - Sales page builder: one `sales_pages` row holds sections/settings as JSON, and one `PageRenderer` (inline styles + `PAGE_CSS`, container queries) feeds the editor, HTML export and the public page — keeps all outputs identical. Public `/p/$slug` renders the exported HTML in a sandboxed iframe without same-origin so user pixels/scripts can't reach the app session.
 - Sales page buttons normalize legacy single-button fields without rewriting saved pages; optional section element order and page backgrounds stay in the existing JSON and pass through the shared renderer — preserves history and output parity without migrations.
 - Sales page share links use a single published-origin resolver, with current origin on published/custom domains and a production fallback on preview hosts — prevents copying draft preview URLs.
+- Sales-page-only interactive sections use scoped data-attribute event delegation serialized into HTML export, while guarantee badges are self-contained SVG and section fields remain JSON — ensures editor/public/export parity without touching the quiz engine or adding schema.
 
 - Quiz elements render through `QuizElementView` in editor and runner; session, navigation, scoring and lead submission stay in `QuizRunner` — prevents visual drift without changing execution rules.
 - Quiz creation defaults are separate from legacy normalization defaults — new styling never overwrites saved or missing legacy settings.

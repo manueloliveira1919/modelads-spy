@@ -18,7 +18,9 @@ export type SectionType =
   | "text"
   | "image"
   | "cta"
-  | "footer";
+  | "footer"
+  | "benefitStrip" | "embeddedQuiz" | "bonusCards" | "printCarousel" | "materialIndex"
+  | "pricingPlans" | "trustBadges" | "checklistAccordion" | "iconCards" | "textPhoto" | "finalCta";
 
 export type Align = "left" | "center" | "right";
 
@@ -36,6 +38,8 @@ export interface SectionStyle {
   weight?: number;
   maxWidth?: number;
   gap?: number;
+  columns?: number;
+  background?: PageBackground;
 }
 
 export interface PageButton {
@@ -47,6 +51,7 @@ export interface PageButton {
   variant?: "solid" | "outline" | "text";
   radius?: number;
   size?: number;
+  guarantee?: { days?: string; topText?: string; bottomText?: string; variant?: string; color?: string; size?: number };
 }
 
 export interface PageBackground {
@@ -138,11 +143,14 @@ export function slugify(v: string) {
 
 /* ---------------- Definição dos campos editáveis por tipo ---------------- */
 
-export type FieldKind = "text" | "textarea" | "image" | "url" | "datetime" | "video";
+export type FieldKind = "text" | "textarea" | "image" | "url" | "datetime" | "video" | "checkbox" | "number" | "select" | "color";
 export interface FieldDef {
   key: string;
   label: string;
   kind: FieldKind;
+  options?: { value: string; label: string }[];
+  min?: number;
+  max?: number;
 }
 export interface BlockDef {
   type: SectionType;
@@ -165,7 +173,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Barra de aviso",
     emoji: "📣",
     description: "Faixa fina no topo da página",
-    fields: [T("text", "Texto")],
+    fields: [T("text", "Texto"), T("showDate", "Mostrar data de hoje", "checkbox")],
     defaults: () => ({ text: "🔥 Oferta por tempo limitado — vagas encerrando hoje!" }),
     style: { paddingY: 10, textSize: 14 },
   },
@@ -174,7 +182,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Hero / Topo",
     emoji: "🚀",
     description: "Título principal, subtítulo, imagem e botão",
-    fields: [T("eyebrow", "Chamada pequena"), T("title", "Título", "textarea"), T("subtitle", "Subtítulo", "textarea"), T("image", "Imagem", "image"), ...BTN],
+    fields: [T("eyebrow", "Chamada pequena"), T("title", "Título", "textarea"), T("subtitle", "Subtítulo", "textarea"), T("image", "Imagem", "image"), T("highlight", "Palavra em itálico"), T("miniBadges", "Mini-selos (um por linha)", "textarea"), ...BTN],
     hasButton: true,
     defaults: () => ({
       eyebrow: "MÉTODO COMPROVADO",
@@ -235,7 +243,7 @@ export const BLOCKS: BlockDef[] = [
     emoji: "🧭",
     description: "Etapas numeradas",
     fields: [T("title", "Título")],
-    items: { label: "Etapa", fields: [T("title", "Título"), T("text", "Texto", "textarea")], blank: { title: "Nova etapa", text: "Descreva a etapa." } },
+    items: { label: "Etapa", fields: [T("icon", "Ícone (opcional)"), T("title", "Título"), T("text", "Texto", "textarea")], blank: { title: "Nova etapa", text: "Descreva a etapa." } },
     defaults: () => ({
       title: "Como funciona",
       items: [
@@ -310,7 +318,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Garantia",
     emoji: "🛡️",
     description: "Selo de garantia",
-    fields: [T("days", "Dias de garantia"), T("title", "Título"), T("text", "Texto", "textarea")],
+    fields: [T("title", "Título"), T("text", "Texto", "textarea")],
     defaults: () => ({ days: "7", title: "Garantia incondicional de 7 dias", text: "Se por qualquer motivo você não gostar, devolvemos 100% do seu dinheiro. Sem perguntas." }),
   },
   {
@@ -374,6 +382,61 @@ export const BLOCKS: BlockDef[] = [
     defaults: () => ({ text: `© ${new Date().getFullYear()} Sua Empresa. Todos os direitos reservados.\nEste site não é afiliado ao Facebook ou Google.` }),
     style: { bg: "#111827", color: "#9CA3AF", paddingY: 32, textSize: 13 },
   },
+  {
+    type: "benefitStrip", label: "Faixa de benefícios", emoji: "✔️", description: "Benefícios em uma linha com check", fields: [],
+    items: { label: "Benefício", fields: [T("text", "Texto")], blank: { text: "Novo benefício" } },
+    defaults: () => ({ items: [{ text: "Acesso imediato" }, { text: "Pronto para imprimir" }, { text: "Garantia de 30 dias" }] }), style: { paddingY: 20, bg: "surface" },
+  },
+  {
+    type: "embeddedQuiz", label: "Quiz embutido", emoji: "🧩", description: "Perguntas locais e resultado com link", fields: [T("title", "Título"), T("resultTitle", "Título do resultado"), T("resultText", "Texto do resultado", "textarea"), ...BTN], hasButton: true,
+    items: { label: "Pergunta", fields: [T("title", "Pergunta"), T("options", "Opções (emoji + texto, uma por linha)", "textarea")], blank: { title: "O que você busca?", options: "🎯 Mais organização\n✨ Novas ideias" } },
+    defaults: () => ({ title: "Encontre seu próximo passo", resultTitle: "Seu próximo passo começa aqui", resultText: "Conheça o material e escolha como começar.", buttonText: "CONHECER O MATERIAL", buttonUrl: "#oferta", items: [{ title: "O que você quer melhorar?", options: "🎯 Minha rotina\n💡 Minhas ideias\n📚 Meu aprendizado" }, { title: "Como você prefere aprender?", options: "📖 Lendo\n🎬 Assistindo\n✍️ Praticando" }] }),
+  },
+  {
+    type: "bonusCards", label: "Cards de bônus", emoji: "🎁", description: "Imagens, preço riscado e etiqueta editável", fields: [T("title", "Título")],
+    items: { label: "Bônus", fields: [T("image", "Imagem", "image"), T("title", "Nome"), T("text", "Descrição", "textarea"), T("value", "Preço de"), T("badge", "Etiqueta")], blank: { image: "", title: "Novo bônus", text: "Material complementar.", value: "De R$ 47", badge: "GRÁTIS" } },
+    defaults: () => ({ title: "Mais recursos para você", items: [{ image: "", title: "Guia de início rápido", text: "Um resumo prático para começar.", value: "De R$ 47", badge: "GRÁTIS" }, { image: "", title: "Planner de atividades", text: "Organize sua próxima semana.", value: "De R$ 37", badge: "GRÁTIS" }] }), style: { columns: 2 },
+  },
+  {
+    type: "printCarousel", label: "Carrossel de prints", emoji: "📸", description: "Imagens com setas e navegação", fields: [T("title", "Título")],
+    items: { label: "Print", fields: [T("image", "Imagem", "image"), T("caption", "Legenda / descrição")], blank: { image: "", caption: "Seu depoimento aqui" } },
+    defaults: () => ({ title: "Experiências de quem já começou", items: [{ image: "", caption: "Insira um depoimento autorizado" }, { image: "", caption: "Insira outro depoimento autorizado" }, { image: "", caption: "Mais uma experiência real" }] }),
+  },
+  {
+    type: "materialIndex", label: "Índice do material", emoji: "📑", description: "Conteúdo numerado e página à direita", fields: [T("title", "Título"), T("dark", "Fundo escuro", "checkbox")],
+    items: { label: "Capítulo", fields: [T("title", "Título"), T("page", "Página")], blank: { title: "Novo capítulo", page: "01" } },
+    defaults: () => ({ title: "Dentro do material", dark: false, items: [{ title: "Primeiros passos", page: "03" }, { title: "Atividades práticas", page: "12" }, { title: "Organização e rotina", page: "24" }] }),
+  },
+  {
+    type: "pricingPlans", label: "Planos de preço", emoji: "💳", description: "Compare dois ou três planos", fields: [T("title", "Título")],
+    items: { label: "Plano", fields: [T("title", "Nome"), T("badge", "Etiqueta"), T("highlighted", "Plano destacado", "checkbox"), T("oldPrice", "Preço de"), T("price", "Preço por"), T("features", "Itens (um por linha)", "textarea"), T("buttonText", "Texto do botão"), T("buttonUrl", "Link do botão", "url"), T("buttonBg", "Cor do botão", "color"), T("buttonColor", "Cor do texto do botão", "color"), { ...T("buttonVariant", "Estilo do botão", "select"), options: [{ value: "solid", label: "Preenchido" }, { value: "outline", label: "Contorno" }] }], blank: { title: "Novo plano", badge: "", highlighted: "false", oldPrice: "De R$ 97", price: "R$ 47", features: "Acesso imediato\nMaterial completo", buttonText: "ESCOLHER", buttonUrl: "", buttonVariant: "outline" } },
+    defaults: () => ({ title: "Escolha seu acesso", items: [{ title: "Essencial", badge: "", highlighted: "false", oldPrice: "De R$ 97", price: "R$ 47", features: "Material principal\nAcesso imediato", buttonText: "QUERO O ESSENCIAL", buttonUrl: "", buttonVariant: "outline" }, { title: "Completo", badge: "MAIS ESCOLHIDO", highlighted: "true", oldPrice: "De R$ 197", price: "R$ 97", features: "Material principal\nTodos os bônus\nAtualizações incluídas", buttonText: "QUERO O COMPLETO", buttonUrl: "", buttonVariant: "solid" }] }), style: { columns: 2 },
+  },
+  {
+    type: "trustBadges", label: "Selos de confiança", emoji: "🔒", description: "Ícones e textos curtos", fields: [],
+    items: { label: "Selo", fields: [T("icon", "Ícone / emoji"), T("text", "Texto")], blank: { icon: "✓", text: "Seu selo" } },
+    defaults: () => ({ items: [{ icon: "🔒", text: "Pagamento seguro" }, { icon: "📥", text: "Produto digital" }, { icon: "⚡", text: "Acesso imediato" }, { icon: "🛡️", text: "Compra protegida" }] }), style: { paddingY: 28 },
+  },
+  {
+    type: "checklistAccordion", label: "Categorias em acordeão", emoji: "🗂️", description: "Categorias com checklist expansível", fields: [T("title", "Título")],
+    items: { label: "Categoria", fields: [T("title", "Categoria"), T("checklist", "Checklist (um por linha)", "textarea")], blank: { title: "Nova categoria", checklist: "Primeiro item\nSegundo item" } },
+    defaults: () => ({ title: "Um recurso para cada situação", items: [{ title: "Para começar", checklist: "Guia prático\nAtividades introdutórias" }, { title: "Para avançar", checklist: "Exercícios complementares\nPlano de acompanhamento" }] }),
+  },
+  {
+    type: "iconCards", label: "Cards com ícone", emoji: "💡", description: "Três ou quatro cards de aprendizado", fields: [T("title", "Título")],
+    items: { label: "Card", fields: [T("icon", "Ícone / emoji"), T("title", "Título"), T("text", "Descrição", "textarea")], blank: { icon: "✨", title: "Novo card", text: "Descreva o conteúdo." } },
+    defaults: () => ({ title: "O que você vai aprender", items: [{ icon: "💡", title: "Criatividade", text: "Explore novas possibilidades." }, { icon: "🎯", title: "Foco", text: "Avance um passo por vez." }, { icon: "📚", title: "Aprendizado", text: "Pratique com clareza." }, { icon: "🌱", title: "Evolução", text: "Construa sua rotina." }] }), style: { columns: 4 },
+  },
+  {
+    type: "textPhoto", label: "Texto + foto", emoji: "🖼️", description: "Imagem e texto lado a lado", fields: [T("title", "Título"), T("text", "Texto", "textarea"), T("image", "Foto", "image"), T("reverse", "Foto à direita", "checkbox"), ...BTN], hasButton: true,
+    items: { label: "Resultado", fields: [T("text", "Texto")], blank: { text: "Novo resultado" } },
+    defaults: () => ({ title: "Uma forma mais simples de começar", text: "Conte como o material pode fazer parte da rotina do seu público.", image: "", reverse: false, buttonText: "CONHECER AGORA", buttonUrl: "#oferta", items: [{ text: "Mais clareza no dia a dia" }, { text: "Recursos práticos sempre à mão" }] }),
+  },
+  {
+    type: "finalCta", label: "CTA final em faixa", emoji: "🚀", description: "Urgência, faixa colorida ou degradê e botão", fields: [T("title", "Frase de urgência"), T("text", "Texto", "textarea"), ...BTN], hasButton: true,
+    defaults: () => ({ title: "Seu próximo passo pode começar hoje", text: "Garanta seu acesso e explore todas as possibilidades.", buttonText: "QUERO COMEÇAR", buttonUrl: "#oferta" }), style: { bg: "primary", color: "#ffffff", paddingY: 56 },
+  },
+
 ];
 
 export const BLOCK_MAP = Object.fromEntries(BLOCKS.map((b) => [b.type, b])) as Record<SectionType, BlockDef>;
@@ -464,4 +527,42 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       newSection("footer"),
     ],
   },
+  {
+    key: "education-kids", name: "Infoproduto Educação Kids", emoji: "🌈", description: "Kit educativo colorido, atividades, bônus e garantia.",
+    settings: { colors: { ...DEFAULT_PAGE_SETTINGS.colors, primary: "#169447", bg: "#ffffff", text: "#203047", muted: "#526079", surface: "#eef8ff" }, radius: 20, headingFont: "Nunito", font: "Nunito" },
+    build: () => {
+      const sequence: SectionType[] = ["announcement", "hero", "pains", "text", "textPhoto", "iconCards", "video", "steps", "printCarousel", "benefits", "steps", "bonusCards", "offer", "guarantee", "trustBadges", "faq", "finalCta", "footer"];
+      const sections = sequence.map((type, i) => newSection(type, undefined, { bg: ["#ffffff", "#eef8ff", "#fff6dc", "#f6eeff"][i % 4] }));
+      sections[0] = newSection("announcement", { text: "Condição especial para começar hoje", showDate: true }, { bg: "#f9db69", color: "#203047", paddingY: 12 });
+      sections[1] = newSection("hero", { eyebrow: "KIT DE ATIVIDADES EDUCATIVAS", title: "Aprender também pode ser uma grande brincadeira", subtitle: "Um kit digital com ideias criativas para explorar letras, números e novas descobertas no ritmo de cada criança.", miniBadges: "📥 Acesso imediato\n🖨️ Pronto para imprimir\n🛡️ 30 dias de garantia", buttonText: "QUERO CONHECER O KIT", buttonUrl: "#oferta", buttons: [{ id: uid(), text: "QUERO CONHECER O KIT", url: "#oferta", guarantee: { days: "30", size: 80, variant: "green" } }] }, { paddingY: 56, align: "left" });
+      sections[2].content = { ...sections[2].content, title: "Faltam ideias para variar as atividades?", items: [{ text: "Você quer atividades simples de preparar" }, { text: "Busca momentos de aprendizado mais criativos" }, { text: "Precisa de materiais organizados em um só lugar" }] };
+      sections[3].content = { title: "Conheça o seu kit de descobertas", body: "Atividades digitais para imprimir, explorar e adaptar à rotina. Este é um exemplo de apresentação: descreva aqui o conteúdo real do seu produto." };
+      sections[4].content.title = "Pequenos momentos, grandes descobertas";
+      sections[7].content.title = "Benefícios para a sua rotina";
+      sections[9].content.title = "O que você recebe no kit";
+      sections[10].content = { title: "Comece em três passos", items: [{ title: "Receba por e-mail", text: "Acesse os arquivos após a confirmação." }, { title: "Imprima", text: "Escolha as atividades que fazem sentido." }, { title: "Use e explore", text: "Crie momentos de descoberta." }] };
+      sections[13] = newSection("guarantee", { days: "30", title: "Garantia incondicional de 30 dias", text: "Avalie o material com tranquilidade. Descreva aqui as condições reais de reembolso do seu produto.", badge: { days: "30", variant: "gold", size: 190 } }, { bg: "#fff6dc" });
+      sections[15].content.items = [{ q: "Como recebo o kit?", a: "O acesso digital chega após a confirmação do pagamento." }, { q: "Posso imprimir?", a: "Descreva aqui os formatos e condições de uso do seu material." }, { q: "Qual é a garantia?", a: "Você tem 30 dias para avaliar o material conforme as condições da oferta." }];
+      sections[16] = newSection("finalCta", { title: "Leve mais criatividade para a rotina", text: "Escolha seu kit e comece novas descobertas.", buttonText: "QUERO MEU KIT", buttonUrl: "#oferta" }, { bg: "#169447", color: "#ffffff" });
+      sections[17] = newSection("footer");
+      return sections;
+    },
+  },
+  {
+    key: "modern-purple", name: "Moderno Roxo", emoji: "💜", description: "Visual moderno, quiz, índice, planos e bônus.",
+    settings: { colors: { ...DEFAULT_PAGE_SETTINGS.colors, primary: "#7b39be", bg: "#faf5ee", text: "#302044", muted: "#6d6078", surface: "#ffffff" }, radius: 28, headingFont: "Montserrat", font: "Lato", background: { type: "gradient", gradientType: "linear", stops: [{ color: "#ede2ff", position: 0 }, { color: "#fff9ed", position: 100 }], angle: 135, centerX: 50, centerY: 50, image: "" } },
+    build: () => {
+      const sequence: SectionType[] = ["announcement", "hero", "benefitStrip", "embeddedQuiz", "iconCards", "iconCards", "checklistAccordion", "materialIndex", "bonusCards", "printCarousel", "countdown", "pricingPlans", "guarantee", "faq", "finalCta", "footer"];
+      const sections = sequence.map(type => newSection(type));
+      sections[0] = newSection("announcement", { text: "Uma condição especial para o seu próximo passo", showDate: true }, { bg: "#302044", color: "#ffffff", paddingY: 12 });
+      sections[1] = newSection("hero", { eyebrow: "SEU MATERIAL DIGITAL", title: "Uma rotina mais leve começa com clareza", highlight: "leve", subtitle: "Organize suas ideias e transforme pequenos passos em uma rotina que faz sentido para você.", miniBadges: "🛡️ Garantia de 7 dias", buttons: [{ id: uid(), text: "QUERO COMEÇAR AGORA", url: "#oferta", radius: 40, guarantee: { days: "7", variant: "purple", size: 76 } }] }, { paddingY: 56, align: "left" });
+      sections[2].content.items = [{ text: "Acesso imediato" }, { text: "Material digital" }, { text: "Garantia de 7 dias" }];
+      sections[5].content.title = "Por que usar no seu dia a dia";
+      sections[7].content.dark = true;
+      sections[12] = newSection("guarantee", { days: "7", badge: { days: "7", variant: "purple", size: 190 }, title: "Sua escolha com tranquilidade", text: "Você tem 7 dias para avaliar o material. Ajuste este texto às condições reais da sua oferta." });
+      sections[14] = newSection("finalCta", undefined, { color: "#ffffff", background: { type: "gradient", gradientType: "linear", stops: [{ color: "#6530a8", position: 0 }, { color: "#a245b0", position: 100 }], angle: 110, centerX: 50, centerY: 50, image: "" } });
+      return sections;
+    },
+  },
+
 ];
