@@ -1,4 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, Children, isValidElement, cloneElement } from "react";
+import { GuaranteeBadge } from "./guarantee-badge";
+import { ExtendedSection, EXTENDED_PAGE_CSS } from "./extended-sections";
+import { installPageInteractions } from "./section-interactions";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, GripVertical } from "lucide-react";
 import { pageBackground, sectionButtons } from "@/lib/sales-page-layout";
@@ -174,6 +177,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
         onClick={ctx.editable ? (e) => e.preventDefault() : undefined}>
         {P(Array.isArray(c.buttons) ? `buttons.${i}.text` : "buttonText", b.text)}
       </a>
+      {b.guarantee && <div className="sp-purchase-badge"><GuaranteeBadge badge={b.guarantee} id={`${sid}-${b.id}`}/></div>}
     </div>
   ));
   const img = (key: string, ph = "Adicione uma imagem") =>
@@ -186,16 +190,17 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   let body: React.ReactNode = null;
   switch (section.type) {
     case "announcement":
-      body = P("text", c.text, { as: "p", className: "sp-p", style: { fontWeight: 700 } });
+      body = <div>{P("text", c.text, { as: "p", className: "sp-p", style: { fontWeight: 700, display: "inline" } })}{(c.showDate === true || c.showDate === "true") && <span className="sp-today" data-sp-today>{ctx.editable ? new Date().toLocaleDateString("pt-BR") : ""}</span>}</div>;
       break;
     case "hero":
       body = (
         <div className={`sp-hero ${c.image || ctx.editable ? "has-img" : ""}`} style={{ textAlign: align }}>
           <div>
             {(c.eyebrow || ctx.editable) && P("eyebrow", c.eyebrow, { as: "p", className: "sp-p", style: { color: accent, fontWeight: 800, letterSpacing: ".12em", fontSize: 13, marginBottom: 12 } })}
-            {title()}
+            {c.highlight && !ctx.editable && String(c.title).includes(c.highlight) ? <h2 className="sp-h" style={{ fontSize: ts, fontFamily: st.font || s.headingFont }}>{String(c.title).split(c.highlight).map((part, i) => <span key={i}>{i > 0 && <em style={{ color: accent }}>{c.highlight}</em>}{part}</span>)}</h2> : title()}
             {P("subtitle", c.subtitle, { as: "p", className: "sp-p", style: { fontSize: (st.textSize ?? 18) + 1, opacity: 0.85 } })}
             {button()}
+            {c.miniBadges && <div data-sp-key="miniBadges" className="sp-mini-badges sp-strip">{ctx.editable ? P("miniBadges", c.miniBadges) : String(c.miniBadges).split("\n").map((line, i) => <span key={i} className="sp-strip-item">{line}</span>)}</div>}
           </div>
           {img("image", "Imagem do produto (opcional)")}
         </div>
@@ -256,7 +261,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           <div className="sp-grid">
             {items.map((it, i) => (
               <div key={i} className="sp-card">
-                <div className="sp-num" style={{ background: accent, color: s.colors.buttonText }}>{i + 1}</div>
+                <div className="sp-num" style={{ background: accent, color: s.colors.buttonText }}>{it.icon ? P(`items.${i}.icon`, it.icon) : i + 1}</div>
                 {P(`items.${i}.title`, it.title, { as: "h3", style: { margin: "0 0 6px", fontSize: 19 } })}
                 {P(`items.${i}.text`, it.text, { as: "p", className: "sp-p", style: { opacity: 0.8 } })}
               </div>
@@ -347,12 +352,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
     case "guarantee":
       body = (
         <div style={{ display: "flex", gap: 28, alignItems: "center", justifyContent: "center", flexWrap: "wrap", textAlign: align }}>
-          <div style={{ width: 140, height: 140, borderRadius: 999, border: `6px solid ${accent}`, display: "grid", placeItems: "center", flexShrink: 0, textAlign: "center" }}>
-            <div>
-              <div style={{ fontSize: 44, fontWeight: 900, color: accent, lineHeight: 1 }}>{P("days", c.days)}</div>
-              <div style={{ fontSize: 12, fontWeight: 800 }}>DIAS DE GARANTIA</div>
-            </div>
-          </div>
+          <div data-sp-key="guarantee-badge"><GuaranteeBadge badge={{ days: c.days, ...c.badge }} id={sid}/></div>
           <div style={{ maxWidth: 520 }}>
             {title()}
             {P("text", c.text, { as: "p", className: "sp-p", style: { opacity: 0.85 } })}
@@ -417,6 +417,8 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
     case "footer":
       body = P("text", c.text, { as: "p", className: "sp-p" });
       break;
+    default:
+      body = ExtendedSection({ section, editable: ctx.editable, accent, buttonColor: btnColor, text: P, title, buttons: button, image: img });
   }
 
   const slots: { key: string; node: React.ReactNode }[] = [];
@@ -441,7 +443,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   return (
     <section
       style={{
-        background: bg,
+        background: st.background ? pageBackground({ ...s, background: st.background }) : bg,
         color,
         fontFamily: `'${font}', sans-serif`,
         fontSize: st.textSize ?? 17,
@@ -533,12 +535,14 @@ export function PageRenderer({
   onText?: Ctx["onText"];
   onOrder?: Ctx["onOrder"];
 }) {
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => { if (!root.current || editable) return; return installPageInteractions(root.current); }, [sections, editable]);
   const [selectedElement, onElementSelect] = useState<string>();
   const ctx: Ctx = { settings, editable, onText, onOrder, selectedElement, onElementSelect };
   const visible = sections.filter((s) => !s.hidden);
   return (
-    <div className="sp-root" style={{ background: pageBackground(settings), color: settings.colors.text, ["--sp-r" as string]: `${settings.radius}px` }}>
-      <style dangerouslySetInnerHTML={{ __html: PAGE_CSS }} />
+    <div ref={root} className="sp-root" style={{ background: pageBackground(settings), color: settings.colors.text, ["--sp-r" as string]: `${settings.radius}px` }}>
+      <style dangerouslySetInnerHTML={{ __html: PAGE_CSS + EXTENDED_PAGE_CSS }} />
       {visible.length === 0 && editable && (
         <div style={{ padding: "120px 24px", textAlign: "center", opacity: 0.6, fontFamily: "sans-serif" }}>
           Página vazia. Adicione seções pela biblioteca à esquerda.

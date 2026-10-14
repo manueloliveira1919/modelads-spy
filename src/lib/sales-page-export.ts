@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { COUNTDOWN_SCRIPT, PageRenderer } from "@/components/sales-page/page-renderer";
 import type { PageSection, PageSettings } from "./sales-page-types";
+import { PAGE_INTERACTIONS_SCRIPT } from "@/components/sales-page/section-interactions";
 import { pageBackground } from "./sales-page-layout";
 
 export const PAGE_FONTS = [
@@ -40,7 +41,8 @@ ${settings.headScripts || ""}
 </head>
 <body>
 ${body}
-<script>${COUNTDOWN_SCRIPT}</script>
+<script>${COUNTDOWN_SCRIPT}
+${PAGE_INTERACTIONS_SCRIPT}</script>
 ${settings.bodyScripts || ""}
 </body>
 </html>`;

@@ -15,7 +15,7 @@ export function ExtendedSection({ section, editable, accent, buttonColor, text: 
   const items = c.items ?? [];
   const columns = Math.max(2, Math.min(4, Number(section.style.columns) || (section.type === "pricingPlans" ? items.length : 3)));
   const gridStyle = { "--sp-columns": columns } as CSSProperties;
-  const itemImage = (it: Record<string, string>, i: number) => it.image ? <img data-sp-key={`items.${i}.image`} className="sp-item-image" src={it.image} alt={it.caption || it.title || ""} loading="lazy"/> : <div data-sp-key={`items.${i}.image`} className="sp-ph">{it.caption || "Votre image".replace("Votre", "Sua")}</div>;
+  const itemImage = (it: Record<string, string>, i: number) => it.image ? <img data-sp-key={`items.${i}.image`} className="sp-item-image" src={it.image} alt={it.caption || it.title || ""} loading="lazy"/> : <div data-sp-key={`items.${i}.image`} className="sp-ph">{it.caption || "Sua imagem"}</div>;
   const checks = (value: string) => lines(value).map((line, i) => <div key={i} className="sp-check"><span style={{ color: accent }}>✓</span><span>{line}</span></div>);
   switch (section.type) {
     case "benefitStrip": case "trustBadges": return <div className="sp-strip">{items.map((it, i) => <div key={i} data-sp-key={`items.${i}`} className="sp-strip-item"><span style={{ color: accent }}>{section.type === "trustBadges" ? P(`items.${i}.icon`, it.icon) : "✓"}</span>{P(`items.${i}.text`, it.text)}</div>)}</div>;
