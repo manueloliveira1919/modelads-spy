@@ -542,6 +542,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       sections[9].content.title = "O que você recebe no kit";
       sections[10].content = { title: "Comece em três passos", items: [{ title: "Receba por e-mail", text: "Acesse os arquivos após a confirmação." }, { title: "Imprima", text: "Escolha as atividades que fazem sentido." }, { title: "Use e explore", text: "Crie momentos de descoberta." }] };
       sections[13] = newSection("guarantee", { days: "30", title: "Garantia incondicional de 30 dias", text: "Avalie o material com tranquilidade. Descreva aqui as condições reais de reembolso do seu produto.", badge: { days: "30", variant: "gold", size: 190 } }, { bg: "#fff6dc" });
+      sections[15].content.items = [{ q: "Como recebo o kit?", a: "O acesso digital chega após a confirmação do pagamento." }, { q: "Posso imprimir?", a: "Descreva aqui os formatos e condições de uso do seu material." }, { q: "Qual é a garantia?", a: "Você tem 30 dias para avaliar o material conforme as condições da oferta." }];
       sections[16] = newSection("finalCta", { title: "Leve mais criatividade para a rotina", text: "Escolha seu kit e comece novas descobertas.", buttonText: "QUERO MEU KIT", buttonUrl: "#oferta" }, { bg: "#169447", color: "#ffffff" });
       sections[17] = newSection("footer");
       return sections;
@@ -555,6 +556,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       const sections = sequence.map(type => newSection(type));
       sections[0] = newSection("announcement", { text: "Uma condição especial para o seu próximo passo", showDate: true }, { bg: "#302044", color: "#ffffff", paddingY: 12 });
       sections[1] = newSection("hero", { eyebrow: "SEU MATERIAL DIGITAL", title: "Uma rotina mais leve começa com clareza", highlight: "leve", subtitle: "Organize suas ideias e transforme pequenos passos em uma rotina que faz sentido para você.", miniBadges: "🛡️ Garantia de 7 dias", buttons: [{ id: uid(), text: "QUERO COMEÇAR AGORA", url: "#oferta", radius: 40, guarantee: { days: "7", variant: "purple", size: 76 } }] }, { paddingY: 56, align: "left" });
+      sections[2].content.items = [{ text: "Acesso imediato" }, { text: "Material digital" }, { text: "Garantia de 7 dias" }];
       sections[5].content.title = "Por que usar no seu dia a dia";
       sections[7].content.dark = true;
       sections[12] = newSection("guarantee", { days: "7", badge: { days: "7", variant: "purple", size: 190 }, title: "Sua escolha com tranquilidade", text: "Você tem 7 dias para avaliar o material. Ajuste este texto às condições reais da sua oferta." });

@@ -18,7 +18,7 @@ export const PAGE_CSS = `
 .sp-element{position:relative;min-width:0}.sp-element[data-selected="true"]{outline:2px solid var(--brand);outline-offset:3px}.sp-element-tools{display:flex;gap:2px;position:absolute;top:0;right:0;z-index:5;background:var(--card);color:var(--foreground);border-radius:4px}.sp-element[data-drop="before"]::before,.sp-element[data-drop="after"]::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--brand);z-index:9}.sp-element[data-drop="before"]::before{top:-5px}.sp-element[data-drop="after"]::after{bottom:-5px}.sp-ordered{display:flex;flex-direction:column;gap:var(--sp-gap,20px)}
 .sp-h{margin:0 0 16px;line-height:1.15;font-weight:800;letter-spacing:0}
 .sp-p{margin:0;white-space:pre-line}
-.sp-grid{display:grid;gap:20px;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:32px;text-align:left}
+.sp-grid{display:grid;gap:20px;grid-template-columns:repeat(var(--sp-columns,3),minmax(0,1fr));margin-top:32px;text-align:left}
 .sp-grid2{display:grid;gap:20px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:32px}
 .sp-card{padding:24px;border-radius:var(--sp-r);background:var(--sp-card)}
 .sp-btn{display:inline-block;padding:18px 36px;font-weight:800;font-size:18px;text-decoration:none;border-radius:var(--sp-r);box-shadow:0 10px 24px -10px rgba(0,0,0,.45);transition:transform .15s;cursor:pointer;border:0}
@@ -449,6 +449,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
         fontSize: st.textSize ?? 17,
         fontWeight: st.weight,
         ["--sp-gap" as string]: `${st.gap ?? 20}px`,
+        ["--sp-columns" as string]: Math.max(2, Math.min(4, st.columns ?? 3)),
         padding: `${st.paddingY ?? 64}px 0`,
         textAlign: align,
         ["--sp-card" as string]: card,
