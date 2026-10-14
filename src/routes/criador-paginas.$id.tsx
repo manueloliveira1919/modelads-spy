@@ -34,6 +34,7 @@ import { useAuth } from "@/lib/auth-context";
 import { DEFAULT_PAGE_BACKGROUND, newPageButton, sectionButtons, salesPageUrl } from "@/lib/sales-page-layout";
 import { cn } from "@/lib/utils";
 import { PageRenderer } from "@/components/sales-page/page-renderer";
+import type { GuaranteeBadgeSettings } from "@/components/sales-page/guarantee-badge";
 import { getPage, updatePage, uploadPageImage } from "@/lib/sales-page-api";
 import { buildPageHtml, downloadHtml, PAGE_FONTS, pageFontsHref } from "@/lib/sales-page-export";
 import {
@@ -536,6 +537,9 @@ function ImageField({ label, value, onChange, userId }: { label: string; value: 
 
 function Field({ def, value, onChange, userId }: { def: FieldDef; value: string; onChange: (v: string) => void; userId: string }) {
   if (def.kind === "image") return <ImageField label={def.label} value={value ?? ""} onChange={onChange} userId={userId} />;
+  if (def.kind === "checkbox") return <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={String(value) === "true"} onChange={e => onChange(String(e.target.checked))}/>{def.label}</label>;
+  if (def.kind === "color") return <ColorField label={def.label} value={value} onChange={v => onChange(v ?? "")} />;
+  if (def.kind === "select") return <div className="space-y-1"><Label className="text-xs">{def.label}</Label><select aria-label={def.label} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={value || ""} onChange={e => onChange(e.target.value)}>{def.options?.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}</select></div>;
   return (
     <div className="space-y-1">
       <Label className="text-xs">{def.label}</Label>
@@ -543,7 +547,7 @@ function Field({ def, value, onChange, userId }: { def: FieldDef; value: string;
         <Textarea value={value ?? ""} onChange={(e) => onChange(e.target.value)} rows={3} className="text-sm" />
       ) : (
         <Input
-          type={def.kind === "datetime" ? "datetime-local" : "text"}
+          type={def.kind === "datetime" ? "datetime-local" : def.kind === "number" ? "number" : "text"}
           value={value ?? ""}
           placeholder={def.kind === "url" ? "https://pay.exemplo.com/..." : def.kind === "video" ? "Link do YouTube, Vimeo ou .mp4" : undefined}
           onChange={(e) => onChange(e.target.value)}
@@ -553,6 +557,18 @@ function Field({ def, value, onChange, userId }: { def: FieldDef; value: string;
       {def.kind === "url" && <p className="text-[10px] text-muted-foreground">Use #oferta para rolar até a seção de oferta.</p>}
     </div>
   );
+}
+
+function BadgePanel({ badge, onChange }: { badge: GuaranteeBadgeSettings; onChange: (next: GuaranteeBadgeSettings) => void }) {
+  const set = (patch: Partial<GuaranteeBadgeSettings>) => onChange({ ...badge, ...patch });
+  return <div className="space-y-3">
+    <Field def={{ key: "days", label: "Dias de garantia", kind: "number" }} value={badge.days || "7"} userId="" onChange={days => set({ days })}/>
+    <Field def={{ key: "top", label: "Texto curvo superior", kind: "text" }} value={badge.topText ?? "GARANTIA INCONDICIONAL"} userId="" onChange={topText => set({ topText })}/>
+    <Field def={{ key: "bottom", label: "Texto curvo inferior", kind: "text" }} value={badge.bottomText ?? "SATISFAÇÃO GARANTIDA"} userId="" onChange={bottomText => set({ bottomText })}/>
+    <Label className="text-xs">Estilo do selo</Label><select aria-label="Estilo do selo" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={badge.variant || "gold"} onChange={e => set({ variant: e.target.value })}><option value="gold">Dourado metálico</option><option value="navy">Azul-marinho com dourado</option><option value="green">Verde</option><option value="purple">Roxo</option><option value="custom">Cor personalizada</option></select>
+    {badge.variant === "custom" && <ColorField label="Cor do selo" value={badge.color} onChange={color => set({ color })}/>}
+    <NumberField label="Tamanho do selo" value={badge.size ?? 180} min={64} max={320} onChange={size => set({ size })}/>
+  </div>;
 }
 
 function SectionPanel({
@@ -571,6 +587,8 @@ function SectionPanel({
   onVisibility: (hidden: boolean) => void;
 }) {
   const [subtab, setSubtab] = useState<"content" | "font" | "color" | "layout">("content");
+  const [uploadingPrints, setUploadingPrints] = useState(false);
+  const printsInput = useRef<HTMLInputElement>(null);
   const buttons = sectionButtons(section);
   const updateButtons = (next: PageButton[]) => onContent("buttons", next);
   const def = BLOCK_MAP[section.type];
@@ -596,6 +614,19 @@ function SectionPanel({
         ))}
       </Group>
 
+      {section.type === "guarantee" && <Group title="Selo de garantia"><BadgePanel badge={{ days: section.content.days, ...section.content.badge }} onChange={badge => onContent("badge", badge)}/></Group>}
+      {section.type === "printCarousel" && <div>
+        <Button variant="outline" className="w-full" size="sm" disabled={uploadingPrints} onClick={() => printsInput.current?.click()}>{uploadingPrints ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}Enviar várias imagens</Button>
+        <input ref={printsInput} hidden type="file" multiple accept="image/*" onChange={async e => {
+          const files = Array.from(e.target.files ?? []); e.target.value = "";
+          if (!files.length) return;
+          if (files.some(f => !f.type.startsWith("image/") || f.size > 5 * 1024 * 1024)) { toast.error("Use imagens de até 5 MB cada."); return; }
+          setUploadingPrints(true);
+          try { const images = await Promise.all(files.map(file => uploadPageImage(userId, file))); onItems([...items, ...images.map(image => ({ image, caption: "" }))]); }
+          catch { toast.error("Não foi possível enviar as imagens."); }
+          finally { setUploadingPrints(false); }
+        }}/>
+      </div>}
       {def.hasButton && <Group title="Botões">
         {buttons.map((button, i) => <div key={button.id} className="space-y-2 rounded-md border border-border p-3">
           <div className="flex items-center justify-between"><span className="text-xs font-semibold">Botão {i + 1}</span><Button variant="ghost" size="icon" title="Remover botão" aria-label={`Remover botão ${i + 1}`} onClick={() => updateButtons(buttons.filter(b => b.id !== button.id))}><Trash2 size={14}/></Button></div>
@@ -603,6 +634,8 @@ function SectionPanel({
           <Field def={{ key: "url", label: "Link do botão", kind: "url" }} value={button.url} userId={userId} onChange={url => updateButtons(buttons.map(b => b.id === button.id ? { ...b, url } : b))}/>
           <Label className="text-xs">Estilo do botão</Label><select aria-label={`Estilo do botão ${i + 1}`} value={button.variant ?? "solid"} onChange={e => updateButtons(buttons.map(b => b.id === button.id ? { ...b, variant: e.target.value as PageButton['variant'] } : b))} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"><option value="solid">Preenchido</option><option value="outline">Contorno</option><option value="text">Somente texto</option></select>
           <NumberField label="Cantos do botão" value={button.radius ?? 12} min={0} max={40} onChange={radius => updateButtons(buttons.map(b => b.id === button.id ? { ...b, radius } : b))}/>
+          <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!button.guarantee} onChange={e => updateButtons(buttons.map(b => b.id === button.id ? { ...b, guarantee: e.target.checked ? { days: "7", size: 80 } : undefined } : b))}/>Selo de garantia junto ao botão</label>
+          {button.guarantee && <details><summary className="cursor-pointer text-xs font-semibold">Personalizar selo</summary><div className="mt-3"><BadgePanel badge={button.guarantee} onChange={guarantee => updateButtons(buttons.map(b => b.id === button.id ? { ...b, guarantee } : b))}/></div></details>}
         </div>)}
         <Button variant="outline" size="sm" className="w-full" onClick={() => updateButtons([...buttons, newPageButton()])}><Plus size={14} className="mr-2"/>Adicionar botão</Button>
       </Group>}
@@ -672,6 +705,14 @@ function SectionPanel({
       </Group>}
 
       {subtab === "layout" && <Group title="Layout">
+        {["bonusCards", "iconCards", "pricingPlans", "steps", "benefits"].includes(section.type) && <NumberField label="Colunas" value={st.columns ?? 3} min={2} max={section.type === "pricingPlans" || section.type === "bonusCards" ? 3 : 4} suffix="" onChange={columns => onStyle({ columns })}/>}
+        {section.type === "finalCta" && <>
+          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={st.background?.type === "gradient"} onChange={e => onStyle({ background: e.target.checked ? { ...DEFAULT_PAGE_BACKGROUND, type: "gradient" } : undefined })}/>Fundo em degradê</label>
+          {st.background?.type === "gradient" && <>
+            {st.background.stops.map((stop, i) => <ColorField key={i} label={`Cor do degradê ${i + 1}`} value={stop.color} onChange={color => { if (color && st.background) onStyle({ background: { ...st.background, stops: st.background.stops.map((s, j) => i === j ? { ...s, color } : s) } }); }}/>) }
+            <NumberField label="Ângulo do degradê" value={st.background.angle} min={0} max={360} suffix="°" onChange={angle => { if (st.background) onStyle({ background: { ...st.background, angle } }); }}/>
+          </>}
+        </>}
         <NumberField label="Espaço vertical" value={st.paddingY ?? 64} min={0} max={160} step={4} onChange={(v) => onStyle({ paddingY: v })} />
         <NumberField label="Distância entre elementos" value={st.gap ?? 20} min={0} max={100} onChange={gap => onStyle({ gap })}/>
         <NumberField label="Largura da seção" value={st.maxWidth ?? 1080} min={320} max={1400} step={20} onChange={maxWidth => onStyle({ maxWidth })}/>
