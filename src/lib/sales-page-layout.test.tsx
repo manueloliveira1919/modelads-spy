@@ -21,7 +21,9 @@ describe("Sales page compatibility and output parity", () => {
   });
   it("resolves visible sections, WhatsApp and selected popular plans safely", () => {
     const plans = newSection("pricingPlans", { popularPlan: "1" });
-    plans.content.items[1].buttonUrl = "https://example.com/checkout";
+    const completePlan = plans.content.items?.[1];
+    if (!completePlan) throw new Error("Missing template plan");
+    completePlan.buttonUrl = "https://example.com/checkout";
     const button = { id: "a", text: "Buy", url: "", destination: { type: "popular" as const } };
     expect(buttonDestination(button, [plans])).toEqual({ href: `#sp-plan-${plans.id}-1`, popular: true });
     expect(buttonDestination({ ...button, destination: { type: "popular", popularAction: "checkout" } }, [plans]).href).toBe("https://example.com/checkout");
