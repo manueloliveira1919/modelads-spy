@@ -58,9 +58,9 @@ export function installPageInteractions(root: HTMLElement) {
     const up = (e: PointerEvent) => { if (activePointer && Math.abs(e.clientX - startX) > 40) advance(carousel, Number(carousel.dataset.index || 0) + (e.clientX < startX ? 1 : -1)); activePointer = false; paused = true; };
     const cancel = () => { activePointer = false; };
     carousel.addEventListener("mouseenter", enter); carousel.addEventListener("mouseleave", leave); carousel.addEventListener("pointerdown", down); carousel.addEventListener("pointerup", up); carousel.addEventListener("pointercancel", cancel);
-    const timer = carousel.dataset.auto === "true" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? window.setInterval(() => { if (!paused && !document.hidden) advance(carousel, Number(carousel.dataset.index || 0) + 1); }, Math.max(1, Number(carousel.dataset.interval) || 5) * 1000) : undefined;
+    const timer = carousel.dataset.auto === "true" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches ? window.setInterval(() => { if (!paused && !document.hidden) advance(carousel, Number(carousel.dataset.index || 0) + 1); }, Math.max(1, Number(carousel.dataset.interval) || 5) * 1000) : 0;
     const resize = () => advance(carousel, Number(carousel.dataset.index || 0)); window.addEventListener("resize", resize);
-    cleanup.push(() => { clearInterval(timer); window.removeEventListener("resize", resize); carousel.removeEventListener("mouseenter", enter); carousel.removeEventListener("mouseleave", leave); carousel.removeEventListener("pointerdown", down); carousel.removeEventListener("pointerup", up); carousel.removeEventListener("pointercancel", cancel); });
+    cleanup.push(() => { if (timer) clearInterval(timer); window.removeEventListener("resize", resize); carousel.removeEventListener("mouseenter", enter); carousel.removeEventListener("mouseleave", leave); carousel.removeEventListener("pointerdown", down); carousel.removeEventListener("pointerup", up); carousel.removeEventListener("pointercancel", cancel); });
     advance(carousel, 0);
   });
   root.querySelectorAll<HTMLElement>("[data-sp-accordion]").forEach(accordion => {

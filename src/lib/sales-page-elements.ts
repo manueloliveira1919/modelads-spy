@@ -3,7 +3,7 @@ import type { ElementStyle, PageButton, PageSection, PageSettings } from "./sale
 import { pageBackground } from "./sales-page-layout";
 
 export function elementCss(style: ElementStyle = {}, settings: PageSettings): CSSProperties {
-  return {
+  const css: CSSProperties = {
     fontFamily: style.font ? `'${style.font}', sans-serif` : undefined, fontSize: style.size,
     fontWeight: style.weight, fontStyle: style.italic === undefined ? undefined : style.italic ? "italic" : "normal",
     lineHeight: style.lineHeight, letterSpacing: style.letterSpacing, color: style.color, textAlign: style.align,
@@ -14,6 +14,7 @@ export function elementCss(style: ElementStyle = {}, settings: PageSettings): CS
     borderRadius: style.radius, width: style.width === undefined ? undefined : `${style.width}%`, maxWidth: "100%",
     ...(style.align === "center" && style.width !== undefined ? { marginLeft: "auto", marginRight: "auto" } : style.align === "right" && style.width !== undefined ? { marginLeft: "auto", marginRight: 0 } : {}),
   };
+  return Object.fromEntries(Object.entries(css).filter(([, value]) => value !== undefined));
 }
 
 export function popularPlan(sections: PageSection[]) {

@@ -22,7 +22,7 @@ export const PAGE_CSS = `
 .sp-grid{display:grid;gap:20px;grid-template-columns:repeat(var(--sp-columns,3),minmax(0,1fr));margin-top:32px;text-align:left}
 .sp-grid2{display:grid;gap:20px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:32px}
 .sp-card{padding:28px;border-radius:var(--sp-r);background:var(--sp-card);border:1px solid color-mix(in srgb,currentColor 9%,transparent);box-shadow:0 12px 36px -24px color-mix(in srgb,currentColor 28%,transparent)}
-.sp-offer{position:relative;box-shadow:0 22px 60px -28px color-mix(in srgb,currentColor 30%,transparent)}.sp-offer-label{display:inline-block;padding:7px 18px;border-radius:var(--sp-r);font-size:12px;font-weight:800;margin-bottom:20px}.sp-offer .sp-btn{display:block;width:100%;text-align:center}.sp-element-tools{top:-28px}.sp-root section{scroll-margin-top:20px}.sp-root p,.sp-root span{overflow-wrap:anywhere}
+.sp-offer{position:relative;box-shadow:0 22px 60px -28px color-mix(in srgb,currentColor 30%,transparent)}.sp-offer-label{display:inline-block;padding:7px 18px;border-radius:var(--sp-r);font-size:12px;font-weight:800;margin-bottom:20px}.sp-offer .sp-btn{display:block;width:100%;text-align:center}.sp-element-tools{top:-28px}.sp-carousel-track>.sp-element{flex:0 0 calc(100% / var(--sp-per-view,1));min-width:0}.sp-carousel-track>.sp-element>figure{width:100%;padding:0 8px}.sp-flex-grid>.sp-element{min-width:0;height:100%}.sp-flex-grid>.sp-element>article{height:100%}.sp-root section{scroll-margin-top:20px}.sp-root p,.sp-root span{overflow-wrap:anywhere}
 .sp-btn{display:inline-block;padding:18px 36px;font-weight:800;font-size:18px;text-decoration:none;border-radius:var(--sp-r);box-shadow:0 10px 24px -10px rgba(0,0,0,.45);transition:transform .15s;cursor:pointer;border:0}
 .sp-btn:hover{transform:translateY(-2px)}
 .sp-hero{display:grid;gap:40px;align-items:center}
@@ -471,7 +471,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   return (
     <section id={`sp-section-${sid}`}
       style={{
-        background: st.background ? pageBackground({ ...s, background: st.background }) : bg,
+        background: st.background ? pageBackground({ ...s, colors: { ...s.colors, bg: resolveColor(st.bg, s, s.colors.bg) }, background: st.background }) : bg,
         color,
         fontFamily: `'${font}', sans-serif`,
         fontSize: st.textSize ?? 17,
