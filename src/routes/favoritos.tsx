@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Heart } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { OffersGate } from "@/components/offers-gate";
 import { RequireAuth } from "@/components/require-auth";
 
 export const Route = createFileRoute("/favoritos")({
@@ -12,7 +13,9 @@ export const Route = createFileRoute("/favoritos")({
   }),
   component: () => (
     <RequireAuth>
-      <Page />
+      <OffersGate>
+        <Page />
+      </OffersGate>
     </RequireAuth>
   ),
 });

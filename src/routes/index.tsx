@@ -4,6 +4,9 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Star, Wand2, Compass, Crown, Flame, TrendingUp, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AppShell } from "@/components/app-shell";
+import { OfferLockCard, useCanViewOffers } from "@/components/offers-gate";
+import { planLabel as planName } from "@/lib/entitlements";
+import { useEntitlements } from "@/hooks/use-entitlements";
 import { LandingPage } from "@/components/landing-page";
 import { listOffers } from "@/lib/offers.functions";
 import { cn } from "@/lib/utils";
@@ -32,9 +35,6 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  loader: ({ context }) => {
-    context.queryClient.ensureQueryData(offersQuery);
-  },
   component: Home,
   errorComponent: ({ error }) => (
     <AppShell>

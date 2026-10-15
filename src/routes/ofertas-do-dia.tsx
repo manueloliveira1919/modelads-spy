@@ -4,6 +4,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { Search, ListFilter, ChevronDown, Flame } from "lucide-react";
 
 import { AppShell } from "@/components/app-shell";
+import { OffersGate } from "@/components/offers-gate";
 import { OfferCard } from "@/components/offer-card";
 import { listOffers } from "@/lib/offers.functions";
 import { useActiveCategoryNames } from "@/hooks/use-categories";
@@ -38,10 +39,11 @@ export const Route = createFileRoute("/ofertas-do-dia")({
       { property: "og:description", content: "Ofertas já garimpadas e validadas." },
     ],
   }),
-  loader: ({ context }) => {
-    context.queryClient.ensureQueryData(offersQuery);
-  },
-  component: Page,
+  component: () => (
+    <OffersGate>
+      <Page />
+    </OffersGate>
+  ),
   errorComponent: ({ error }) => (
     <AppShell>
       <div className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">

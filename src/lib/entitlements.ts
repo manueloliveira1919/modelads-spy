@@ -167,7 +167,5 @@ export function planLabel(code: PlanCode | string): string {
       return "Starter";
     default:
       return "Free";
-    case "__unused":
-      return "Starter";
   }
 }
