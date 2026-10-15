@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { buttonDestination } from "@/lib/sales-page-elements";
+import { parseDestination, buttonDestination } from "@/lib/sales-page-elements";
 import type { PageSection } from "@/lib/sales-page-types";
 
 type Props = {
@@ -19,9 +19,9 @@ export function ExtendedSection({ section, sections, editable, accent, buttonCol
   const itemImage = (it: Record<string, string>, i: number) => it.image ? <img data-sp-key={`items.${i}.image`} className="sp-item-image" src={it.image} alt={it.caption || it.title || ""} loading="lazy"/> : <div data-sp-key={`items.${i}.image`} className="sp-ph">{it.caption || "Sua imagem"}</div>;
   const checks = (value: string) => lines(value).map((line, i) => <div key={i} className="sp-check"><span style={{ color: accent }}>✓</span><span>{line}</span></div>);
   switch (section.type) {
-    case "benefitStrip": case "trustBadges": return <div className="sp-strip">{items.map((it, i) => <div key={i} data-sp-key={`items.${i}`} className="sp-strip-item"><span style={{ color: accent }}>{section.type === "trustBadges" ? P(`items.${i}.icon`, it.icon) : "✓"}</span>{P(`items.${i}.text`, it.text)}</div>)}</div>;
+    case "benefitStrip": case "trustBadges": return <div className="sp-strip">{items.map((it, i) => <div key={i} data-sp-key={`items.${i}`} className="sp-strip-item"><span data-sp-key={`items.${i}.icon`} style={{ color: accent }}>{section.type === "trustBadges" ? P(`items.${i}.icon`, it.icon) : "✓"}</span>{P(`items.${i}.text`, it.text)}</div>)}</div>;
     case "iconCards": return <>{title()}<div className="sp-flex-grid" style={gridStyle}>{items.map((it, i) => <article key={i} data-sp-key={`items.${i}`} className="sp-card"><div className="sp-card-icon" style={{ color: accent }}>{P(`items.${i}.icon`, it.icon)}</div>{P(`items.${i}.title`, it.title, { as: "h3" })}{P(`items.${i}.text`, it.text, { as: "p", className: "sp-p" })}</article>)}</div></>;
-    case "bonusCards": return <>{title()}<div className="sp-flex-grid" style={gridStyle}>{items.map((it, i) => <article key={i} className="sp-card"><div className="sp-bonus-image">{itemImage(it, i)}<span data-sp-key={`items.${i}.badge`} className="sp-label" style={{ background: accent, color: buttonColor }}>{P(`items.${i}.badge`, it.badge)}</span></div>{P(`items.${i}.title`, it.title, { as: "h3" })}{P(`items.${i}.text`, it.text, { as: "p", className: "sp-p" })}<p><s>{P(`items.${i}.value`, it.value)}</s></p></article>)}</div></>;
+    case "bonusCards": return <>{title()}<div className="sp-flex-grid" style={gridStyle}>{items.map((it, i) => <article key={i} data-sp-key={`items.${i}`} className="sp-card"><div className="sp-bonus-image">{itemImage(it, i)}<span data-sp-key={`items.${i}.badge`} className="sp-label" style={{ background: accent, color: buttonColor }}>{P(`items.${i}.badge`, it.badge)}</span></div>{P(`items.${i}.title`, it.title, { as: "h3" })}{P(`items.${i}.text`, it.text, { as: "p", className: "sp-p" })}<p><s>{P(`items.${i}.value`, it.value)}</s></p></article>)}</div></>;
     case "textPhoto": return <div className={`sp-photo ${enabled(c.reverse) ? "sp-photo-reverse" : ""}`}>{image("image", "Foto do seu material")}<div>{title()}{P("text", c.text, { as: "p", className: "sp-p" })}<div>{items.map((it, i) => <div key={i} className="sp-check"><span style={{ color: accent }}>✓</span>{P(`items.${i}.text`, it.text)}</div>)}</div>{buttons()}</div></div>;
     case "materialIndex": return <div data-sp-key="index" className={`sp-index sp-card ${enabled(c.dark) ? "sp-index-dark" : ""}`}>{title()}{items.map((it, i) => <div key={i} className="sp-index-row"><span className="sp-index-number">{String(i + 1).padStart(2, "0")}</span>{P(`items.${i}.title`, it.title)}<span className="sp-index-page">{P(`items.${i}.page`, it.page)}</span></div>)}</div>;
     case "checklistAccordion": return <>{title()}<div className="sp-faq" data-sp-accordion data-multiple={enabled(c.multipleOpen)}>{items.map((it, i) => {
@@ -35,13 +35,13 @@ export function ExtendedSection({ section, sections, editable, accent, buttonCol
       const color = /^#[0-9a-f]{6}$/i.test(it.buttonColor || "") ? it.buttonColor : buttonColor;
       const outline = (it.buttonVariant || (highlighted ? "solid" : "outline")) === "outline";
       const raw = (it.buttonUrl || "").trim();
-      const destination = buttonDestination({ id: String(i), text: it.buttonText, url: raw, destination: it.destination ? JSON.parse(it.destination) : undefined }, sections);
+      const destination = buttonDestination({ id: String(i), text: it.buttonText, url: raw, destination: parseDestination(it.destination) }, sections);
        const href = destination.href;
       return <article key={i} id={`sp-plan-${section.id}-${i}`} data-sp-key={`items.${i}`} data-popular={highlighted} className="sp-card sp-plan" style={{ border: `2px solid ${highlighted ? accent : "transparent"}`, background: it.cardBg || undefined, color: it.textColor || undefined }}>
         {it.badge && <div className="sp-label" style={{ background: accent, color: buttonColor }}>{P(`items.${i}.badge`, it.badge)}</div>}
         {P(`items.${i}.title`, it.title, { as: "h3" })}<p><s>{P(`items.${i}.oldPrice`, it.oldPrice)}</s></p>{P(`items.${i}.price`, it.price, { as: "p", style: { fontSize: 38, fontWeight: 900, color: accent } })}
         {P(`items.${i}.period`, it.period, { as: "p", className: "sp-p" })}<div>{lines(it.features).map((line, j) => <div key={j} data-sp-key={`items.${i}.features.${j}`} className="sp-check"><span style={{ color: accent }}>✓</span>{P(`items.${i}.features.${j}`, line)}</div>)}</div>
-        <a data-sp-key={`items.${i}.button`} className="sp-btn" href={href} target={raw.startsWith("#") ? undefined : "_top"} aria-disabled={!!destination.warning} title={destination.warning} onClick={editable || destination.warning ? e => e.preventDefault() : undefined} style={{ background: outline ? "transparent" : bg, color: outline ? bg : color, border: `2px solid ${bg}`, marginTop: 24 }}>{P(`items.${i}.buttonText`, it.buttonText)}</a>
+        <a data-sp-key={`items.${i}.button`} className="sp-btn" href={href} data-sp-popular={destination.popular || undefined} target={href.startsWith("#") ? undefined : "_top"} aria-disabled={!!destination.warning} title={destination.warning} onClick={editable || destination.warning ? e => e.preventDefault() : undefined} style={{ background: outline ? "transparent" : bg, color: outline ? bg : color, border: `2px solid ${bg}`, marginTop: 24 }}>{P(`items.${i}.buttonText`, it.buttonText)}</a>
       </article>;
     })}</div></div>;
     case "finalCta": return <>{title()}{P("text", c.text, { as: "p", className: "sp-p" })}{buttons()}</>;

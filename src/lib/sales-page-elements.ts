@@ -2,6 +2,13 @@ import type { CSSProperties } from "react";
 import type { ElementStyle, PageButton, PageSection, PageSettings } from "./sales-page-types";
 import { pageBackground } from "./sales-page-layout";
 
+export function parseDestination(value: unknown): PageButton["destination"] {
+  if (!value) return undefined;
+  try { const parsed = typeof value === "string" ? JSON.parse(value) : value;
+    return parsed && ["url", "section", "whatsapp", "popular"].includes(parsed.type) ? parsed : undefined;
+  } catch { return undefined; }
+}
+
 export function elementCss(style: ElementStyle = {}, settings: PageSettings): CSSProperties {
   const css: CSSProperties = {
     fontFamily: style.font ? `'${style.font}', sans-serif` : undefined, fontSize: style.size,
@@ -54,5 +61,7 @@ export function buttonDestination(button: PageButton, sections: PageSection[]): 
 export function contentAt(section: PageSection, key: string): string {
   if (key.startsWith("custom:")) return section.customElements?.find(e => e.id === key.slice(7))?.value || "";
   if (key.startsWith("button:")) return section.content.buttons?.find((b: PageButton) => b.id === key.slice(7))?.text || section.content.buttonText || "";
+  const list = key.match(/^items\.(\d+)\.(features|checklist)\.(\d+)$/);
+  if (list) return (section.content.items?.[Number(list[1])]?.[list[2]] || "").split("\n")[Number(list[3])] || "";
   return key.split(".").reduce<any>((value, part) => value?.[part], section.content) ?? "";
 }

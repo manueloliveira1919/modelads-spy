@@ -43,7 +43,7 @@ export const PAGE_CSS = `
  .sp-grid,.sp-grid2,.sp-hero.has-img{grid-template-columns:1fr}
  .sp-wrap{padding:0 18px}
  .sp-btn{display:block;width:100%;padding:16px 20px;font-size:16px}
- .sp-root .sp-h{font-size:calc(var(--sp-ts) * .72)!important}
+ .sp-root .sp-h:not([data-sp-custom-size]){font-size:calc(var(--sp-ts) * .72)!important}
  .sp-cd div{min-width:64px}.sp-cd b{font-size:26px}
 }`;
 
@@ -86,7 +86,7 @@ function E({
   style?: CSSProperties;
 }) {
   const override = ctx.sections.find(s => s.id === sid)?.elementStyles?.[path];
-  style = { ...style, ...elementCss(override, ctx.settings) };
+  style = { ...style, ...elementCss(override, ctx.settings), ...(override?.size !== undefined ? { "--sp-ts": `${override.size}px` } : {}) } as CSSProperties;
   const ref = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
     const n = ref.current;
@@ -95,7 +95,7 @@ function E({
   if (!ctx.editable) {
     if (!value) return null;
     return (
-      <Tag className={className} style={{ whiteSpace: "pre-line", ...style }}>
+      <Tag data-sp-custom-size={override?.size !== undefined || undefined} className={className} style={{ whiteSpace: "pre-line", ...style }}>
         {value}
       </Tag>
     );
@@ -104,6 +104,7 @@ function E({
     <Tag
       ref={ref as never}
       className={className}
+      data-sp-custom-size={override?.size !== undefined || undefined}
       style={{ whiteSpace: "pre-line", outline: "none", cursor: "text", minWidth: 20, display: Tag === "span" ? "inline-block" : undefined, ...style }}
       contentEditable
       suppressContentEditableWarning
@@ -179,7 +180,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   const button = () => sectionButtons(section).map((b, i) => { const destination = buttonDestination(b, ctx.sections); return (
     <div key={b.id} data-sp-key={`button:${b.id}`} style={{ marginTop: 28 }}>
       <a className="sp-btn" data-sp-popular={destination.popular || undefined} href={destination.href} target={destination.href.startsWith("#") ? undefined : "_top"} aria-disabled={!!destination.warning} title={destination.warning}
-        style={{ background: b.variant === "outline" || b.variant === "text" ? "transparent" : resolveColor(b.bg, s, btnBg), color: resolveColor(b.color, s, btnColor), border: b.variant === "outline" ? `2px solid ${resolveColor(b.bg, s, btnBg)}` : undefined, boxShadow: b.variant === "text" ? "none" : undefined, borderRadius: b.radius ?? s.radius, fontSize: b.size ?? 18, fontFamily: `'${st.font || s.headingFont}', sans-serif`, ...elementCss(section.elementStyles?.[`button:${b.id}`], s) }}
+        style={{ background: b.variant === "outline" || b.variant === "text" ? "transparent" : resolveColor(b.bg, s, btnBg), color: resolveColor(b.color, s, b.variant === "outline" ? resolveColor(b.bg, s, btnBg) : btnColor), border: b.variant === "outline" ? `2px solid ${resolveColor(b.bg, s, btnBg)}` : undefined, boxShadow: b.variant === "text" ? "none" : undefined, borderRadius: b.radius ?? s.radius, fontSize: b.size ?? 18, fontFamily: `'${st.font || s.headingFont}', sans-serif`, ...elementCss(section.elementStyles?.[`button:${b.id}`], s) }}
         onClick={ctx.editable || destination.warning ? (e) => e.preventDefault() : undefined}>
         {P(Array.isArray(c.buttons) ? `buttons.${i}.text` : "buttonText", b.text)}
       </a>
@@ -235,7 +236,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div className="sp-grid">
             {items.map((it, i) => (
-              <div key={i} className="sp-card">
+              <div key={i} data-sp-key={`items.${i}`} className="sp-card">
                 <div style={{ fontSize: 30, marginBottom: 10 }}>{P(`items.${i}.icon`, it.icon)}</div>
                 {P(`items.${i}.title`, it.title, { as: "h3", style: { margin: "0 0 6px", fontSize: 19 } })}
                 {P(`items.${i}.text`, it.text, { as: "p", className: "sp-p", style: { opacity: 0.8 } })}
@@ -251,8 +252,8 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div style={{ maxWidth: 640, margin: "24px auto 0", textAlign: "left" }}>
             {items.map((it, i) => (
-              <div key={i} className="sp-check" style={{ fontSize: st.textSize ?? 18 }}>
-                {(c.showIcon === true || c.showIcon === "true") && <span style={{ color: accent, fontWeight: 900 }}>✔</span>}
+              <div key={i} data-sp-key={`items.${i}`} className="sp-check" style={{ fontSize: st.textSize ?? 18 }}>
+                {(c.showIcon === true || c.showIcon === "true") && <span data-sp-key={`items.${i}.icon`} style={{ color: accent, fontWeight: 900 }}>✔</span>}
                 {P(`items.${i}.text`, it.text)}
               </div>
             ))}
@@ -266,7 +267,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div className="sp-grid">
             {items.map((it, i) => (
-              <div key={i} className="sp-card">
+              <div key={i} data-sp-key={`items.${i}`} className="sp-card">
                 <div className="sp-num" style={{ background: accent, color: s.colors.buttonText }}>{it.icon ? P(`items.${i}.icon`, it.icon) : i + 1}</div>
                 {P(`items.${i}.title`, it.title, { as: "h3", style: { margin: "0 0 6px", fontSize: 19 } })}
                 {P(`items.${i}.text`, it.text, { as: "p", className: "sp-p", style: { opacity: 0.8 } })}
@@ -282,7 +283,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div className="sp-grid">
             {items.map((it, i) => (
-              <div key={i} className="sp-card">
+              <div key={i} data-sp-key={`items.${i}`} className="sp-card">
                 <div style={{ color: "#F59E0B", marginBottom: 8 }}>★★★★★</div>
                 {P(`items.${i}.text`, it.text, { as: "p", className: "sp-p", style: { fontStyle: "italic" } })}
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
@@ -323,8 +324,8 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div style={{ textAlign: "left", margin: "16px 0" }}>
             {items.map((it, i) => (
-              <div key={i} className="sp-check">
-                <span style={{ color: accent, fontWeight: 900 }}>✔</span>
+              <div key={i} data-sp-key={`items.${i}`} className="sp-check">
+                <span data-sp-key={`items.${i}.icon`} style={{ color: accent, fontWeight: 900 }}>✔</span>
                 {P(`items.${i}.text`, it.text)}
               </div>
             ))}
@@ -343,7 +344,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div className="sp-grid2">
             {items.map((it, i) => (
-              <div key={i} className="sp-card" style={{ textAlign: "left", borderLeft: `4px solid ${accent}` }}>
+              <div key={i} data-sp-key={`items.${i}`} className="sp-card" style={{ textAlign: "left", borderLeft: `4px solid ${accent}` }}>
                 <div style={{ fontSize: 26 }}>🎁</div>
                 {P(`items.${i}.title`, it.title, { as: "h3", style: { margin: "6px 0" } })}
                 {P(`items.${i}.text`, it.text, { as: "p", className: "sp-p", style: { opacity: 0.8 } })}
@@ -373,14 +374,14 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           {items.map((it, i) =>
             ctx.editable ? (
-              <div key={i} className="sp-card" style={{ marginTop: 12, textAlign: "left", background: card }}>
+              <div key={i} data-sp-key={`items.${i}`} className="sp-card" style={{ marginTop: 12, textAlign: "left", background: card }}>
                 {P(`items.${i}.q`, it.q, { as: "p", style: { fontWeight: 700, margin: 0 } })}
                 {P(`items.${i}.a`, it.a, { as: "p", className: "sp-p", style: { opacity: 0.8, marginTop: 8 } })}
               </div>
             ) : (
-              <details key={i} style={{ background: card }}>
-                <summary>{it.q}</summary>
-                <p className="sp-p" style={{ opacity: 0.8, marginTop: 10 }}>{it.a}</p>
+              <details key={i} data-sp-key={`items.${i}`} style={{ background: card }}>
+                <summary>{P(`items.${i}.q`, it.q)}</summary>
+                {P(`items.${i}.a`, it.a, { as: "p", className: "sp-p", style: { opacity: 0.8, marginTop: 10 } })}
               </details>
             ),
           )}
@@ -430,7 +431,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
 
   const custom = (section.customElements ?? []).map(el => {
     const key = `custom:${el.id}`;
-    if (el.type === "text" || el.type === "icon") return <div key={key} data-sp-key={key}>{P(key, el.value, { as: "p" })}</div>;
+    if (el.type === "text" || el.type === "icon") return <div key={key}>{P(key, el.value, { as: "p" })}</div>;
     if (el.type === "image") return <div key={key} data-sp-key={key}>{el.value ? <img src={el.value} alt=""/> : <div className="sp-ph">Sua imagem</div>}</div>;
     if (el.type === "video") { const v = videoEmbed(el.value); return <div key={key} data-sp-key={key} className="sp-video">{v?.kind === "video" ? <video src={v.src} controls playsInline/> : v ? <iframe src={v.src} title="Vídeo" allowFullScreen/> : <div className="sp-ph">Seu vídeo</div>}</div>; }
     const destination = buttonDestination(el.button ?? { id: el.id, text: el.value, url: "" }, ctx.sections);

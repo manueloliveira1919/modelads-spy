@@ -32,6 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
 import { DEFAULT_PAGE_BACKGROUND, newPageButton, sectionButtons, salesPageUrl } from "@/lib/sales-page-layout";
+import { parseDestination } from "@/lib/sales-page-elements";
 import { cn } from "@/lib/utils";
 import { BackgroundPanel, Choice, ElementPanel, DestinationPanel, Numeric } from "@/components/sales-page/element-panel";
 import { PageRenderer } from "@/components/sales-page/page-renderer";
@@ -328,7 +329,7 @@ function Editor({ initial }: { initial: SalesPage }) {
           {meta.status === "published" && (
             <Button size="sm" variant="outline" onClick={() => (navigator.clipboard.writeText(publicUrl), toast.success("Link copiado."))}><LinkIcon className="mr-1 h-3.5 w-3.5" /> Copiar link</Button>
           )}
-          <Button size="sm" onClick={togglePublish} className={meta.status === "published" ? "" : "bg-gradient-brand text-white"} variant={meta.status === "published" ? "secondary" : "default"}>
+          <Button size="sm" onClick={togglePublish} className={meta.status === "published" ? "" : "bg-gradient-brand text-primary-foreground"} variant={meta.status === "published" ? "secondary" : "default"}>
             {meta.status === "published" ? "Despublicar" : "Publicar"}
           </Button>
         </div>
@@ -406,7 +407,7 @@ function Editor({ initial }: { initial: SalesPage }) {
         {/* Centro: preview */}
         <main className={cn("min-w-0 flex-1 overflow-y-auto bg-muted/30 p-3 sm:p-5 lg:block", mobilePane === "preview" ? "block" : "hidden")} onClick={() => select(null)}>
           <div
-            className={cn("mx-auto overflow-hidden bg-white shadow-2xl transition-all duration-300", device === "mobile" ? "max-w-[390px] rounded-[28px] ring-8 ring-black/80" : "max-w-full rounded-lg")}
+            className={cn("mx-auto overflow-hidden bg-background shadow-2xl transition-all duration-300", device === "mobile" ? "max-w-[390px] rounded-[28px] ring-8 ring-foreground/80" : "max-w-full rounded-lg")}
           >
             <PageRenderer
               sections={sections}
@@ -562,9 +563,10 @@ function Field({ def, value, onChange, userId }: { def: FieldDef; value: string;
     <div className="space-y-1">
       <Label className="text-xs">{def.label}</Label>
       {def.kind === "textarea" ? (
-        <Textarea value={value ?? ""} onChange={(e) => onChange(e.target.value)} rows={3} className="text-sm" />
+        <Textarea aria-label={def.label} value={value ?? ""} onChange={(e) => onChange(e.target.value)} rows={3} className="text-sm" />
       ) : (
         <Input
+          aria-label={def.label}
           type={def.kind === "datetime" ? "datetime-local" : def.kind === "number" ? "number" : "text"}
           value={value ?? ""}
           placeholder={def.kind === "url" ? "https://pay.exemplo.com/..." : def.kind === "video" ? "Link do YouTube, Vimeo ou .mp4" : undefined}
@@ -572,7 +574,7 @@ function Field({ def, value, onChange, userId }: { def: FieldDef; value: string;
           className="h-9 text-sm"
         />
       )}
-      {def.kind === "url" && <p className="text-[10px] text-muted-foreground">Use #oferta para rolar até a seção de oferta.</p>}
+
     </div>
   );
 }
@@ -635,7 +637,14 @@ function SectionPanel({
       </div>
       {subtab === "content" && <>
       <Group title="Conteúdo">
-        {def.fields.filter(f => f.key !== "buttonText" && f.key !== "buttonUrl").map((f) => (
+        {def.fields.filter(f => {
+          if (["buttonText", "buttonUrl"].includes(f.key)) return false;
+          if (section.type !== "announcement") return true;
+          const mode = section.content.mode || "text";
+          if (["dateAutomatic", "dateText"].includes(f.key)) return mode === "date" && (f.key !== "dateText" || section.content.dateAutomatic === "false");
+          if (["timerType", "endAt", "durationSeconds", "expiry", "expiredText"].includes(f.key)) return mode === "countdown" && (f.key !== "endAt" || section.content.timerType !== "duration") && (f.key !== "durationSeconds" || section.content.timerType === "duration");
+          return true;
+        }).map((f) => (
           <Field key={f.key} def={f} value={section.content[f.key]} onChange={(v) => onContent(f.key, v)} userId={userId} />
         ))}
       </Group>
@@ -681,7 +690,8 @@ function SectionPanel({
                   <IconBtn title="Remover" onClick={() => { if (section.type !== "pricingPlans" || items.length > 2) onItems(items.filter((_, j) => j !== i)); }}><Trash2 className="h-3 w-3" /></IconBtn>
                 </div>
               </div>
-              {def.items?.fields.map((f) => (
+              {section.type === "pricingPlans" && <DestinationPanel button={{ id: String(i), text: it.buttonText, url: it.buttonUrl || "", destination: parseDestination(it.destination) }} sections={sections} set={b => onItems(items.map((item, j) => j === i ? { ...item, buttonUrl: b.url, destination: JSON.stringify(b.destination) } : item))}/>}
+              {def.items?.fields.filter(f => section.type !== "pricingPlans" || f.key !== "buttonUrl").map((f) => (
                 <Field key={f.key} def={f} value={it[f.key]} onChange={(v) => onContent(`items.${i}.${f.key}`, v)} userId={userId} />
               ))}
             </div>
