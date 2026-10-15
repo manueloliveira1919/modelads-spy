@@ -16,7 +16,7 @@ export const PAGE_CSS = `
 .sp-root *{box-sizing:border-box}
 .sp-root img{max-width:100%;display:block}
 .sp-wrap{margin:0 auto;padding:0 24px}
-.sp-element{position:relative;min-width:0}.sp-element[data-selected="true"]{outline:2px solid var(--brand);outline-offset:3px}.sp-element-tools{display:flex;gap:2px;position:absolute;top:0;right:0;z-index:5;background:var(--card);color:var(--foreground);border-radius:4px}.sp-element[data-drop="before"]::before,.sp-element[data-drop="after"]::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--brand);z-index:9}.sp-element[data-drop="before"]::before{top:-5px}.sp-element[data-drop="after"]::after{bottom:-5px}.sp-ordered{display:flex;flex-direction:column;gap:var(--sp-gap,20px)}
+.sp-element{position:relative;min-width:0}.sp-element img{border-radius:inherit}.sp-root [data-sp-key^="custom:"]>img{border-radius:inherit;width:100%}.sp-element[data-selected="true"]{outline:2px solid var(--brand);outline-offset:3px}.sp-element-tools{display:flex;gap:2px;position:absolute;top:0;right:0;z-index:5;background:var(--card);color:var(--foreground);border-radius:4px}.sp-element[data-drop="before"]::before,.sp-element[data-drop="after"]::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--brand);z-index:9}.sp-element[data-drop="before"]::before{top:-5px}.sp-element[data-drop="after"]::after{bottom:-5px}.sp-ordered{display:flex;flex-direction:column;gap:var(--sp-gap,20px)}
 .sp-h{margin:0 0 16px;line-height:1.15;font-weight:800;letter-spacing:0}
 .sp-p{margin:0;white-space:pre-line}
 .sp-grid{display:grid;gap:20px;grid-template-columns:repeat(var(--sp-columns,3),minmax(0,1fr));margin-top:32px;text-align:left}

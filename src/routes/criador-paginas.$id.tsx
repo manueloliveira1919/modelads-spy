@@ -220,6 +220,7 @@ function Editor({ initial }: { initial: SalesPage }) {
   const updateSection = (id: string, fn: (s: PageSection) => PageSection, key?: string) =>
     commit((cur) => ({ ...cur, sections: cur.sections.map((s) => (s.id === id ? fn(s) : s)) }), key);
   const setContent = (id: string, path: string, v: unknown) => updateSection(id, s => {
+    if (path.startsWith("button:")) return { ...s, content: { ...s.content, buttons: sectionButtons(s).map(b => b.id === path.slice(7) ? { ...b, text: String(v) } : b) } };
     if (path.startsWith("custom:")) return { ...s, customElements: s.customElements?.map(el => el.id === path.slice(7) ? { ...el, value: String(v), button: el.button ? { ...el.button, text: String(v) } : undefined } : el) };
     const list = path.match(/^items\.(\d+)\.(checklist|features)\.(\d+)$/);
     if (list) { const lines = (s.content.items?.[Number(list[1])]?.[list[2]] || "").split("\n"); lines[Number(list[3])] = String(v); return { ...s, content: setPath(s.content, `items.${list[1]}.${list[2]}`, lines.join("\n")) }; }
@@ -416,7 +417,7 @@ function Editor({ initial }: { initial: SalesPage }) {
               selectedId={selectedId}
               onSelect={(id) => select(id)}
               onText={(sid, path, v) => setContent(sid, path, v)}
-              onElementSelect={(sid, key) => { setSelectedId(sid); setSelectedElement(key); setTab("section"); }}
+              onElementSelect={(sid, key) => { const section = sections.find(s => s.id === sid); const buttonIndex = key === "buttonText" ? 0 : /^buttons\.\d+\.text$/.test(key) ? Number(key.split(".")[1]) : undefined; const button = section && buttonIndex !== undefined ? sectionButtons(section)[buttonIndex] : undefined; setSelectedId(sid); setSelectedElement(button ? `button:${button.id}` : key); setTab("section"); }}
               onElementAction={(sid, key, action) => { updateElement(sid, key, { [action]: true }); setSelectedElement(null); }}
               onOrder={(sid, order, group) => updateSection(sid, s => group ? ({ ...s, groupOrders: { ...s.groupOrders, [group]: order } }) : ({ ...s, elementOrder: order }))}
             />
