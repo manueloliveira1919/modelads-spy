@@ -26,3 +26,4 @@
 - Quiz font stylesheets are stable per editor or complete runner dataset; await font faces before applying selections to prevent fallback flashes.
 - Result presentation owns analysis/count-up timing and signals readiness to the runner; session navigation, scoring and lead writes remain unchanged.
 - Extension releases: every change in extension/ must bump manifest.json version and regenerate public/modelads-extension.zip via `bun scripts/pack-extension.ts` — the app reads the version from the manifest, so zip and displayed version must match.
+- Cakto payments: the webhook only verifies the signature and calls SQL `cakto_ingest_event`; matching, subscription writes and plan role sync live in SQL (`cakto_process_event`), and signups replay unmatched events via `handle_new_user` — one idempotent path for webhook and late signup.
