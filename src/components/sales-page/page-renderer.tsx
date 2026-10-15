@@ -3,8 +3,9 @@ import { GuaranteeBadge } from "./guarantee-badge";
 import { ExtendedSection, EXTENDED_PAGE_CSS } from "./extended-sections";
 import { installPageInteractions } from "./section-interactions";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, GripVertical } from "lucide-react";
+import { ArrowUp, ArrowDown, GripVertical, Trash2, EyeOff } from "lucide-react";
 import { pageBackground, sectionButtons } from "@/lib/sales-page-layout";
+import { buttonDestination, elementCss } from "@/lib/sales-page-elements";
 import { BLOCK_MAP, type PageSection, type PageSettings } from "@/lib/sales-page-types";
 
 /* Renderizador único: editor, página pública e exportação HTML usam o mesmo código.
@@ -15,12 +16,13 @@ export const PAGE_CSS = `
 .sp-root *{box-sizing:border-box}
 .sp-root img{max-width:100%;display:block}
 .sp-wrap{margin:0 auto;padding:0 24px}
-.sp-element{position:relative;min-width:0}.sp-element[data-selected="true"]{outline:2px solid var(--brand);outline-offset:3px}.sp-element-tools{display:flex;gap:2px;position:absolute;top:0;right:0;z-index:5;background:var(--card);color:var(--foreground);border-radius:4px}.sp-element[data-drop="before"]::before,.sp-element[data-drop="after"]::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--brand);z-index:9}.sp-element[data-drop="before"]::before{top:-5px}.sp-element[data-drop="after"]::after{bottom:-5px}.sp-ordered{display:flex;flex-direction:column;gap:var(--sp-gap,20px)}
+.sp-element{position:relative;min-width:0}.sp-element img{border-radius:inherit}.sp-root [data-sp-key^="custom:"]>img{border-radius:inherit;width:100%}.sp-element[data-selected="true"]{outline:2px solid var(--brand);outline-offset:3px}.sp-element-tools{display:flex;gap:2px;position:absolute;top:0;right:0;z-index:5;background:var(--card);color:var(--foreground);border-radius:4px}.sp-element[data-drop="before"]::before,.sp-element[data-drop="after"]::after{content:"";position:absolute;left:0;right:0;height:3px;background:var(--brand);z-index:9}.sp-element[data-drop="before"]::before{top:-5px}.sp-element[data-drop="after"]::after{bottom:-5px}.sp-ordered{display:flex;flex-direction:column;gap:var(--sp-gap,20px)}
 .sp-h{margin:0 0 16px;line-height:1.15;font-weight:800;letter-spacing:0}
 .sp-p{margin:0;white-space:pre-line}
 .sp-grid{display:grid;gap:20px;grid-template-columns:repeat(var(--sp-columns,3),minmax(0,1fr));margin-top:32px;text-align:left}
 .sp-grid2{display:grid;gap:20px;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:32px}
-.sp-card{padding:24px;border-radius:var(--sp-r);background:var(--sp-card)}
+.sp-card{padding:28px;border-radius:var(--sp-r);background:var(--sp-card);border:1px solid color-mix(in srgb,currentColor 9%,transparent);box-shadow:0 12px 36px -24px color-mix(in srgb,currentColor 28%,transparent)}
+.sp-offer{position:relative;box-shadow:0 22px 60px -28px color-mix(in srgb,currentColor 30%,transparent)}.sp-offer-label{display:inline-block;padding:7px 18px;border-radius:var(--sp-r);font-size:12px;font-weight:800;margin-bottom:20px}.sp-offer .sp-btn{display:block;width:100%;text-align:center}.sp-element-tools{top:-28px}.sp-carousel-track>.sp-element{flex:0 0 calc(100% / var(--sp-per-view,1));min-width:0}.sp-carousel-track>.sp-element>figure{width:100%;padding:0 8px}.sp-flex-grid>.sp-element{min-width:0;height:100%}.sp-flex-grid>.sp-element>article{height:100%}.sp-root section{scroll-margin-top:20px}.sp-root p,.sp-root span{overflow-wrap:anywhere}
 .sp-btn{display:inline-block;padding:18px 36px;font-weight:800;font-size:18px;text-decoration:none;border-radius:var(--sp-r);box-shadow:0 10px 24px -10px rgba(0,0,0,.45);transition:transform .15s;cursor:pointer;border:0}
 .sp-btn:hover{transform:translateY(-2px)}
 .sp-hero{display:grid;gap:40px;align-items:center}
@@ -41,7 +43,7 @@ export const PAGE_CSS = `
  .sp-grid,.sp-grid2,.sp-hero.has-img{grid-template-columns:1fr}
  .sp-wrap{padding:0 18px}
  .sp-btn{display:block;width:100%;padding:16px 20px;font-size:16px}
- .sp-root .sp-h{font-size:calc(var(--sp-ts) * .72)!important}
+ .sp-root .sp-h:not([data-sp-custom-size]){font-size:calc(var(--sp-ts) * .72)!important}
  .sp-cd div{min-width:64px}.sp-cd b{font-size:26px}
 }`;
 
@@ -49,10 +51,12 @@ export const COUNTDOWN_SCRIPT = `(function(){function t(){document.querySelector
 
 type Ctx = {
   settings: PageSettings;
+  sections: PageSection[];
+  onElementAction?: (sid: string, key: string, action: "hidden" | "removed") => void;
   editable: boolean;
   selectedElement?: string;
   onElementSelect?: (key: string) => void;
-  onOrder?: (sectionId: string, order: string[]) => void;
+  onOrder?: (sectionId: string, order: string[], group?: string) => void;
   onText?: (sectionId: string, path: string, value: string) => void;
 };
 
@@ -81,6 +85,8 @@ function E({
   className?: string;
   style?: CSSProperties;
 }) {
+  const override = ctx.sections.find(s => s.id === sid)?.elementStyles?.[path];
+  style = { ...style, ...elementCss(override, ctx.settings), ...(override?.size !== undefined ? { "--sp-ts": `${override.size}px` } : {}) } as CSSProperties;
   const ref = useRef<HTMLElement | null>(null);
   useLayoutEffect(() => {
     const n = ref.current;
@@ -89,7 +95,7 @@ function E({
   if (!ctx.editable) {
     if (!value) return null;
     return (
-      <Tag className={className} style={{ whiteSpace: "pre-line", ...style }}>
+      <Tag data-sp-custom-size={override?.size !== undefined || undefined} className={className} style={{ whiteSpace: "pre-line", ...style }}>
         {value}
       </Tag>
     );
@@ -98,6 +104,7 @@ function E({
     <Tag
       ref={ref as never}
       className={className}
+      data-sp-custom-size={override?.size !== undefined || undefined}
       style={{ whiteSpace: "pre-line", outline: "none", cursor: "text", minWidth: 20, display: Tag === "span" ? "inline-block" : undefined, ...style }}
       contentEditable
       suppressContentEditableWarning
@@ -170,16 +177,16 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   );
   const title = (key = "title") =>
     (c[key] || ctx.editable) && P(key, c[key], { as: "h2", className: "sp-h", style: { fontSize: ts, fontFamily: `'${st.font || s.headingFont}', sans-serif`, fontWeight: st.weight ?? 800 } });
-  const button = () => sectionButtons(section).map((b, i) => (
+  const button = () => sectionButtons(section).map((b, i) => { const destination = buttonDestination(b, ctx.sections); return (
     <div key={b.id} data-sp-key={`button:${b.id}`} style={{ marginTop: 28 }}>
-      <a className="sp-btn" href={safeHref(b.url)} target={b.url.startsWith("#") ? undefined : "_top"}
-        style={{ background: b.variant === "outline" || b.variant === "text" ? "transparent" : resolveColor(b.bg, s, btnBg), color: resolveColor(b.color, s, btnColor), border: b.variant === "outline" ? `2px solid ${resolveColor(b.bg, s, btnBg)}` : undefined, boxShadow: b.variant === "text" ? "none" : undefined, borderRadius: b.radius ?? s.radius, fontSize: b.size ?? 18, fontFamily: `'${st.font || s.headingFont}', sans-serif` }}
-        onClick={ctx.editable ? (e) => e.preventDefault() : undefined}>
+      <a className="sp-btn" data-sp-popular={destination.popular || undefined} href={destination.href} target={destination.href.startsWith("#") ? undefined : "_top"} aria-disabled={!!destination.warning} title={destination.warning}
+        style={{ background: b.variant === "outline" || b.variant === "text" ? "transparent" : resolveColor(b.bg, s, btnBg), color: resolveColor(b.color, s, b.variant === "outline" ? resolveColor(b.bg, s, btnBg) : btnColor), border: b.variant === "outline" ? `2px solid ${resolveColor(b.bg, s, btnBg)}` : undefined, boxShadow: b.variant === "text" ? "none" : undefined, borderRadius: b.radius ?? s.radius, fontSize: b.size ?? 18, fontFamily: `'${st.font || s.headingFont}', sans-serif`, ...elementCss(section.elementStyles?.[`button:${b.id}`], s) }}
+        onClick={ctx.editable || destination.warning ? (e) => e.preventDefault() : undefined}>
         {P(Array.isArray(c.buttons) ? `buttons.${i}.text` : "buttonText", b.text)}
       </a>
       {b.guarantee && <div className="sp-purchase-badge"><GuaranteeBadge badge={b.guarantee} id={`${sid}-${b.id}`}/></div>}
     </div>
-  ));
+  ); });
   const img = (key: string, ph = "Adicione uma imagem") =>
     c[key] ? (
       <img data-sp-key={key} src={c[key]} alt="" style={{ borderRadius: s.radius, width: "100%", height: "auto" }} loading="lazy" />
@@ -190,7 +197,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   let body: React.ReactNode = null;
   switch (section.type) {
     case "announcement":
-      body = <div>{P("text", c.text, { as: "p", className: "sp-p", style: { fontWeight: 700, display: "inline" } })}{(c.showDate === true || c.showDate === "true") && <span className="sp-today" data-sp-today>{ctx.editable ? new Date().toLocaleDateString("pt-BR") : ""}</span>}</div>;
+      body = <div data-sp-announcement data-mode={c.mode || (c.showDate ? "date" : "text")} data-expiry={c.expiry || "text"} data-expired-text={c.expiredText || "Oferta encerrada"}><div data-sp-announcement-main>{P("text", c.text, { as: "p", className: "sp-p", style: { fontWeight: 700, display: "inline" } })}{(c.mode === "date" || c.showDate === true || c.showDate === "true") && (c.dateAutomatic !== "false" ? <span className="sp-today" data-sp-today>{ctx.editable ? new Date().toLocaleDateString("pt-BR") : ""}</span> : P("dateText", c.dateText || "", { style: { marginLeft: 8 } }))}{c.mode === "countdown" && <div data-sp-timer data-end={c.timerType === "duration" ? undefined : c.endAt} data-duration={c.timerType === "duration" ? Number(c.durationSeconds) || 3600 : undefined}><span data-sp-timer-value>00d 00h 00m 00s</span></div>}</div><p data-sp-expired hidden>{c.expiredText || "Oferta encerrada"}</p></div>;
       break;
     case "hero":
       body = (
@@ -229,7 +236,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div className="sp-grid">
             {items.map((it, i) => (
-              <div key={i} className="sp-card">
+              <div key={i} data-sp-key={`items.${i}`} className="sp-card">
                 <div style={{ fontSize: 30, marginBottom: 10 }}>{P(`items.${i}.icon`, it.icon)}</div>
                 {P(`items.${i}.title`, it.title, { as: "h3", style: { margin: "0 0 6px", fontSize: 19 } })}
                 {P(`items.${i}.text`, it.text, { as: "p", className: "sp-p", style: { opacity: 0.8 } })}
@@ -245,8 +252,8 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div style={{ maxWidth: 640, margin: "24px auto 0", textAlign: "left" }}>
             {items.map((it, i) => (
-              <div key={i} className="sp-check" style={{ fontSize: st.textSize ?? 18 }}>
-                <span style={{ color: accent, fontWeight: 900 }}>✔</span>
+              <div key={i} data-sp-key={`items.${i}`} className="sp-check" style={{ fontSize: st.textSize ?? 18 }}>
+                {(c.showIcon === true || c.showIcon === "true") && <span style={{ color: accent, fontWeight: 900 }}>{P(`items.${i}.icon`, it.icon || "✔")}</span>}
                 {P(`items.${i}.text`, it.text)}
               </div>
             ))}
@@ -260,7 +267,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div className="sp-grid">
             {items.map((it, i) => (
-              <div key={i} className="sp-card">
+              <div key={i} data-sp-key={`items.${i}`} className="sp-card">
                 <div className="sp-num" style={{ background: accent, color: s.colors.buttonText }}>{it.icon ? P(`items.${i}.icon`, it.icon) : i + 1}</div>
                 {P(`items.${i}.title`, it.title, { as: "h3", style: { margin: "0 0 6px", fontSize: 19 } })}
                 {P(`items.${i}.text`, it.text, { as: "p", className: "sp-p", style: { opacity: 0.8 } })}
@@ -276,7 +283,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div className="sp-grid">
             {items.map((it, i) => (
-              <div key={i} className="sp-card">
+              <div key={i} data-sp-key={`items.${i}`} className="sp-card">
                 <div style={{ color: "#F59E0B", marginBottom: 8 }}>★★★★★</div>
                 {P(`items.${i}.text`, it.text, { as: "p", className: "sp-p", style: { fontStyle: "italic" } })}
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 14 }}>
@@ -312,12 +319,13 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
       break;
     case "offer":
       body = (
-        <div id="oferta" className="sp-card" style={{ maxWidth: 560, margin: "0 auto", padding: 36, border: `2px solid ${accent}`, background: card }}>
+        <div data-sp-key="offerCard" className="sp-card sp-offer" style={{ maxWidth: 600, margin: "0 auto", padding: 36, border: `1px solid ${accent}`, background: card }} >
+          {P("badge", c.badge || "", { className: "sp-offer-label", style: { background: accent, color: btnColor } })}
           {title()}
           <div style={{ textAlign: "left", margin: "16px 0" }}>
             {items.map((it, i) => (
-              <div key={i} className="sp-check">
-                <span style={{ color: accent, fontWeight: 900 }}>✔</span>
+              <div key={i} data-sp-key={`items.${i}`} className="sp-check">
+                <span style={{ color: accent, fontWeight: 900 }}>{P(`items.${i}.icon`, it.icon || "✔")}</span>
                 {P(`items.${i}.text`, it.text)}
               </div>
             ))}
@@ -336,7 +344,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           <div className="sp-grid2">
             {items.map((it, i) => (
-              <div key={i} className="sp-card" style={{ textAlign: "left", borderLeft: `4px solid ${accent}` }}>
+              <div key={i} data-sp-key={`items.${i}`} className="sp-card" style={{ textAlign: "left", borderLeft: `4px solid ${accent}` }}>
                 <div style={{ fontSize: 26 }}>🎁</div>
                 {P(`items.${i}.title`, it.title, { as: "h3", style: { margin: "6px 0" } })}
                 {P(`items.${i}.text`, it.text, { as: "p", className: "sp-p", style: { opacity: 0.8 } })}
@@ -366,14 +374,14 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           {title()}
           {items.map((it, i) =>
             ctx.editable ? (
-              <div key={i} className="sp-card" style={{ marginTop: 12, textAlign: "left", background: card }}>
+              <div key={i} data-sp-key={`items.${i}`} className="sp-card" style={{ marginTop: 12, textAlign: "left", background: card }}>
                 {P(`items.${i}.q`, it.q, { as: "p", style: { fontWeight: 700, margin: 0 } })}
                 {P(`items.${i}.a`, it.a, { as: "p", className: "sp-p", style: { opacity: 0.8, marginTop: 8 } })}
               </div>
             ) : (
-              <details key={i} style={{ background: card }}>
-                <summary>{it.q}</summary>
-                <p className="sp-p" style={{ opacity: 0.8, marginTop: 10 }}>{it.a}</p>
+              <details key={i} data-sp-key={`items.${i}`} style={{ background: card }}>
+                <summary>{P(`items.${i}.q`, it.q)}</summary>
+                {P(`items.${i}.a`, it.a, { as: "p", className: "sp-p", style: { opacity: 0.8, marginTop: 10 } })}
               </details>
             ),
           )}
@@ -418,32 +426,53 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
       body = P("text", c.text, { as: "p", className: "sp-p" });
       break;
     default:
-      body = ExtendedSection({ section, editable: ctx.editable, accent, buttonColor: btnColor, text: P, title, buttons: button, image: img });
+      body = ExtendedSection({ section, sections: ctx.sections, editable: ctx.editable, accent, buttonColor: btnColor, text: P, title, buttons: button, image: img });
   }
 
-  const slots: { key: string; node: React.ReactNode }[] = [];
-  function scan(node: React.ReactNode): React.ReactNode {
-    return Children.map(node, child => {
-      if (!isValidElement<Record<string, any>>(child)) return child;
+  const custom = (section.customElements ?? []).map(el => {
+    const key = `custom:${el.id}`;
+    if (el.type === "text" || el.type === "icon") return <div key={key}>{P(key, el.value, { as: "p" })}</div>;
+    if (el.type === "image") return <div key={key} data-sp-key={key}>{el.value ? <img src={el.value} alt=""/> : <div className="sp-ph">Sua imagem</div>}</div>;
+    if (el.type === "video") { const v = videoEmbed(el.value); return <div key={key} data-sp-key={key} className="sp-video">{v?.kind === "video" ? <video src={v.src} controls playsInline/> : v ? <iframe src={v.src} title="Vídeo" allowFullScreen/> : <div className="sp-ph">Seu vídeo</div>}</div>; }
+    const destination = buttonDestination(el.button ?? { id: el.id, text: el.value, url: "" }, ctx.sections);
+    return <a key={key} data-sp-key={key} data-sp-popular={destination.popular || undefined} href={destination.href} target={destination.href.startsWith("#") ? undefined : "_top"} className="sp-btn" style={{ background: accent, color: btnColor }} onClick={ctx.editable || destination.warning ? e => e.preventDefault() : undefined}>{P(key, el.value)}</a>;
+  });
+  body = <>{body}{custom}</>;
+  function decorate(node: React.ReactNode, parent = "root"): React.ReactNode {
+    const children = Children.toArray(node);
+    const entries = children.map((child, index) => {
+      if (!isValidElement<Record<string, any>>(child)) return { key: `static-${index}`, node: child };
       const p = child.props;
-      const key = child.type === E ? p.path : p["data-sp-key"] || (child.type === Countdown ? "countdown" : ["sp-grid", "sp-grid2"].includes(p.className) ? "items" : null);
-      if (key) {
-        slots.push({ key, node: child });
-        return ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} ctx={ctx} order={() => slots.map(x => x.key)}>{child}</SectionElement> : child;
-      }
-      return p.children ? cloneElement(child, {}, scan(p.children)) : child;
+      const key = child.type === E ? p.path : p["data-sp-key"] || (p.className === "sp-grid" || p.className === "sp-grid2" || p.className === "sp-flex-grid" ? "items" : child.type === Countdown ? "countdown" : p.className?.split(" ").includes("sp-card") || p.className === "sp-check" ? `${parent}.item.${index}` : undefined);
+      const group = key || `${parent}.${index}`;
+      let next = p.children && child.type !== E ? cloneElement(child, {}, decorate(p.children, group)) : child;
+      if (!key) return { key: `static-${index}`, node: next };
+      const override = section.elementStyles?.[key];
+      if (override?.hidden || override?.removed) return { key, node: null };
+      if (child.type !== E) next = cloneElement(next, { style: { ...p.style, ...elementCss(override, s) } });
+      return { key, node: ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} group={parent} ctx={{ ...ctx, onOrder: (sid, order) => ctx.onOrder?.(sid, order, parent) }} order={() => entries.filter(e => !e.key.startsWith("static-")).map(e => e.key)}>{next}</SectionElement> : next };
     });
+    const order = section.groupOrders?.[parent];
+    if (order) entries.sort((a, b) => (order.indexOf(a.key) < 0 ? 999 : order.indexOf(a.key)) - (order.indexOf(b.key) < 0 ? 999 : order.indexOf(b.key)));
+    return entries.map(e => e.node);
   }
-  const decorated = scan(body);
-  const ordered = [...(section.elementOrder ?? []).filter(k => slots.some(x => x.key === k)), ...slots.map(x => x.key).filter(k => !section.elementOrder?.includes(k))];
-  const output = section.elementOrder ? <div className="sp-ordered">{ordered.map(key => {
-    const node = slots.find(x => x.key === key)?.node;
-    return ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} ctx={ctx} order={() => ordered}>{node}</SectionElement> : <div key={key}>{node}</div>;
-  })}</div> : decorated;
+  // Preserve the older explicitly flattened layout, while new nested ordering stays within its parent.
+  let output: React.ReactNode;
+  if (section.elementOrder) {
+    const slots: { key: string; node: React.ReactNode }[] = [];
+    const collect = (node: React.ReactNode) => Children.forEach(node, child => {
+      if (!isValidElement<Record<string, any>>(child)) return;
+      const p = child.props; const key = child.type === E ? p.path : p["data-sp-key"];
+      if (key) slots.push({ key, node: child }); else if (p.children) collect(p.children);
+    });
+    collect(body);
+    const order = [...section.elementOrder.filter(k => slots.some(x => x.key === k)), ...slots.map(x => x.key).filter(k => !section.elementOrder?.includes(k))];
+    output = <div className="sp-ordered">{order.map(key => <div key={key}>{decorate(slots.find(x => x.key === key)?.node, "root")}</div>)}</div>;
+  } else output = decorate(body);
   return (
-    <section
+    <section id={`sp-section-${sid}`}
       style={{
-        background: st.background ? pageBackground({ ...s, background: st.background }) : bg,
+        background: st.background ? pageBackground({ ...s, colors: { ...s.colors, bg: resolveColor(st.bg, s, s.colors.bg) }, background: st.background }) : bg,
         color,
         fontFamily: `'${font}', sans-serif`,
         fontSize: st.textSize ?? 17,
@@ -463,7 +492,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   );
 }
 
-function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string; elementKey: string; ctx: Ctx; order: () => string[]; children: React.ReactNode }) {
+function SectionElement({ sid, elementKey, group, ctx, order, children }: { sid: string; elementKey: string; group: string; ctx: Ctx; order: () => string[]; children: React.ReactNode }) {
   const selected = ctx.selectedElement === `${sid}:${elementKey}`;
   const [drop, setDrop] = useState<"before" | "after" | undefined>();
   const move = (delta: number) => {
@@ -471,12 +500,12 @@ function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string
     if (i < 0 || j < 0 || j >= keys.length) return;
     [keys[i], keys[j]] = [keys[j], keys[i]]; ctx.onOrder?.(sid, keys);
   };
-  return <div className="sp-element" data-element-key={elementKey} data-selected={selected} data-drop={drop}
-    onClick={() => ctx.onElementSelect?.(`${sid}:${elementKey}`)}
+  return <div className="sp-element" data-element-key={elementKey} data-element-group={group} data-selected={selected} data-drop={drop}
+    onClick={e => { e.stopPropagation(); ctx.onElementSelect?.(`${sid}:${elementKey}`); }}
     onDragOver={e => { if (!e.dataTransfer.types.includes("application/modelads-element")) return; e.preventDefault(); e.stopPropagation(); setDrop(e.clientY < e.currentTarget.getBoundingClientRect().top + e.currentTarget.offsetHeight / 2 ? "before" : "after"); }}
     onDragLeave={() => setDrop(undefined)} onDrop={e => {
       e.preventDefault(); e.stopPropagation(); setDrop(undefined);
-      try { const from = JSON.parse(e.dataTransfer.getData("application/modelads-element")); if (from.sid !== sid || from.key === elementKey) return;
+      try { const from = JSON.parse(e.dataTransfer.getData("application/modelads-element")); if (from.sid !== sid || from.group !== group || from.key === elementKey) return;
         const keys = order().filter(k => k !== from.key); const i = keys.indexOf(elementKey); keys.splice(i + (drop === "after" ? 1 : 0), 0, from.key); ctx.onOrder?.(sid, keys);
       } catch { /* Ignore foreign drags. */ }
     }}>
@@ -490,7 +519,8 @@ function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string
         const clear = () => sectionRoot.querySelectorAll('[data-drop]').forEach(el => el.removeAttribute('data-drop'));
         const track = (event: PointerEvent) => {
           clear();
-          const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-element-key]');
+          let target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-element-key]');
+          while (target && target.dataset.elementGroup !== group) target = target.parentElement?.closest<HTMLElement>('[data-element-key]');
           if (!target || !sectionRoot.contains(target) || target.dataset.elementKey === elementKey) { targetKey = undefined; return; }
           targetKey = target.dataset.elementKey;
           const rect = target.getBoundingClientRect(); after = event.clientY > rect.top + rect.height / 2;
@@ -498,7 +528,7 @@ function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string
         };
         const finish = () => {
           clear(); window.removeEventListener('pointermove', track); window.removeEventListener('pointerup', finish); window.removeEventListener('pointercancel', cancel);
-          if (!targetKey) return;
+          if (!targetKey || !order().includes(targetKey)) return;
           const keys = order().filter(k => k !== elementKey); const i = keys.indexOf(targetKey);
           if (i >= 0) { keys.splice(i + (after ? 1 : 0), 0, elementKey); ctx.onOrder?.(sid, keys); }
         };
@@ -507,6 +537,8 @@ function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string
       }}><GripVertical size={14}/></Button>
       <Button size="icon" variant="ghost" title="Subir elemento" aria-label="Subir elemento" onClick={() => move(-1)}><ArrowUp size={14}/></Button>
       <Button size="icon" variant="ghost" title="Descer elemento" aria-label="Descer elemento" onClick={() => move(1)}><ArrowDown size={14}/></Button>
+      <Button size="icon" variant="ghost" title="Ocultar elemento" aria-label="Ocultar elemento" onClick={() => ctx.onElementAction?.(sid, elementKey, "hidden")}><EyeOff size={14}/></Button>
+      <Button size="icon" variant="ghost" title="Remover elemento" aria-label="Remover elemento" onClick={() => ctx.onElementAction?.(sid, elementKey, "removed")}><Trash2 size={14}/></Button>
     </div>}
   </div>;
 }
@@ -527,6 +559,8 @@ export function PageRenderer({
   onSelect,
   onText,
   onOrder,
+  onElementSelect: externalSelect,
+  onElementAction,
 }: {
   sections: PageSection[];
   settings: PageSettings;
@@ -535,11 +569,13 @@ export function PageRenderer({
   onSelect?: (id: string) => void;
   onText?: Ctx["onText"];
   onOrder?: Ctx["onOrder"];
+  onElementSelect?: (sid: string, key: string) => void;
+  onElementAction?: Ctx["onElementAction"];
 }) {
   const root = useRef<HTMLDivElement>(null);
   useEffect(() => { if (!root.current || editable) return; return installPageInteractions(root.current); }, [sections, editable]);
   const [selectedElement, onElementSelect] = useState<string>();
-  const ctx: Ctx = { settings, editable, onText, onOrder, selectedElement, onElementSelect };
+  const ctx: Ctx = { settings, sections, editable, onText, onOrder, onElementAction, selectedElement, onElementSelect: key => { onElementSelect(key); const sid = sections.find(s => key.startsWith(`${s.id}:`))?.id; if (sid) externalSelect?.(sid, key.slice(sid.length + 1)); } };
   const visible = sections.filter((s) => !s.hidden);
   return (
     <div ref={root} className="sp-root" style={{ background: pageBackground(settings), color: settings.colors.text, ["--sp-r" as string]: `${settings.radius}px` }}>
