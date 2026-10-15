@@ -33,6 +33,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
 import { DEFAULT_PAGE_BACKGROUND, newPageButton, sectionButtons, salesPageUrl } from "@/lib/sales-page-layout";
 import { cn } from "@/lib/utils";
+import { BackgroundPanel, Choice, ElementPanel, DestinationPanel, Numeric } from "@/components/sales-page/element-panel";
 import { PageRenderer } from "@/components/sales-page/page-renderer";
 import type { GuaranteeBadgeSettings } from "@/components/sales-page/guarantee-badge";
 import { getPage, updatePage, uploadPageImage } from "@/lib/sales-page-api";
@@ -112,6 +113,7 @@ function Editor({ initial }: { initial: SalesPage }) {
   const history = useRef<{ past: Snap[]; future: Snap[] }>({ past: [], future: [] });
   const lastPush = useRef<{ key: string; at: number }>({ key: "", at: 0 });
   const [meta, setMeta] = useState({ name: initial.name, slug: initial.slug, status: initial.status });
+  const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [tab, setTab] = useState<"section" | "page">("page");
   const [device, setDevice] = useState<"desktop" | "mobile">("desktop");
@@ -216,7 +218,18 @@ function Editor({ initial }: { initial: SalesPage }) {
 
   const updateSection = (id: string, fn: (s: PageSection) => PageSection, key?: string) =>
     commit((cur) => ({ ...cur, sections: cur.sections.map((s) => (s.id === id ? fn(s) : s)) }), key);
-  const setContent = (id: string, path: string, v: unknown) => updateSection(id, (s) => ({ ...s, content: setPath(s.content, path, v) }), `${id}:c:${path}`);
+  const setContent = (id: string, path: string, v: unknown) => updateSection(id, s => {
+    if (path.startsWith("custom:")) return { ...s, customElements: s.customElements?.map(el => el.id === path.slice(7) ? { ...el, value: String(v), button: el.button ? { ...el.button, text: String(v) } : undefined } : el) };
+    const list = path.match(/^items\.(\d+)\.(checklist|features)\.(\d+)$/);
+    if (list) { const lines = (s.content.items?.[Number(list[1])]?.[list[2]] || "").split("\n"); lines[Number(list[3])] = String(v); return { ...s, content: setPath(s.content, `items.${list[1]}.${list[2]}`, lines.join("\n")) }; }
+    return { ...s, content: setPath(s.content, path, v) };
+  }, `${id}:c:${path}`);
+  const updateElement = (sid: string, key: string, patch: Record<string, unknown>) => updateSection(sid, s => ({ ...s, elementStyles: { ...s.elementStyles, [key]: { ...s.elementStyles?.[key], ...patch } } }), `${sid}:element:${key}:${Object.keys(patch).join()}`);
+  const elementButton = (section: PageSection, key: string, b: PageButton) => {
+    if (key.startsWith("custom:")) updateSection(section.id, s => ({ ...s, customElements: s.customElements?.map(el => `custom:${el.id}` === key ? { ...el, button: b, value: b.text } : el) }));
+    else if (key.startsWith("items.")) { const i = Number(key.split(".")[1]); updateSection(section.id, s => ({ ...s, content: { ...s.content, items: s.content.items?.map((it, j) => j === i ? { ...it, buttonUrl: b.url, destination: JSON.stringify(b.destination), buttonText: b.text } : it) } })); }
+    else setContent(section.id, "buttons", sectionButtons(section).map(it => `button:${it.id}` === key ? b : it));
+  };
   const setStyle = (id: string, patch: Partial<SectionStyle>) => updateSection(id, (s) => ({ ...s, style: { ...s.style, ...patch } }), `${id}:s:${Object.keys(patch).join()}`);
   const setSettings = (path: string, v: unknown) => commit((cur) => ({ ...cur, settings: setPath(cur.settings, path, v) as PageSettings }), `settings:${path}`);
 
@@ -256,6 +269,7 @@ function Editor({ initial }: { initial: SalesPage }) {
   };
 
   const select = (id: string | null) => {
+    setSelectedElement(null);
     setSelectedId(id);
     setTab(id ? "section" : "page");
   };
@@ -401,7 +415,9 @@ function Editor({ initial }: { initial: SalesPage }) {
               selectedId={selectedId}
               onSelect={(id) => select(id)}
               onText={(sid, path, v) => setContent(sid, path, v)}
-              onOrder={(sid, elementOrder) => updateSection(sid, s => ({ ...s, elementOrder }))}
+              onElementSelect={(sid, key) => { setSelectedId(sid); setSelectedElement(key); setTab("section"); }}
+              onElementAction={(sid, key, action) => { updateElement(sid, key, { [action]: true }); setSelectedElement(null); }}
+              onOrder={(sid, order, group) => updateSection(sid, s => group ? ({ ...s, groupOrders: { ...s.groupOrders, [group]: order } }) : ({ ...s, elementOrder: order }))}
             />
           </div>
         </main>
@@ -413,10 +429,12 @@ function Editor({ initial }: { initial: SalesPage }) {
             <button onClick={() => setTab("page")} className={cn("flex-1 py-2.5 text-xs font-semibold", tab === "page" ? "border-b-2 border-brand" : "text-muted-foreground")}>Página</button>
           </div>
           <div className="space-y-5 p-4">
-            {tab === "section" && selected ? (
+            {tab === "section" && selected && selectedElement ? <><Button size="sm" variant="ghost" onClick={() => setSelectedElement(null)}><ArrowLeft size={14}/>Seção inteira</Button><ElementPanel section={selected} elementKey={selectedElement} sections={sections} userId={user?.id || ""} onStyle={patch => updateElement(selected.id, selectedElement, patch)} onValue={value => setContent(selected.id, selectedElement, value)} onButton={b => elementButton(selected, selectedElement, b)}/></> : tab === "section" && selected ? (
               <SectionPanel
                 key={selected.id}
                 section={selected}
+                sections={sections}
+                onSection={fn => updateSection(selected.id, fn)}
                 userId={user?.id ?? ""}
                 onContent={(p, v) => setContent(selected.id, p, v)}
                 onStyle={(p) => setStyle(selected.id, p)}
@@ -559,20 +577,26 @@ function Field({ def, value, onChange, userId }: { def: FieldDef; value: string;
   );
 }
 
-function BadgePanel({ badge, onChange }: { badge: GuaranteeBadgeSettings; onChange: (next: GuaranteeBadgeSettings) => void }) {
+function BadgePanel({ badge, onChange, userId }: { badge: GuaranteeBadgeSettings; userId: string; onChange: (next: GuaranteeBadgeSettings) => void }) {
   const set = (patch: Partial<GuaranteeBadgeSettings>) => onChange({ ...badge, ...patch });
   return <div className="space-y-3">
+    <Choice label="Tipo de selo" value={badge.mode || "default"} options={[["default", "Selo padrão"], ["image", "Imagem enviada"]]} set={mode => set({ mode: mode as "default" | "image" })}/>
+    <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!badge.hidden} onChange={e => set({ hidden: !e.target.checked })}/>Selo visível</label>
+    {badge.mode === "image" ? <ImageField label="Imagem do selo" value={badge.image || ""} userId={userId} onChange={image => set({ image })}/> : <>
     <Field def={{ key: "days", label: "Dias de garantia", kind: "number" }} value={badge.days || "7"} userId="" onChange={days => set({ days })}/>
-    <Field def={{ key: "top", label: "Texto curvo superior", kind: "text" }} value={badge.topText ?? "GARANTIA INCONDICIONAL"} userId="" onChange={topText => set({ topText })}/>
-    <Field def={{ key: "bottom", label: "Texto curvo inferior", kind: "text" }} value={badge.bottomText ?? "SATISFAÇÃO GARANTIDA"} userId="" onChange={bottomText => set({ bottomText })}/>
+    <Field def={{ key: "top", label: "Texto curto do selo", kind: "text" }} value={badge.topText ?? "GARANTIA"} userId="" onChange={topText => set({ topText })}/>
+
     <Label className="text-xs">Estilo do selo</Label><select aria-label="Estilo do selo" className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm" value={badge.variant || "gold"} onChange={e => set({ variant: e.target.value })}><option value="gold">Dourado metálico</option><option value="navy">Azul-marinho com dourado</option><option value="green">Verde</option><option value="purple">Roxo</option><option value="custom">Cor personalizada</option></select>
     {badge.variant === "custom" && <ColorField label="Cor do selo" value={badge.color} onChange={color => set({ color })}/>}
+    </>}
     <NumberField label="Tamanho do selo" value={badge.size ?? 180} min={64} max={320} onChange={size => set({ size })}/>
   </div>;
 }
 
 function SectionPanel({
   section,
+  sections,
+  onSection,
   userId,
   onContent,
   onStyle,
@@ -580,6 +604,8 @@ function SectionPanel({
   onVisibility,
 }: {
   section: PageSection;
+  sections: PageSection[];
+  onSection: (fn: (s: PageSection) => PageSection) => void;
   userId: string;
   onContent: (path: string, v: unknown) => void;
   onStyle: (p: Partial<SectionStyle>) => void;
@@ -614,7 +640,10 @@ function SectionPanel({
         ))}
       </Group>
 
-      {section.type === "guarantee" && <Group title="Selo de garantia"><BadgePanel badge={{ days: section.content.days, ...section.content.badge }} onChange={badge => onContent("badge", badge)}/></Group>}
+      {section.type === "guarantee" && <Group title="Selo de garantia"><BadgePanel userId={userId} badge={{ days: section.content.days, ...section.content.badge }} onChange={badge => onContent("badge", badge)}/></Group>}
+      <Group title="Adicionar elemento"><div className="flex flex-wrap gap-1">{(["text", "image", "button", "icon", "video"] as const).map(type => <Button key={type} size="sm" variant="outline" onClick={() => onSection(s => ({ ...s, customElements: [...(s.customElements || []), { id: uid(), type, value: type === "text" ? "Seu texto" : type === "button" ? "SAIBA MAIS" : type === "icon" ? "✓" : "" }] }))}><Plus size={12}/>{({ text: "Texto", image: "Imagem", button: "Botão", icon: "Ícone", video: "Vídeo" })[type]}</Button>)}</div></Group>
+      {Object.entries(section.elementStyles || {}).some(([, v]) => v.hidden || v.removed) && <Group title="Elementos ocultos ou removidos">{Object.entries(section.elementStyles || {}).filter(([, v]) => v.hidden || v.removed).map(([key]) => <Button key={key} size="sm" variant="outline" className="max-w-full whitespace-normal" onClick={() => onSection(s => ({ ...s, elementStyles: { ...s.elementStyles, [key]: { ...s.elementStyles?.[key], hidden: false, removed: false } } }))}><Eye size={14}/>Restaurar {key}</Button>)}</Group>}
+      {section.type === "pricingPlans" && <><Numeric label="Quantidade de planos" value={items.length} min={2} max={4} set={n => { if (!n) return; const next = items.slice(0, n); while (next.length < n) next.push({ ...def.items?.blank }); onItems(next); }}/><Choice label="Plano popular" value={String(section.content.popularPlan ?? Math.max(0, items.findIndex(it => it.highlighted === "true")))} options={items.map((it, i) => [String(i), it.title || `Plano ${i + 1}`])} set={v => onContent("popularPlan", v)}/></>}
       {section.type === "printCarousel" && <div>
         <Button variant="outline" className="w-full" size="sm" disabled={uploadingPrints} onClick={() => printsInput.current?.click()}>{uploadingPrints ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Upload className="mr-2 h-4 w-4"/>}Enviar várias imagens</Button>
         <input ref={printsInput} hidden type="file" multiple accept="image/*" onChange={async e => {
@@ -631,11 +660,11 @@ function SectionPanel({
         {buttons.map((button, i) => <div key={button.id} className="space-y-2 rounded-md border border-border p-3">
           <div className="flex items-center justify-between"><span className="text-xs font-semibold">Botão {i + 1}</span><Button variant="ghost" size="icon" title="Remover botão" aria-label={`Remover botão ${i + 1}`} onClick={() => updateButtons(buttons.filter(b => b.id !== button.id))}><Trash2 size={14}/></Button></div>
           <Field def={{ key: "text", label: "Texto do botão", kind: "text" }} value={button.text} userId={userId} onChange={text => updateButtons(buttons.map(b => b.id === button.id ? { ...b, text } : b))}/>
-          <Field def={{ key: "url", label: "Link do botão", kind: "url" }} value={button.url} userId={userId} onChange={url => updateButtons(buttons.map(b => b.id === button.id ? { ...b, url } : b))}/>
+          <DestinationPanel button={button} sections={sections} set={next => updateButtons(buttons.map(b => b.id === button.id ? next : b))}/>
           <Label className="text-xs">Estilo do botão</Label><select aria-label={`Estilo do botão ${i + 1}`} value={button.variant ?? "solid"} onChange={e => updateButtons(buttons.map(b => b.id === button.id ? { ...b, variant: e.target.value as PageButton['variant'] } : b))} className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm"><option value="solid">Preenchido</option><option value="outline">Contorno</option><option value="text">Somente texto</option></select>
           <NumberField label="Cantos do botão" value={button.radius ?? 12} min={0} max={40} onChange={radius => updateButtons(buttons.map(b => b.id === button.id ? { ...b, radius } : b))}/>
           <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={!!button.guarantee} onChange={e => updateButtons(buttons.map(b => b.id === button.id ? { ...b, guarantee: e.target.checked ? { days: "7", size: 80 } : undefined } : b))}/>Selo de garantia junto ao botão</label>
-          {button.guarantee && <details><summary className="cursor-pointer text-xs font-semibold">Personalizar selo</summary><div className="mt-3"><BadgePanel badge={button.guarantee} onChange={guarantee => updateButtons(buttons.map(b => b.id === button.id ? { ...b, guarantee } : b))}/></div></details>}
+          {button.guarantee && <details><summary className="cursor-pointer text-xs font-semibold">Personalizar selo</summary><div className="mt-3"><BadgePanel userId={userId} badge={button.guarantee} onChange={guarantee => updateButtons(buttons.map(b => b.id === button.id ? { ...b, guarantee } : b))}/></div></details>}
         </div>)}
         <Button variant="outline" size="sm" className="w-full" onClick={() => updateButtons([...buttons, newPageButton()])}><Plus size={14} className="mr-2"/>Adicionar botão</Button>
       </Group>}
@@ -647,8 +676,9 @@ function SectionPanel({
                 <span className="text-xs font-semibold">{def.items?.label} {i + 1}</span>
                 <div className="flex">
                   <IconBtn title="Subir" onClick={() => { if (i > 0) { const a = [...items]; [a[i - 1], a[i]] = [a[i], a[i - 1]]; onItems(a); } }}><ArrowUp className="h-3 w-3" /></IconBtn>
-                  <IconBtn title="Duplicar" onClick={() => { const a = [...items]; a.splice(i + 1, 0, { ...it }); onItems(a); }}><Copy className="h-3 w-3" /></IconBtn>
-                  <IconBtn title="Remover" onClick={() => onItems(items.filter((_, j) => j !== i))}><Trash2 className="h-3 w-3" /></IconBtn>
+                  <IconBtn title="Descer" onClick={() => { if (i < items.length - 1) { const a = [...items]; [a[i], a[i + 1]] = [a[i + 1], a[i]]; onItems(a); } }}><ArrowDown className="h-3 w-3" /></IconBtn>
+                  <IconBtn title="Duplicar" onClick={() => { if (section.type === "pricingPlans" && items.length >= 4) return; const a = [...items]; a.splice(i + 1, 0, { ...it }); onItems(a); }}><Copy className="h-3 w-3" /></IconBtn>
+                  <IconBtn title="Remover" onClick={() => { if (section.type !== "pricingPlans" || items.length > 2) onItems(items.filter((_, j) => j !== i)); }}><Trash2 className="h-3 w-3" /></IconBtn>
                 </div>
               </div>
               {def.items?.fields.map((f) => (
@@ -656,7 +686,7 @@ function SectionPanel({
               ))}
             </div>
           ))}
-          <Button size="sm" variant="outline" className="w-full" onClick={() => onItems([...items, { ...def.items?.blank }])}>
+          <Button size="sm" variant="outline" className="w-full" disabled={section.type === "pricingPlans" && items.length >= 4} onClick={() => onItems([...items, { ...def.items?.blank }])}>
             <Plus className="mr-1 h-3.5 w-3.5" /> Adicionar {def.items.label.toLowerCase()}
           </Button>
         </Group>
@@ -684,7 +714,7 @@ function SectionPanel({
       </Group>}
 
       {subtab === "color" && <Group title="Cor">
-        <ColorField label="Fundo da seção" value={st.bg} onChange={(v) => onStyle({ bg: v })} />
+        <BackgroundPanel value={st.background} color={st.bg} userId={userId} onChange={background => onStyle({ background })} onColor={bg => onStyle({ bg })}/>
         <div className="flex gap-1.5">
           {(["bg", "surface", "primary"] as const).map((t) => (
             <button key={t} onClick={() => onStyle({ bg: t })} className={cn("flex-1 rounded-md border px-1 py-1 text-[10px]", st.bg === t ? "border-brand" : "border-border")}>
@@ -705,7 +735,7 @@ function SectionPanel({
       </Group>}
 
       {subtab === "layout" && <Group title="Layout">
-        {["bonusCards", "iconCards", "pricingPlans", "steps", "benefits"].includes(section.type) && <NumberField label="Colunas" value={st.columns ?? 3} min={2} max={section.type === "pricingPlans" || section.type === "bonusCards" ? 3 : 4} suffix="" onChange={columns => onStyle({ columns })}/>}
+        {["bonusCards", "iconCards", "pricingPlans", "steps", "benefits"].includes(section.type) && <NumberField label="Colunas" value={st.columns ?? 3} min={2} max={section.type === "bonusCards" ? 3 : 4} suffix="" onChange={columns => onStyle({ columns })}/>}
         {section.type === "finalCta" && <>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={st.background?.type === "gradient"} onChange={e => onStyle({ background: e.target.checked ? { ...DEFAULT_PAGE_BACKGROUND, type: "gradient" } : undefined })}/>Fundo em degradê</label>
           {st.background?.type === "gradient" && <>
