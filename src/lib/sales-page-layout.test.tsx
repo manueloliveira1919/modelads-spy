@@ -5,8 +5,46 @@ import { BLOCKS, PAGE_TEMPLATES, DEFAULT_PAGE_SETTINGS, newSection } from "./sal
 import { pageBackground, salesPageUrl, sectionButtons } from "./sales-page-layout";
 import { PageRenderer } from "@/components/sales-page/page-renderer";
 import { buildPageHtml } from "./sales-page-export";
+import { buttonDestination, elementCss, contentAt, parseDestination } from "./sales-page-elements";
 
 describe("Sales page compatibility and output parity", () => {
+  it("overrides one element without changing siblings and preserves parent structure", () => {
+    const section = newSection("hero", { title: "Independent title", subtitle: "Unchanged sibling" });
+    section.elementStyles = { title: { size: 42, color: "#123456", marginBottom: 24 } };
+    const html = buildPageHtml("Overrides", DEFAULT_PAGE_SETTINGS, [section]);
+    expect(html).toContain('font-size:42px');
+    expect(html).toContain('margin-bottom:24px');
+    expect(html).toContain("Unchanged sibling");
+    section.elementStyles.title.hidden = true;
+    expect(buildPageHtml("Hidden", DEFAULT_PAGE_SETTINGS, [section])).not.toContain("Independent title");
+    expect(elementCss({}, DEFAULT_PAGE_SETTINGS)).not.toHaveProperty("fontSize");
+  });
+  it("resolves visible sections, WhatsApp and selected popular plans safely", () => {
+    const plans = newSection("pricingPlans", { popularPlan: "1" });
+    plans.content.items[1].buttonUrl = "https://example.com/checkout";
+    const button = { id: "a", text: "Buy", url: "", destination: { type: "popular" as const } };
+    expect(buttonDestination(button, [plans])).toEqual({ href: `#sp-plan-${plans.id}-1`, popular: true });
+    expect(buttonDestination({ ...button, destination: { type: "popular", popularAction: "checkout" } }, [plans]).href).toBe("https://example.com/checkout");
+    expect(buttonDestination({ ...button, destination: { type: "section", sectionId: plans.id } }, [plans]).href).toBe(`#sp-section-${plans.id}`);
+    plans.hidden = true;
+    expect(buttonDestination(button, [plans]).warning).toBeDefined();
+    expect(buttonDestination({ ...button, destination: { type: "whatsapp", phone: "+55 (11) 99999-9999", message: "Olá & teste" } }, []).href).toContain("https://wa.me/5511999999999?text=Ol%C3%A1%20%26%20teste");
+    expect(buttonDestination({ id: "x", text: "x", url: "javascript:alert(1)" }, []).href).toBe("#");
+    expect(parseDestination("bad json")).toBeUndefined();
+  });
+  it("exports custom media, independent card backgrounds and nested content", () => {
+    const offer = newSection("offer");
+    offer.elementStyles = { offerCard: { bg: "#abcdef", radius: 20 }, price: { size: 61 } };
+    offer.customElements = [{ id: "text", type: "text", value: "CUSTOM SAFE TEXT" }];
+    const html = buildPageHtml("Offer", DEFAULT_PAGE_SETTINGS, [offer]);
+    expect(html).toContain("background:#abcdef");
+    expect(html).toContain("font-size:61px");
+    expect(html).toContain("CUSTOM SAFE TEXT");
+    const plans = newSection("pricingPlans");
+    expect(contentAt(plans, "items.0.features.1")).toBe("Acesso imediato");
+    const badge = newSection("guarantee", { badge: { mode: "image", image: "https://example.com/badge.png" } });
+    expect(buildPageHtml("Image badge", DEFAULT_PAGE_SETTINGS, [badge])).toContain('src="https://example.com/badge.png"');
+  });
   it("adds complete editable templates without changing legacy templates", () => {
     expect(PAGE_TEMPLATES).toHaveLength(7);
     for (const key of ["education-kids", "modern-purple"]) {
