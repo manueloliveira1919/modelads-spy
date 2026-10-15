@@ -3,6 +3,13 @@ export function installPageInteractions(root: HTMLElement) {
   function click(event: Event) {
     const target = event.target;
     if (!(target instanceof Element)) return;
+    const anchor = target.closest<HTMLAnchorElement>("a[href^='#']");
+    if (anchor && root.contains(anchor)) {
+      event.preventDefault();
+      const id = anchor.getAttribute("href")?.slice(1);
+      const destination = id ? root.querySelector<HTMLElement>(`[id="${CSS.escape(id)}"]`) : null;
+      destination?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth", block: "center" });
+    }
     const action = target.closest<HTMLElement>("[data-sp-action], [data-sp-popular]");
     if (!action || !root.contains(action)) return;
     const quiz = action.closest<HTMLElement>("[data-sp-quiz]");
