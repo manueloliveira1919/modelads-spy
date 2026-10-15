@@ -1,10 +1,77 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { KeyRound, Copy, Trash2, Loader2 } from "lucide-react";
+import { KeyRound, Copy, Trash2, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { generateExtensionToken } from "@/lib/extension.functions";
+import { EXTENSION_VERSION, EXTENSION_ZIP_NAME, EXTENSION_ZIP_URL } from "@/lib/extension-version";
+
+function ExtensionDownload() {
+  const [busy, setBusy] = useState(false);
+  const download = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch(EXTENSION_ZIP_URL, { cache: "no-store" });
+      if (!res.ok) throw new Error();
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = EXTENSION_ZIP_NAME;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch {
+      toast.error("Não foi possível baixar a extensão.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <div className="mt-4 rounded-xl border border-border bg-background/40 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <span className="text-sm">
+          Versão atual: <strong>v{EXTENSION_VERSION}</strong>
+        </span>
+        <a
+          href={EXTENSION_ZIP_URL}
+          download={EXTENSION_ZIP_NAME}
+          onClick={(e) => {
+            e.preventDefault();
+            download();
+          }}
+          className="inline-flex items-center gap-2 rounded-lg bg-gradient-brand px-3 py-1.5 text-sm font-semibold hover:brightness-110"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          Baixar extensão
+        </a>
+      </div>
+      <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-muted-foreground">
+        <li>Extraia o zip (se for atualização, substitua a pasta antiga).</li>
+        <li>
+          Abra <code className="text-xs">chrome://extensions</code> no Chrome.{" "}
+          <button
+            onClick={() => {
+              navigator.clipboard.writeText("chrome://extensions");
+              toast.success("Copiado. Cole na barra de endereço.");
+            }}
+            className="ml-1 inline-flex items-center gap-1 rounded border border-border px-1.5 py-0.5 text-xs hover:bg-accent"
+          >
+            <Copy className="h-3 w-3" /> Copiar chrome://extensions
+          </button>
+        </li>
+        <li>Ative o “Modo do desenvolvedor” (canto superior direito).</li>
+        <li>
+          Clique em “Carregar sem compactação” e escolha a pasta — ou, se já estiver instalada, clique no
+          ícone de recarregar.
+        </li>
+        <li>Cole no popup da extensão o token gerado acima.</li>
+      </ol>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Depois, atualize a página da Biblioteca de Anúncios (F5).
+      </p>
+    </div>
+  );
+}
 
 type TokenRow = {
   id: string;
@@ -76,6 +143,8 @@ export function MyExtensionTokens({ userId }: { userId: string }) {
       <p className="mt-1 text-sm text-muted-foreground">
         Use o token para conectar a extensão à sua conta.
       </p>
+
+      <ExtensionDownload />
 
       {shown && (
         <div className="mt-4 rounded-xl border border-brand/40 bg-brand/10 p-4">

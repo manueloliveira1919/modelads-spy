@@ -25,3 +25,4 @@
 - Quiz rich text is data-only validated runs with synchronized plain text; selection edits update the focused DOM before autosave to preserve the cursor and avoid user HTML execution.
 - Quiz font stylesheets are stable per editor or complete runner dataset; await font faces before applying selections to prevent fallback flashes.
 - Result presentation owns analysis/count-up timing and signals readiness to the runner; session navigation, scoring and lead writes remain unchanged.
+- Extension releases: every change in extension/ must bump manifest.json version and regenerate public/modelads-extension.zip via `bun scripts/pack-extension.ts` — the app reads the version from the manifest, so zip and displayed version must match.
