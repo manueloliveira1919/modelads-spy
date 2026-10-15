@@ -10,7 +10,7 @@ export const PAGE_FONTS = [
 ];
 
 export function pageFontsHref(settings: PageSettings, sections: PageSection[]) {
-  const fams = new Set([settings.font, settings.headingFont, ...sections.map((s) => s.style?.font).filter(Boolean) as string[]]);
+  const fams = new Set([settings.font, settings.headingFont, ...sections.map((s) => s.style?.font).filter(Boolean) as string[], ...sections.flatMap(s => Object.values(s.elementStyles || {}).map(e => e.font).filter(Boolean) as string[])]);
   const q = [...fams].filter((f) => PAGE_FONTS.includes(f)).map((f) => `family=${f.replace(/ /g, "+")}:wght@400;600;700;800;900`).join("&");
   return q ? `https://fonts.googleapis.com/css2?${q}&display=swap` : null;
 }
