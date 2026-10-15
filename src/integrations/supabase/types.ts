@@ -80,6 +80,48 @@ export type Database = {
         }
         Relationships: []
       }
+      cakto_webhook_events: {
+        Row: {
+          customer_email: string | null
+          error_message: string | null
+          event: string
+          event_key: string
+          id: string
+          offer_id: string | null
+          payload: Json
+          processed_at: string | null
+          received_at: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          customer_email?: string | null
+          error_message?: string | null
+          event: string
+          event_key: string
+          id?: string
+          offer_id?: string | null
+          payload: Json
+          processed_at?: string | null
+          received_at?: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          customer_email?: string | null
+          error_message?: string | null
+          event?: string
+          event_key?: string
+          id?: string
+          offer_id?: string | null
+          payload?: Json
+          processed_at?: string | null
+          received_at?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       credit_ledger: {
         Row: {
           amount: number
@@ -844,6 +886,8 @@ export type Database = {
       plans: {
         Row: {
           availability: string
+          cakto_offer_id: string | null
+          checkout_url: string | null
           code: string
           created_at: string
           description: string | null
@@ -858,6 +902,8 @@ export type Database = {
         }
         Insert: {
           availability?: string
+          cakto_offer_id?: string | null
+          checkout_url?: string | null
           code: string
           created_at?: string
           description?: string | null
@@ -872,6 +918,8 @@ export type Database = {
         }
         Update: {
           availability?: string
+          cakto_offer_id?: string | null
+          checkout_url?: string | null
           code?: string
           created_at?: string
           description?: string | null
@@ -1337,6 +1385,7 @@ export type Database = {
       }
       user_subscriptions: {
         Row: {
+          canceled_at: string | null
           created_at: string
           current_period_end: string | null
           current_period_start: string | null
@@ -1352,6 +1401,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
@@ -1367,6 +1417,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          canceled_at?: string | null
           created_at?: string
           current_period_end?: string | null
           current_period_start?: string | null
@@ -1400,6 +1451,20 @@ export type Database = {
         Args: { p_amount: number; p_reason?: string; p_user_id: string }
         Returns: Json
       }
+      cakto_claim_pending: {
+        Args: { p_email: string; p_user: string }
+        Returns: undefined
+      }
+      cakto_ingest_event: {
+        Args: { p_data: Json; p_event: string; p_key: string }
+        Returns: Json
+      }
+      cakto_process_event: { Args: { p_id: string }; Returns: string }
+      cakto_set_plan_role: {
+        Args: { p_plan: string; p_user: string }
+        Returns: undefined
+      }
+      cakto_ts: { Args: { p: string }; Returns: string }
       claim_refresh_jobs: {
         Args: { p_limit?: number }
         Returns: {

@@ -54,6 +54,7 @@ import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as QuizSlugRouteImport } from './routes/quiz.$slug'
+import { Route as ApiPublicCaktoWebhookRouteImport } from './routes/api/public/cakto-webhook'
 import { Route as ModelarQuizLeadsIdRouteImport } from './routes/modelar-quiz.leads.$id'
 import { Route as ApiPublicExtensionStatusRouteImport } from './routes/api/public/extension/status'
 import { Route as ApiPublicExtensionSubmitRouteImport } from './routes/api/public/extension/submit'
@@ -287,6 +288,11 @@ const QuizSlugRoute = QuizSlugRouteImport.update({
   path: '/quiz/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicCaktoWebhookRoute = ApiPublicCaktoWebhookRouteImport.update({
+  id: '/api/public/cakto-webhook',
+  path: '/api/public/cakto-webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ModelarQuizLeadsIdRoute = ModelarQuizLeadsIdRouteImport.update({
   id: '/leads/$id',
   path: '/leads/$id',
@@ -369,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/criador-paginas/': typeof CriadorPaginasIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
+  '/api/public/cakto-webhook': typeof ApiPublicCaktoWebhookRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
   '/api/public/extension/submit': typeof ApiPublicExtensionSubmitRoute
@@ -419,6 +426,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/criador-paginas': typeof CriadorPaginasIndexRoute
   '/modelar-quiz': typeof ModelarQuizIndexRoute
+  '/api/public/cakto-webhook': typeof ApiPublicCaktoWebhookRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
   '/api/public/extension/submit': typeof ApiPublicExtensionSubmitRoute
@@ -473,6 +481,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/criador-paginas/': typeof CriadorPaginasIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
+  '/api/public/cakto-webhook': typeof ApiPublicCaktoWebhookRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
   '/api/public/extension/submit': typeof ApiPublicExtensionSubmitRoute
@@ -528,6 +537,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/criador-paginas/'
     | '/modelar-quiz/'
+    | '/api/public/cakto-webhook'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
     | '/api/public/extension/submit'
@@ -578,6 +588,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/criador-paginas'
     | '/modelar-quiz'
+    | '/api/public/cakto-webhook'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
     | '/api/public/extension/submit'
@@ -631,6 +642,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/criador-paginas/'
     | '/modelar-quiz/'
+    | '/api/public/cakto-webhook'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
     | '/api/public/extension/submit'
@@ -670,6 +682,7 @@ export interface RootRouteChildren {
   OfertaIdRoute: typeof OfertaIdRoute
   PSlugRoute: typeof PSlugRoute
   QuizSlugRoute: typeof QuizSlugRoute
+  ApiPublicCaktoWebhookRoute: typeof ApiPublicCaktoWebhookRoute
   ApiPublicExtensionStatusRoute: typeof ApiPublicExtensionStatusRoute
   ApiPublicExtensionSubmitRoute: typeof ApiPublicExtensionSubmitRoute
   ApiPublicExtensionValidateRoute: typeof ApiPublicExtensionValidateRoute
@@ -994,6 +1007,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuizSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/cakto-webhook': {
+      id: '/api/public/cakto-webhook'
+      path: '/api/public/cakto-webhook'
+      fullPath: '/api/public/cakto-webhook'
+      preLoaderRoute: typeof ApiPublicCaktoWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/modelar-quiz/leads/$id': {
       id: '/modelar-quiz/leads/$id'
       path: '/leads/$id'
@@ -1130,6 +1150,7 @@ const rootRouteChildren: RootRouteChildren = {
   OfertaIdRoute: OfertaIdRoute,
   PSlugRoute: PSlugRoute,
   QuizSlugRoute: QuizSlugRoute,
+  ApiPublicCaktoWebhookRoute: ApiPublicCaktoWebhookRoute,
   ApiPublicExtensionStatusRoute: ApiPublicExtensionStatusRoute,
   ApiPublicExtensionSubmitRoute: ApiPublicExtensionSubmitRoute,
   ApiPublicExtensionValidateRoute: ApiPublicExtensionValidateRoute,
