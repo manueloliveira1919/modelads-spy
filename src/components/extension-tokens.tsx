@@ -223,6 +223,7 @@ export function AdminExtensionTokens({ emailById }: { emailById: Record<string, 
       <h3 className="flex items-center gap-2 font-display text-lg font-semibold">
         <KeyRound className="h-5 w-5" /> Tokens de extensão ativos
       </h3>
+      <p className="mt-1 text-xs text-muted-foreground">Versão publicada da extensão: v{EXTENSION_VERSION}</p>
       {q.isLoading ? (
         <div className="mt-4 h-12 animate-pulse rounded-xl bg-muted/50" />
       ) : (q.data ?? []).length === 0 ? (
