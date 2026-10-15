@@ -1465,6 +1465,7 @@ export type Database = {
         Returns: undefined
       }
       cakto_ts: { Args: { p: string }; Returns: string }
+      can_view_offers: { Args: never; Returns: boolean }
       claim_refresh_jobs: {
         Args: { p_limit?: number }
         Returns: {
