@@ -253,7 +253,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           <div style={{ maxWidth: 640, margin: "24px auto 0", textAlign: "left" }}>
             {items.map((it, i) => (
               <div key={i} data-sp-key={`items.${i}`} className="sp-check" style={{ fontSize: st.textSize ?? 18 }}>
-                {(c.showIcon === true || c.showIcon === "true") && <span data-sp-key={`items.${i}.icon`} style={{ color: accent, fontWeight: 900 }}>✔</span>}
+                {(c.showIcon === true || c.showIcon === "true") && <span style={{ color: accent, fontWeight: 900 }}>{P(`items.${i}.icon`, it.icon || "✔")}</span>}
                 {P(`items.${i}.text`, it.text)}
               </div>
             ))}
@@ -325,7 +325,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
           <div style={{ textAlign: "left", margin: "16px 0" }}>
             {items.map((it, i) => (
               <div key={i} data-sp-key={`items.${i}`} className="sp-check">
-                <span data-sp-key={`items.${i}.icon`} style={{ color: accent, fontWeight: 900 }}>✔</span>
+                <span style={{ color: accent, fontWeight: 900 }}>{P(`items.${i}.icon`, it.icon || "✔")}</span>
                 {P(`items.${i}.text`, it.text)}
               </div>
             ))}
@@ -443,14 +443,14 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
     const entries = children.map((child, index) => {
       if (!isValidElement<Record<string, any>>(child)) return { key: `static-${index}`, node: child };
       const p = child.props;
-      const key = child.type === E ? p.path : p["data-sp-key"] || (child.type === Countdown ? "countdown" : p.className?.split(" ").includes("sp-card") || p.className === "sp-check" ? `${parent}.item.${index}` : undefined);
+      const key = child.type === E ? p.path : p["data-sp-key"] || (p.className === "sp-grid" || p.className === "sp-grid2" || p.className === "sp-flex-grid" ? "items" : child.type === Countdown ? "countdown" : p.className?.split(" ").includes("sp-card") || p.className === "sp-check" ? `${parent}.item.${index}` : undefined);
       const group = key || `${parent}.${index}`;
       let next = p.children && child.type !== E ? cloneElement(child, {}, decorate(p.children, group)) : child;
       if (!key) return { key: `static-${index}`, node: next };
       const override = section.elementStyles?.[key];
       if (override?.hidden || override?.removed) return { key, node: null };
       if (child.type !== E) next = cloneElement(next, { style: { ...p.style, ...elementCss(override, s) } });
-      return { key, node: ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} ctx={{ ...ctx, onOrder: (sid, order) => ctx.onOrder?.(sid, order, parent) }} order={() => entries.filter(e => !e.key.startsWith("static-")).map(e => e.key)}>{next}</SectionElement> : next };
+      return { key, node: ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} group={parent} ctx={{ ...ctx, onOrder: (sid, order) => ctx.onOrder?.(sid, order, parent) }} order={() => entries.filter(e => !e.key.startsWith("static-")).map(e => e.key)}>{next}</SectionElement> : next };
     });
     const order = section.groupOrders?.[parent];
     if (order) entries.sort((a, b) => (order.indexOf(a.key) < 0 ? 999 : order.indexOf(a.key)) - (order.indexOf(b.key) < 0 ? 999 : order.indexOf(b.key)));
@@ -492,7 +492,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   );
 }
 
-function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string; elementKey: string; ctx: Ctx; order: () => string[]; children: React.ReactNode }) {
+function SectionElement({ sid, elementKey, group, ctx, order, children }: { sid: string; elementKey: string; group: string; ctx: Ctx; order: () => string[]; children: React.ReactNode }) {
   const selected = ctx.selectedElement === `${sid}:${elementKey}`;
   const [drop, setDrop] = useState<"before" | "after" | undefined>();
   const move = (delta: number) => {
@@ -500,12 +500,12 @@ function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string
     if (i < 0 || j < 0 || j >= keys.length) return;
     [keys[i], keys[j]] = [keys[j], keys[i]]; ctx.onOrder?.(sid, keys);
   };
-  return <div className="sp-element" data-element-key={elementKey} data-selected={selected} data-drop={drop}
+  return <div className="sp-element" data-element-key={elementKey} data-element-group={group} data-selected={selected} data-drop={drop}
     onClick={e => { e.stopPropagation(); ctx.onElementSelect?.(`${sid}:${elementKey}`); }}
     onDragOver={e => { if (!e.dataTransfer.types.includes("application/modelads-element")) return; e.preventDefault(); e.stopPropagation(); setDrop(e.clientY < e.currentTarget.getBoundingClientRect().top + e.currentTarget.offsetHeight / 2 ? "before" : "after"); }}
     onDragLeave={() => setDrop(undefined)} onDrop={e => {
       e.preventDefault(); e.stopPropagation(); setDrop(undefined);
-      try { const from = JSON.parse(e.dataTransfer.getData("application/modelads-element")); if (from.sid !== sid || from.key === elementKey) return;
+      try { const from = JSON.parse(e.dataTransfer.getData("application/modelads-element")); if (from.sid !== sid || from.group !== group || from.key === elementKey) return;
         const keys = order().filter(k => k !== from.key); const i = keys.indexOf(elementKey); keys.splice(i + (drop === "after" ? 1 : 0), 0, from.key); ctx.onOrder?.(sid, keys);
       } catch { /* Ignore foreign drags. */ }
     }}>
@@ -519,7 +519,8 @@ function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string
         const clear = () => sectionRoot.querySelectorAll('[data-drop]').forEach(el => el.removeAttribute('data-drop'));
         const track = (event: PointerEvent) => {
           clear();
-          const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-element-key]');
+          let target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLElement>('[data-element-key]');
+          while (target && target.dataset.elementGroup !== group) target = target.parentElement?.closest<HTMLElement>('[data-element-key]');
           if (!target || !sectionRoot.contains(target) || target.dataset.elementKey === elementKey) { targetKey = undefined; return; }
           targetKey = target.dataset.elementKey;
           const rect = target.getBoundingClientRect(); after = event.clientY > rect.top + rect.height / 2;
@@ -527,7 +528,7 @@ function SectionElement({ sid, elementKey, ctx, order, children }: { sid: string
         };
         const finish = () => {
           clear(); window.removeEventListener('pointermove', track); window.removeEventListener('pointerup', finish); window.removeEventListener('pointercancel', cancel);
-          if (!targetKey) return;
+          if (!targetKey || !order().includes(targetKey)) return;
           const keys = order().filter(k => k !== elementKey); const i = keys.indexOf(targetKey);
           if (i >= 0) { keys.splice(i + (after ? 1 : 0), 0, elementKey); ctx.onOrder?.(sid, keys); }
         };

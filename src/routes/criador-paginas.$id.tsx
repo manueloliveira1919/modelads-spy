@@ -430,7 +430,7 @@ function Editor({ initial }: { initial: SalesPage }) {
             <button onClick={() => setTab("page")} className={cn("flex-1 py-2.5 text-xs font-semibold", tab === "page" ? "border-b-2 border-brand" : "text-muted-foreground")}>Página</button>
           </div>
           <div className="space-y-5 p-4">
-            {tab === "section" && selected && selectedElement ? <><Button size="sm" variant="ghost" onClick={() => setSelectedElement(null)}><ArrowLeft size={14}/>Seção inteira</Button><ElementPanel section={selected} elementKey={selectedElement} sections={sections} userId={user?.id || ""} onStyle={patch => updateElement(selected.id, selectedElement, patch)} onValue={value => setContent(selected.id, selectedElement, value)} onButton={b => elementButton(selected, selectedElement, b)}/></> : tab === "section" && selected ? (
+            {tab === "section" && selected && selectedElement ? <><Button size="sm" variant="ghost" onClick={() => setSelectedElement(null)}><ArrowLeft size={14}/>Seção inteira</Button><ElementPanel section={selected} elementKey={selectedElement} sections={sections} userId={user?.id || ""} onStyle={patch => updateElement(selected.id, selectedElement, patch)} onContent={(key, value) => setContent(selected.id, key, value)} onValue={value => setContent(selected.id, selectedElement, value)} onButton={b => elementButton(selected, selectedElement, b)}/></> : tab === "section" && selected ? (
               <SectionPanel
                 key={selected.id}
                 section={selected}
@@ -440,7 +440,11 @@ function Editor({ initial }: { initial: SalesPage }) {
                 onContent={(p, v) => setContent(selected.id, p, v)}
                 onStyle={(p) => setStyle(selected.id, p)}
                 onVisibility={(hidden) => updateSection(selected.id, s => ({ ...s, hidden }))}
-                onItems={(items) => updateSection(selected.id, (s) => ({ ...s, content: { ...s.content, items } }))}
+                onItems={(items) => updateSection(selected.id, s => {
+                  const old = s.content.items || [];
+                  const remap = (key: string) => key.replace(/^items\.(\d+)(?=\.|$)/, (_, index) => { const next = items.indexOf(old[Number(index)]); return next < 0 ? "retired" : `items.${next}`; });
+                  return { ...s, content: { ...s.content, items }, elementStyles: Object.fromEntries(Object.entries(s.elementStyles || {}).map(([key, value]) => [remap(key), value]).filter(([key]) => !(key as string).startsWith("retired"))), groupOrders: Object.fromEntries(Object.entries(s.groupOrders || {}).map(([key, order]) => [remap(key), order.map(remap).filter(k => !k.startsWith("retired"))]).filter(([key]) => !(key as string).startsWith("retired"))) };
+                })}
               />
             ) : (
               <PagePanel settings={snap.settings} set={setSettings} userId={user?.id ?? ""} slug={meta.slug} onSlug={(slug) => saveMeta({ slug })} />
