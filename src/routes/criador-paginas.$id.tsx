@@ -229,7 +229,7 @@ function Editor({ initial }: { initial: SalesPage }) {
   const elementButton = (section: PageSection, key: string, b: PageButton) => {
     if (key.startsWith("custom:")) updateSection(section.id, s => ({ ...s, customElements: s.customElements?.map(el => `custom:${el.id}` === key ? { ...el, button: b, value: b.text } : el) }));
     else if (key.startsWith("items.")) { const i = Number(key.split(".")[1]); updateSection(section.id, s => ({ ...s, content: { ...s.content, items: s.content.items?.map((it, j) => j === i ? { ...it, buttonUrl: b.url, destination: JSON.stringify(b.destination), buttonText: b.text } : it) } })); }
-    else setContent(section.id, "buttons", sectionButtons(section).map(it => `button:${it.id}` === key ? b : it));
+    else setContent(section.id, "buttons", sectionButtons(section).map((it, i) => `button:${it.id}` === key || key === `buttons.${i}.text` || key === "buttonText" && i === 0 ? b : it));
   };
   const setStyle = (id: string, patch: Partial<SectionStyle>) => updateSection(id, (s) => ({ ...s, style: { ...s.style, ...patch } }), `${id}:s:${Object.keys(patch).join()}`);
   const setSettings = (path: string, v: unknown) => commit((cur) => ({ ...cur, settings: setPath(cur.settings, path, v) as PageSettings }), `settings:${path}`);
