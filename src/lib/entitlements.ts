@@ -2,7 +2,7 @@
 // Todos os valores (preços, créditos, custos e limites) vêm do banco — nada é fixo no código.
 import { supabase } from "@/integrations/supabase/client";
 
-export type PlanCode = "starter" | "pro" | "premium" | "admin";
+export type PlanCode = "free" | "starter" | "pro" | "premium" | "admin";
 
 export type FeatureKey =
   | "dashboard"
@@ -81,7 +81,7 @@ export async function fetchEntitlements(): Promise<Entitlements | null> {
   const d = data as Record<string, unknown>;
   return {
     userId: String(d["user_id"] ?? ""),
-    planCode: (d["plan_code"] as PlanCode) ?? "starter",
+    planCode: (d["plan_code"] as PlanCode) ?? "free",
     isAdmin: Boolean(d["is_admin"]),
     unlimited: Boolean(d["unlimited"]),
     balance: Number(d["balance"] ?? 0),
@@ -163,7 +163,9 @@ export function planLabel(code: PlanCode | string): string {
       return "Premium";
     case "pro":
       return "Pro";
-    default:
+    case "starter":
       return "Starter";
+    default:
+      return "Free";
   }
 }

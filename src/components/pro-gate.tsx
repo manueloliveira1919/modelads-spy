@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { Lock, Sparkles, type LucideIcon } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { useAuth } from "@/lib/auth-context";
+import { useEntitlements } from "@/hooks/use-entitlements";
 
 interface ProGateProps {
   title: string;
@@ -12,6 +13,8 @@ interface ProGateProps {
 
 export function ProGate({ title, description, icon: Icon, children }: ProGateProps) {
   const { isPro, loading } = useAuth();
+  const { planCode, entitlements } = useEntitlements();
+  const isFree = Boolean(entitlements) && planCode === "free";
 
   if (loading) {
     return (
@@ -63,7 +66,9 @@ export function ProGate({ title, description, icon: Icon, children }: ProGatePro
             {title}
           </h1>
           <p className="mt-3 max-w-lg text-sm text-muted-foreground">
-            {description} Desbloqueie no plano PRO junto com todas as outras ferramentas de IA.
+            {isFree
+              ? "Ative um plano para ver as ofertas e usar as ferramentas."
+              : `${description} Desbloqueie no plano PRO junto com todas as outras ferramentas de IA.`}
           </p>
           <Link
             to="/upgrade"

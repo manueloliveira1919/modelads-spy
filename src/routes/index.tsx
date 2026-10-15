@@ -1,9 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { Star, Wand2, Compass, Crown, Flame, TrendingUp, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { AppShell } from "@/components/app-shell";
+import { OfferLockCard, useCanViewOffers } from "@/components/offers-gate";
+import { planLabel as planName } from "@/lib/entitlements";
+import { useEntitlements } from "@/hooks/use-entitlements";
 import { LandingPage } from "@/components/landing-page";
 import { listOffers } from "@/lib/offers.functions";
 import { cn } from "@/lib/utils";
@@ -32,9 +35,6 @@ export const Route = createFileRoute("/")({
       },
     ],
   }),
-  loader: ({ context }) => {
-    context.queryClient.ensureQueryData(offersQuery);
-  },
   component: Home,
   errorComponent: ({ error }) => (
     <AppShell>
@@ -73,13 +73,15 @@ function useFavoritesCount() {
 }
 
 function Dashboard() {
-  const { data } = useSuspenseQuery(offersQuery);
-  const offers = data.offers;
+  const { canView, loading: entLoading } = useCanViewOffers();
+  const { entitlements } = useEntitlements();
+  const { data } = useQuery({ ...offersQuery, enabled: canView });
+  const offers = data?.offers ?? [];
   const favCount = useFavoritesCount();
   const { user, isAdmin, isPro } = useAuth();
   const displayName =
     (user?.user_metadata?.display_name as string | undefined) || user?.email?.split("@")[0];
-  const planLabel = isAdmin ? "Admin" : isPro ? "Pro" : "Starter";
+  const planLabel = entitlements ? planName(entitlements.planCode) : isAdmin ? "Admin" : isPro ? "Pro" : "…";
 
   const escaladas = offers.filter((o) => o.status === "escaladissimo").length;
   const crescendo = offers.filter((o) => o.status === "escalado").length;
@@ -122,7 +124,9 @@ function Dashboard() {
             </Link>
           </div>
 
-          {destaques.length === 0 ? (
+          {!canView && !entLoading ? (
+            <OfferLockCard compact />
+          ) : destaques.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted-foreground">
               Nenhuma oferta minerada ainda. A mineração roda automaticamente.
             </p>

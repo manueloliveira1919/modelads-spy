@@ -23,6 +23,7 @@ import { searchOffersLive, type LiveSearchResult } from "@/lib/search.functions"
 import { extractPrice } from "@/lib/offer-heuristics";
 import { PRODUCT_TYPES, type ProductType } from "@/lib/offers-shape";
 import { cn } from "@/lib/utils";
+import { OffersGate } from "@/components/offers-gate";
 
 
 export const Route = createFileRoute("/buscar")({
@@ -36,7 +37,11 @@ export const Route = createFileRoute("/buscar")({
       },
     ],
   }),
-  component: BuscarPage,
+  component: () => (
+    <OffersGate>
+      <BuscarPage />
+    </OffersGate>
+  ),
 });
 
 type ScaleFilter = "escalados" | "todos" | "escaladissimo";

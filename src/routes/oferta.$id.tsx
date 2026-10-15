@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { StatusBadge, CategoryBadge } from "@/components/offer-card";
+import { OffersGate } from "@/components/offers-gate";
 import { ShareOfferModal } from "@/components/share-offer-modal";
 import { getOffer } from "@/lib/offers.functions";
 import { extractPrice } from "@/lib/offer-heuristics";
@@ -47,10 +48,6 @@ const offerQuery = (id: string) =>
   });
 
 export const Route = createFileRoute("/oferta/$id")({
-  loader: async ({ params, context }) => {
-    const res = await context.queryClient.ensureQueryData(offerQuery(params.id));
-    if (!res.offer) throw notFound();
-  },
   head: () => ({
     meta: [
       { title: "Detalhes da oferta — Modelads" },
@@ -69,7 +66,11 @@ export const Route = createFileRoute("/oferta/$id")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  component: OfferDetail,
+  component: () => (
+    <OffersGate>
+      <OfferDetail />
+    </OffersGate>
+  ),
   errorComponent: ({ error }) => (
     <AppShell>
       <div className="py-20 text-center text-sm text-muted-foreground">
@@ -118,7 +119,8 @@ function OfferDetail() {
   const navigate = useNavigate();
   const { isPro } = useAuth();
   const { data } = useSuspenseQuery(offerQuery(params.id));
-  const offer = data.offer!;
+  if (!data.offer) throw notFound();
+  const offer = data.offer;
   const ads = data.ads ?? [];
 
   const [expanded, setExpanded] = useState(false);

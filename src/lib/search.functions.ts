@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { classifyStatus, inferProductType, inferStructure, isWhatsappFunnel, stripSnapshotSecrets, type ProductType } from "./offer-heuristics";
 import type { OfferStatus, OfferStructure } from "./offers-shape";
 
@@ -54,10 +55,15 @@ function computeActiveDays(start?: string): number {
 }
 
 export const searchOffersLive = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { term: string }) => ({
     term: String(input.term ?? "").trim().slice(0, 120),
   }))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { data: allowed } = await context.supabase.rpc("can_view_offers");
+    if (!allowed) {
+      return { results: [] as LiveSearchResult[], error: "Ative um plano para ver as ofertas." as string | null };
+    }
     const term = data.term;
     if (!term) return { results: [] as LiveSearchResult[], error: null as string | null };
     const token = process.env.META_ACCESS_TOKEN;

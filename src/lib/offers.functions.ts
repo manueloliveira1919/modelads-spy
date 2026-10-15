@@ -1,27 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { rowToOffer, type Offer } from "./offers-shape";
 
-function serverSupabase() {
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY!;
-  return createClient(url, key, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: {
-      fetch: (input, init) => {
-        const h = new Headers(init?.headers);
-        if (key.startsWith("sb_") && h.get("Authorization") === `Bearer ${key}`) {
-          h.delete("Authorization");
-        }
-        h.set("apikey", key);
-        return fetch(input, { ...init, headers: h });
-      },
-    },
-  });
-}
-
-export const listOffers = createServerFn({ method: "GET" }).handler(async () => {
-  const supabase = serverSupabase();
+// Ofertas exigem login e plano pago: as RPCs devolvem vazio para contas free.
+export const listOffers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+  const supabase = context.supabase;
   // 1 card = 1 OFERTA (produto de um anunciante), nunca 1 anúncio e nunca
   // DISTINCT ON (page_id). Só ofertas qualificadas (5+ dias E 10+ anúncios
   // da mesma oferta) e aprovadas nos filtros de qualidade (destino próprio,
@@ -54,9 +39,10 @@ export interface OfferAd {
 }
 
 export const getOffer = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
   .inputValidator((input: { id: string }) => ({ id: String(input.id) }))
-  .handler(async ({ data }) => {
-    const supabase = serverSupabase();
+  .handler(async ({ data, context }) => {
+    const supabase = context.supabase;
     const [offerRes, adsRes] = await Promise.all([
       supabase.rpc("get_offer_row", { p_id: data.id }),
       supabase.rpc("list_offer_ads", { p_id: data.id }),
