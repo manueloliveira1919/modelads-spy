@@ -22,7 +22,16 @@ export type SectionType =
   | "benefitStrip" | "embeddedQuiz" | "bonusCards" | "printCarousel" | "materialIndex"
   | "pricingPlans" | "trustBadges" | "checklistAccordion" | "iconCards" | "textPhoto" | "finalCta";
 
-export type Align = "left" | "center" | "right";
+export type Align = "left" | "center" | "right" | "justify";
+
+export interface ElementStyle {
+  font?: string; size?: number; weight?: number; italic?: boolean; lineHeight?: number; letterSpacing?: number;
+  color?: string; align?: Align; marginTop?: number; marginBottom?: number; marginX?: number;
+  paddingTop?: number; paddingBottom?: number; paddingX?: number; bg?: string; background?: PageBackground;
+  borderColor?: string; borderWidth?: number; radius?: number; width?: number; hidden?: boolean; removed?: boolean;
+}
+export interface CustomPageElement { id: string; type: "text" | "image" | "button" | "icon" | "video"; value: string; button?: PageButton }
+export interface ButtonDestination { type: "url" | "whatsapp" | "section" | "popular"; sectionId?: string; phone?: string; message?: string; popularAction?: "scroll" | "checkout" }
 
 export interface SectionStyle {
   bg?: string;
@@ -51,7 +60,8 @@ export interface PageButton {
   variant?: "solid" | "outline" | "text";
   radius?: number;
   size?: number;
-  guarantee?: { days?: string; topText?: string; bottomText?: string; variant?: string; color?: string; size?: number };
+  destination?: ButtonDestination;
+  guarantee?: { days?: string; topText?: string; bottomText?: string; variant?: string; color?: string; size?: number; mode?: "default" | "image"; image?: string; hidden?: boolean };
 }
 
 export interface PageBackground {
@@ -72,6 +82,9 @@ export interface PageSection {
   content: Record<string, any> & { items?: Item[] };
   style: SectionStyle;
   elementOrder?: string[];
+  elementStyles?: Record<string, ElementStyle>;
+  groupOrders?: Record<string, string[]>;
+  customElements?: CustomPageElement[];
 }
 
 export interface PageSettings {
