@@ -31,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadRoles(uid: string | null) {
     if (!uid) {
       setRoles([]);
+      setPlan("free");
       return;
     }
     const [{ data }, planRes] = await Promise.all([

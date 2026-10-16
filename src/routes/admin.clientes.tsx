@@ -144,14 +144,28 @@ function ClientesPage() {
   }, [profilesQuery.data, search]);
 
   const setRoleMut = useMutation({
-    mutationFn: async (args: { userId: string; role: Role }) => {
-      // Substitui todos os papéis por um único: apaga e insere.
-      const del = await supabase.from("user_roles").delete().eq("user_id", args.userId);
-      if (del.error) throw del.error;
-      const ins = await supabase
-        .from("user_roles")
-        .insert({ user_id: args.userId, role: args.role });
-      if (ins.error) throw ins.error;
+    mutationFn: async (args: { userId: string; role: Role | "cakto" }) => {
+      if (args.role === "admin") {
+        const ins = await supabase
+          .from("user_roles")
+          .insert({ user_id: args.userId, role: "admin" });
+        if (ins.error && ins.error.code !== "23505") throw ins.error;
+      } else {
+        if (rolesQuery.data?.get(args.userId)?.includes("admin")) {
+          const del = await supabase
+            .from("user_roles")
+            .delete()
+            .eq("user_id", args.userId)
+            .eq("role", "admin");
+          if (del.error) throw del.error;
+        }
+        // Plano manual (ou volta para Cakto): validado como admin no servidor.
+        const { error } = await supabase.rpc("admin_set_user_plan", {
+          p_user_id: args.userId,
+          p_plan: args.role === "plus" ? "pro" : args.role,
+        });
+        if (error) throw error;
+      }
       await logSystem({
         action: "user.plan_change",
         kind: "user",
