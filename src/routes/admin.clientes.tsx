@@ -322,6 +322,11 @@ function ClientesPage() {
                             <Repeat className="mr-2 h-4 w-4" /> {r}
                           </DropdownMenuItem>
                         ))}
+                        <DropdownMenuItem
+                          onClick={() => setRoleMut.mutate({ userId: p.id, role: "cakto" })}
+                        >
+                          <Repeat className="mr-2 h-4 w-4" /> Seguir assinatura Cakto
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           onClick={() => {
