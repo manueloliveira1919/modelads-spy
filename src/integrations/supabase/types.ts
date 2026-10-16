@@ -1362,6 +1362,35 @@ export type Database = {
         }
         Relationships: []
       }
+      user_plan_overrides: {
+        Row: {
+          plan_code: string
+          set_at: string
+          set_by: string | null
+          user_id: string
+        }
+        Insert: {
+          plan_code: string
+          set_at?: string
+          set_by?: string | null
+          user_id: string
+        }
+        Update: {
+          plan_code?: string
+          set_at?: string
+          set_by?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_plan_overrides_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -1449,6 +1478,10 @@ export type Database = {
     Functions: {
       admin_adjust_credits: {
         Args: { p_amount: number; p_reason?: string; p_user_id: string }
+        Returns: Json
+      }
+      admin_set_user_plan: {
+        Args: { p_plan: string; p_user_id: string }
         Returns: Json
       }
       cakto_claim_pending: {
@@ -1542,7 +1575,9 @@ export type Database = {
         Args: { p_rows: Json; p_user_id: string }
         Returns: Json
       }
+      get_effective_plan: { Args: { _user_id: string }; Returns: Json }
       get_my_entitlements: { Args: never; Returns: Json }
+      get_my_plan: { Args: never; Returns: Json }
       get_offer_row: {
         Args: { p_id: string }
         Returns: {
