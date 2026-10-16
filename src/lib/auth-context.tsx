@@ -26,14 +26,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
+  const [plan, setPlan] = useState<string>("free");
 
   async function loadRoles(uid: string | null) {
     if (!uid) {
       setRoles([]);
+      setPlan("free");
       return;
     }
-    const { data } = await supabase.from("user_roles").select("role").eq("user_id", uid);
+    const [{ data }, planRes] = await Promise.all([
+      supabase.from("user_roles").select("role").eq("user_id", uid),
+      supabase.rpc("get_my_plan"),
+    ]);
     setRoles(((data ?? []) as { role: AppRole }[]).map((r) => r.role));
+    setPlan(((planRes.data as { plan?: string } | null)?.plan ?? "free") as string);
   }
 
   useEffect(() => {
@@ -58,9 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Plano efetivo vem do servidor (get_effective_plan); papéis só definem admin.
   const isAdmin = roles.includes("admin");
-  const isPremium = isAdmin || roles.includes("premium");
-  const isPro = isAdmin || isPremium || roles.includes("pro") || roles.includes("plus");
+  const isPremium = isAdmin || plan === "premium";
+  const isPro = isAdmin || isPremium || plan === "pro";
   const isPlus = isPro;
 
   const value: AuthState = {
