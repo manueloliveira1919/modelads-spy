@@ -80,6 +80,8 @@ export function CategoryBadge({
 
 export function OfferCard({ offer }: { offer: Offer }) {
   const { fav, toggle } = useFavorite(offer.id);
+  const [failedCover, setFailedCover] = useState<string | null>(null);
+  const cover = offer.previewUrl && failedCover !== offer.previewUrl ? offer.previewUrl : null;
   // Preço da página de destino real quando existir (mais confiável que o texto do anúncio).
   const price = offer.landingPrice ?? extractPrice(`${offer.headline} ${offer.description}`);
   const structure = offer.landingStructure ?? offer.structure;
@@ -91,35 +93,30 @@ export function OfferCard({ offer }: { offer: Offer }) {
         params={{ id: offer.id }}
         className="flex flex-1 flex-col"
       >
-        {/* MÍDIA — compacta quando não há imagem real */}
-        {offer.creativeUrl ? (
-          <div className="relative aspect-video overflow-hidden bg-muted">
+        {/* Capa persistida: nunca usa uma URL efêmera ou vídeo como imagem. */}
+          <div className="relative aspect-square overflow-hidden rounded-t-xl border-b border-border bg-muted">
+            {cover ? (
             <img
-              src={offer.creativeUrl}
-              alt={offer.headline}
+              src={cover}
+              alt={`Criativo de ${offer.page}`}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
+              decoding="async"
+              onError={() => setFailedCover(cover)}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-muted-foreground">
+                <ImageIcon className="h-10 w-10 opacity-30" />
+                <span className="text-xs opacity-70">Capa indisponível</span>
+              </div>
+            )}
             <MediaBadges offer={offer} />
             {offer.creativeType === "video" && (
-              <div className="absolute bottom-3 right-3 rounded-md bg-black/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white">
+              <div className="absolute bottom-3 right-3 rounded-md bg-background/90 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-foreground">
                 Vídeo
               </div>
             )}
           </div>
-        ) : (
-          <div className="relative flex h-20 items-center gap-2 border-b border-border bg-gradient-to-r from-muted/40 to-transparent px-4">
-            <ImageIcon className="h-4 w-4 shrink-0 text-muted-foreground/50" />
-            <p className="truncate text-[11px] text-muted-foreground/70">
-              Prévia disponível na Biblioteca de Anúncios
-            </p>
-            <div className="ml-auto flex items-center gap-1.5">
-              <StatusBadge status={offer.status} />
-              <LangBadge lang={offer.language} />
-            </div>
-          </div>
-        )}
 
         {/* CORPO */}
         <div className="flex flex-1 flex-col gap-3 p-4">

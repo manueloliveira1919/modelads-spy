@@ -47,6 +47,7 @@ export interface Offer {
   headline: string;
   description: string;
   creativeUrl: string | null;
+  previewUrl?: string | null;
   creativeType: "image" | "video";
   pageUrl: string;
   linkUrl: string | null;

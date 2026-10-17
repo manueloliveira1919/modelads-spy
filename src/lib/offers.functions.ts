@@ -21,8 +21,9 @@ export const listOffers = createServerFn({ method: "GET" })
   // A ordem já vem do banco por confiança (destino, preço, estrutura, escala e
   // tempo no ar) — não reordenar por volume bruto de anúncios.
   const rows = (data ?? []) as Parameters<typeof rowToOffer>[0][];
-
-  return { offers: rows.map(rowToOffer), error: null as string | null };
+  const previews = rows.length ? await supabase.from("offer_previews").select("offer_id,url").eq("status", "ok").in("offer_id", rows.map((row) => row.id)) : { data: [] };
+  const covers = new Map((previews.data ?? []).map((preview) => [preview.offer_id, preview.url]));
+  return { offers: rows.map((row) => ({ ...rowToOffer(row), previewUrl: covers.get(row.id) ?? null })), error: null as string | null };
 });
 
 
@@ -71,6 +72,7 @@ export const getOffer = createServerFn({ method: "GET" })
         : null,
     }));
 
-    return { offer: row ? rowToOffer(row) : null, ads };
+    const preview = row ? await supabase.from("offer_previews").select("url").eq("offer_id", row.id).eq("status", "ok").maybeSingle() : { data: null };
+    return { offer: row ? { ...rowToOffer(row), previewUrl: preview.data?.url ?? null } : null, ads };
   });
 
