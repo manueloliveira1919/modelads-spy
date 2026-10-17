@@ -1,8 +1,13 @@
 # Vitrine — capas de criativos
 - [x] Verificar fontes e criar fila isolada, gerador e botão administrativo
 - [x] Exibir capas/placeholder preservando dados; testes e navegador com conta admin
-- [ ] Ativar bucket público e testar cópia real — bloqueado pela política do workspace; bucket privado criado sem consumir tentativas
-- [ ] Agendamento automático — indisponível neste projeto antigo (sem helper/ferramentas de callbacks gerenciados); não alterar cron da mineração
+- [x] Bucket público ativado; cópia Meta no servidor inviável e substituída pelo caminho da extensão
+- [x] Agendamento automático dispensado pelo usuário
+
+# Extensão 1.4.0 — capas
+- [ ] Miniaturas administrativas com fallback no navegador e lotes leves
+- [ ] Recebimento seguro, armazenamento por anúncio e associação isolada às ofertas
+- [ ] Desativar cópia Meta, atualizar versão/pacote e validar regras e fluxo
 
 # Extensão 1.2.0
 
