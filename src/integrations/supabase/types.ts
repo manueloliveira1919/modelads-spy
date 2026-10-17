@@ -746,6 +746,53 @@ export type Database = {
         }
         Relationships: []
       }
+      offer_previews: {
+        Row: {
+          attempts: number
+          claim_token: string | null
+          claimed_at: string | null
+          last_error: string | null
+          next_attempt_at: string
+          offer_id: string
+          source_ad_id: string | null
+          status: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          attempts?: number
+          claim_token?: string | null
+          claimed_at?: string | null
+          last_error?: string | null
+          next_attempt_at?: string
+          offer_id: string
+          source_ad_id?: string | null
+          status?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          attempts?: number
+          claim_token?: string | null
+          claimed_at?: string | null
+          last_error?: string | null
+          next_attempt_at?: string
+          offer_id?: string
+          source_ad_id?: string | null
+          status?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "offer_previews_offer_id_fkey"
+            columns: ["offer_id"]
+            isOneToOne: true
+            referencedRelation: "offers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       offers: {
         Row: {
           active_days: number
@@ -1499,6 +1546,27 @@ export type Database = {
       }
       cakto_ts: { Args: { p: string }; Returns: string }
       can_view_offers: { Args: never; Returns: boolean }
+      claim_offer_previews: {
+        Args: never
+        Returns: {
+          attempts: number
+          claim_token: string | null
+          claimed_at: string | null
+          last_error: string | null
+          next_attempt_at: string
+          offer_id: string
+          source_ad_id: string | null
+          status: string
+          updated_at: string
+          url: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "offer_previews"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       claim_refresh_jobs: {
         Args: { p_limit?: number }
         Returns: {
