@@ -1,4 +1,9 @@
 # Extensão 1.2.0
+# Vitrine — capas de criativos
+- [ ] Verificar fontes e criar armazenamento/fila isolados
+- [ ] Gerar lotes seguros e botão administrativo; avaliar agendamento disponível
+- [ ] Exibir capas preservando dados e validar fluxo
+
 
 - [x] Galeria com cache, ordenação e alternância da lista original
 - [x] Envio administrativo em lotes e atualização do ZIP
