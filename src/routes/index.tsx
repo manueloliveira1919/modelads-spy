@@ -28,6 +28,8 @@ export const Route = createFileRoute("/")({
           "Encontre ofertas validadas na Meta Ads Library, descubra criativos escaladíssimos e modele o que funciona.",
       },
       { property: "og:title", content: "Modelads" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       {
         property: "og:description",
         content:
