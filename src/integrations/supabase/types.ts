@@ -1993,6 +1993,10 @@ export type Database = {
         Args: { p_exclude_id?: string; p_slug: string }
         Returns: string
       }
+      reconcile_extension_previews: {
+        Args: { p_offer_ids: string[] }
+        Returns: undefined
+      }
       revoke_extension_token: { Args: { p_id: string }; Returns: boolean }
       submit_quiz_lead: {
         Args: {
