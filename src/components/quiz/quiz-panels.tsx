@@ -48,6 +48,7 @@ import { clearRunProperty } from "@/lib/quiz-rich-text";
 import { useQuizRichText, type RichCommand } from "./quiz-rich-toolbar";
 import { QUIZ_THEMES, applyQuizTheme, readableQuizText } from "@/lib/quiz-themes";
 import { uploadPageImage } from "@/lib/sales-page-api";
+import { QUIZ_BUTTON_DELAYS } from "@/lib/quiz-button";
 export const ELEMENT_LABEL: Record<ElementType, string> = {
   text: "Texto",
   image: "Imagem",
@@ -198,6 +199,7 @@ function Chips({
     </Field>
   );
 }
+function DelayControls({ value, onChange }: { value: unknown; onChange: (v: number) => void }) { return <Chips label="Aparecer após" value={Number(value) || 0} items={QUIZ_BUTTON_DELAYS.map(v => [v, v === 0 ? "Imediato" : `${v}s`] as const)} onChange={onChange} />; }
 export function AlignControls({
   value,
   onChange,
@@ -301,6 +303,7 @@ export function ElementEditor({
           </Field>
         </div></details>
       )}
+      {el.type === "button" && <DelayControls value={st.delaySeconds} onChange={delaySeconds => setSt({ delaySeconds })} />}
       {el.type === "button" && (
         <details className="q-panel-details"><summary>Mais opções</summary><div className="space-y-4 pt-4">
           <SelectField
@@ -768,6 +771,8 @@ function ResultEditor({
   return (
     <div className="space-y-3">
       <Label>O que mostrar</Label>
+      <Toggle label="Botão" value={st.showButton === true} onChange={showButton => setSt({ showButton })} />
+      {st.showButton === true && <div className="space-y-3"><Field label="Texto do botão"><Input value={String(ct.buttonText || "Continuar")} onChange={e => setCt({ buttonText: e.target.value, buttonTextRuns: [] })} /></Field><SelectField label="Ação do botão" value={String(st.buttonAction || "none")} options={[{ value: "none", label: "Avançar" }, { value: "url", label: "Abrir link" }, { value: "whatsapp", label: "WhatsApp" }, { value: "checkout", label: "Checkout" }]} onChange={buttonAction => setSt({ buttonAction })} />{["url", "checkout"].includes(String(st.buttonAction)) && <Field label="Destino do botão"><Input value={String(st.buttonUrl || "")} placeholder="https://..." onChange={e => setSt({ buttonUrl: e.target.value })} /></Field>}{st.buttonAction === "whatsapp" && <><Field label="WhatsApp com DDD"><Input value={String(st.buttonPhone || "")} onChange={e => setSt({ buttonPhone: e.target.value })} /></Field><Field label="Mensagem"><Textarea value={String(st.buttonMessage || "")} onChange={e => setSt({ buttonMessage: e.target.value })} /></Field></>}{st.buttonAction && st.buttonAction !== "none" && <Toggle label="Abrir botão em nova aba" value={st.buttonTarget !== "_self"} onChange={v => setSt({ buttonTarget: v ? "_blank" : "_self" })} />}<DelayControls value={st.buttonDelaySeconds} onChange={buttonDelaySeconds => setSt({ buttonDelaySeconds })} /></div>
       <Toggle label="Pontuação" value={st.showScore !== false} onChange={showScore => setSt({ showScore })} />
       <Toggle label="Percentual" value={st.showPercent !== false} onChange={showPercent => setSt({ showPercent })} />
       <Toggle label="Medidor" value={st.chart !== "none"} onChange={v => setSt({ chart: v ? "bar" : "none" })} />

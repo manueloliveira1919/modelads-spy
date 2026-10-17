@@ -62,6 +62,7 @@ export function QuizRunner({
   const [error, setError] = useState<string | null>(null);
   const [anim, setAnim] = useState<"in" | "out">("in");
   const [saving, setSaving] = useState(false);
+  const [visit, setVisit] = useState(0);
 
   const total = sections.length;
   const index = Math.min(session.current_section, Math.max(0, total - 1));
@@ -74,6 +75,7 @@ export function QuizRunner({
       setError(null);
       setAnim("out");
       window.setTimeout(() => {
+        setVisit(v => v + 1);
         setSession((s) => {
           const last = Math.max(0, total - 1);
           const cur = Math.min(s.current_section, last);
@@ -102,6 +104,7 @@ export function QuizRunner({
   const restart = useCallback(() => {
     setError(null);
     setSession(newSession(quizId));
+    setVisit(v => v + 1);
   }, [quizId]);
 
   const setOptions = (sectionId: string, elementId: string, optionIds: string[]) => {
@@ -231,7 +234,7 @@ export function QuizRunner({
   );
   const [readyResults, setReadyResults] = useState<Set<string>>(() => new Set());
   // Readiness is scoped to each visit, including Back and Restart, never reused across analyses.
-  const visitKey = `${session.session_id}-${section?.id}-${session.history?.length ?? 0}`;
+  const visitKey = `${session.session_id}-${section?.id}-${visit}`;
   const readyIds = new Set(section?.elements.filter(e => readyResults.has(`${visitKey}-${e.id}`)).map(e => e.id));
   const buttonsReady = !section || !sectionAnalysisPending(section, readyIds);
   const resultReady = !!section?.elements.some(e => e.type === "result" && readyIds.has(e.id));

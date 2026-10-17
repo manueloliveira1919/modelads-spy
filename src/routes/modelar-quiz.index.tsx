@@ -11,6 +11,7 @@ import {
   Plus,
   Trash2,
   Users,
+  Sparkles,
 } from "lucide-react";
 
 import { toast } from "sonner";
@@ -44,9 +45,14 @@ import {
   duplicateQuiz,
   listQuizzes,
   SlugTakenError,
+  loadQuiz,
+  createQuizFromTemplate,
 } from "@/lib/quiz-api";
 import { useSlugAvailability } from "@/lib/use-slug-availability";
 import { QUIZ_TEMPLATES, slugify, type QuizListItem } from "@/lib/quiz-types";
+
+import { QuizExportMenu, QuizTemplateInput } from "@/components/quiz/quiz-template-controls";
+import type { QuizTemplate } from "@/lib/quiz-template";
 
 export const Route = createFileRoute("/modelar-quiz/")({
   head: () => ({
@@ -95,7 +101,7 @@ function QuizListContent() {
   });
 
   const duplicateMut = useMutation({
-    mutationFn: (id: string) => duplicateQuiz(id, user!.id),
+    mutationFn: (id: string) => { if (!user) throw new Error("Entre na sua conta."); return duplicateQuiz(id, user.id); },
     onSuccess: () => {
       toast.success("Quiz duplicado como rascunho.");
       qc.invalidateQueries({ queryKey: ["quizzes"] });
@@ -114,7 +120,7 @@ function QuizListContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-end gap-3">
+      <div className="flex flex-wrap items-center justify-end gap-3"><QuizAiLink />
         <Button onClick={() => setCreateOpen(true)} className="bg-gradient-brand text-white">
           <Plus className="mr-1.5 h-4 w-4" /> Criar novo Quiz
         </Button>
@@ -145,7 +151,7 @@ function QuizListContent() {
           </p>
           <Button onClick={() => setCreateOpen(true)} className="mt-5 bg-gradient-brand text-white">
             <Plus className="mr-1.5 h-4 w-4" /> Criar novo Quiz
-          </Button>
+          </Button><div className="mt-3"><QuizAiLink /></div>
         </div>
       )}
 
@@ -218,7 +224,7 @@ function QuizListContent() {
                 onClick={() => setPendingDelete(q)}
               >
                 <Trash2 className="mr-1 h-3.5 w-3.5" /> Excluir
-              </Button>
+              </Button><QuizExportMenu getData={() => loadQuiz(q.id)} />
             </div>
 
           </article>
@@ -260,6 +266,8 @@ function QuizListContent() {
   );
 }
 
+function QuizAiLink() { return <Button asChild variant="secondary" className="q-ai-secondary"><Link to="/modelar-quiz/gerar-com-ia"><Sparkles className="h-4 w-4" />Gerar quiz com IA</Link></Button>; }
+
 function NewQuizDialog({
   open,
   onOpenChange,
@@ -273,7 +281,8 @@ function NewQuizDialog({
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [slugTouched, setSlugTouched] = useState(false);
-  const [mode, setMode] = useState<"blank" | "template">("blank");
+  const [mode, setMode] = useState<"blank" | "template" | "import" | "ai">("blank");
+  const [imported, setImported] = useState<QuizTemplate | null>(null);
   const [templateKey, setTemplateKey] = useState(QUIZ_TEMPLATES[0].key);
 
   useEffect(() => {
@@ -282,6 +291,7 @@ function NewQuizDialog({
       setSlug("");
       setSlugTouched(false);
       setMode("blank");
+      setImported(null);
       setTemplateKey(QUIZ_TEMPLATES[0].key);
     }
   }, [open]);
@@ -291,13 +301,16 @@ function NewQuizDialog({
   const slugCheck = useSlugAvailability(effectiveSlug);
 
   const mut = useMutation({
-    mutationFn: () =>
-      createQuiz({
-        userId: user!.id,
+    mutationFn: () => {
+      if (!user) throw new Error("Entre na sua conta.");
+      if (mode === "import") { if (!imported) throw new Error("Importe um template válido."); return createQuizFromTemplate({ userId: user.id, name, slug: effectiveSlug, template: imported }); }
+      return createQuiz({
+        userId: user.id,
         name,
         slug: effectiveSlug,
         templateKey: mode === "template" ? templateKey : null,
-      }),
+      });
+    },
     onSuccess: (id) => {
       onOpenChange(false);
       onCreated(id);
@@ -361,7 +374,7 @@ function NewQuizDialog({
                     className="h-7 text-xs"
                     onClick={() => {
                       setSlugTouched(true);
-                      setSlug(slugCheck.suggestion!);
+                      if (slugCheck.suggestion) setSlug(slugCheck.suggestion);
                     }}
                   >
                     Usar {slugCheck.suggestion}
@@ -372,24 +385,27 @@ function NewQuizDialog({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
-            {(["blank", "template"] as const).map((m) => (
-              <button
+            {(["blank", "template", "import", "ai"] as const).map((m) => (
+              <Button
+                variant="outline"
                 key={m}
                 type="button"
                 onClick={() => setMode(m)}
                 className={cn(
-                  "rounded-xl border p-3 text-left text-sm font-semibold transition-colors",
+                  "h-auto flex-col items-start whitespace-normal rounded-lg border p-3 text-left text-sm font-semibold transition-colors",
                   mode === m ? "border-brand bg-brand/10" : "border-border hover:border-brand/40",
                 )}
               >
-                {m === "blank" ? "Começar do zero" : "Usar template"}
+                {m === "blank" ? "Começar do zero" : m === "template" ? "Usar template" : m === "import" ? "Importar template (JSON)" : "Gerar com IA"}
                 <span className="mt-1 block text-xs font-normal text-muted-foreground">
-                  {m === "blank" ? "Somente uma capa" : "Estrutura pronta e editável"}
+                  {m === "blank" ? "Somente uma capa" : m === "template" ? "Estrutura pronta e editável" : m === "import" ? "Colar ou escolher arquivo" : "Em breve"}
                 </span>
-              </button>
+              </Button>
             ))}
           </div>
 
+          {mode === "import" && <QuizTemplateInput onParsed={t => { setImported(t); if (t && !name.trim()) setName(t.name); }} />}
+          {mode === "ai" && <div className="space-y-3"><p className="text-sm text-muted-foreground">A geração de quizzes com IA estará disponível em breve.</p><Button asChild variant="secondary"><Link to="/modelar-quiz/gerar-com-ia"><Sparkles className="h-4 w-4" />Abrir gerador</Link></Button></div>}
           {mode === "template" && (
             <div className="space-y-2">
               {QUIZ_TEMPLATES.map((t) => (
@@ -421,7 +437,7 @@ function NewQuizDialog({
           </Button>
           <Button
             disabled={
-              !name.trim() ||
+              !name.trim() || mode === "ai" || (mode === "import" && !imported) ||
               mut.isPending ||
               slugCheck.status === "taken" ||
               slugCheck.status === "checking"
