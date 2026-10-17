@@ -11,6 +11,7 @@ import { QUIZ_FONTS, QUIZ_ANIMATIONS } from "./quiz-visual";
 import { hasCycle } from "./quiz-logic";
 
 export const QUIZ_TEMPLATE_MAX_BYTES = 1024 * 1024;
+export const QUIZ_TEMPLATE_FORMAT_ERROR = "Esse arquivo não está no formato do Modelads (parece gerado sem as instruções). Abra o guia 'Criar com ChatGPT/Claude', copie o prompt e peça de novo.";
 const hex = z.string().regex(/^#[0-9a-f]{6}$/i, "Cor inválida: use #rrggbb.");
 const color = z.union([hex, z.literal("")]);
 const font = z.enum(QUIZ_FONTS, { errorMap: () => ({ message: "Fonte não permitida." }) });
@@ -85,17 +86,25 @@ export function parseQuizTemplate(input: string | unknown): QuizTemplate {
   try {
     const json = typeof input === "string" ? input : JSON.stringify(input);
     if (new TextEncoder().encode(json).byteLength > QUIZ_TEMPLATE_MAX_BYTES) throw new Error("O template deve ter no máximo 1 MB.");
-    raw = JSON.parse(json);
+    const cleaned = json.replace(/^\uFEFF/, "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    const first = cleaned.indexOf("{"), last = cleaned.lastIndexOf("}");
+    raw = JSON.parse(first >= 0 && last >= first ? cleaned.slice(first, last + 1) : cleaned);
   } catch (e) { if (e instanceof Error && e.message.includes("1 MB")) throw e; throw new Error("JSON inválido. Confira vírgulas, aspas e chaves."); }
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    const obj = raw as Record<string, unknown>;
+    if ((!obj.format || !obj.sections) && ["funnel", "template", "template_name", "questions", "entry"].some(key => key in obj)) throw new Error(QUIZ_TEMPLATE_FORMAT_ERROR);
+  }
   checkLinks(raw);
   const parsed = schema.safeParse(raw);
   if (!parsed.success) {
-    const issue = parsed.error.issues[0];
+    const messages = parsed.error.issues.slice(0, 5).map(issue => {
     const field = issue.path[issue.path.length - 1];
-    if (field === "version") throw new Error("Versão de template desconhecida. Use version: 1.");
-    if (field === "format") throw new Error('Formato inválido. Use "modelads-quiz-template".');
-    if (field === "type") { const val = issue.path.reduce<unknown>((v, k) => v && typeof v === "object" ? (v as Record<string | number, unknown>)[k] : undefined, raw); throw new Error(`${context(issue.path)}: tipo '${String(val)}' não existe.`); }
-    throw new Error(`${context(issue.path)}: ${issue.message.startsWith("Expected") ? "Campo inválido ou obrigatório ausente." : issue.message}`);
+    if (field === "version") return "Versão de template desconhecida. Use version: 1.";
+    if (field === "format") return 'Formato inválido. Use "modelads-quiz-template".';
+    if (field === "type") { const val = issue.path.reduce<unknown>((v, k) => v && typeof v === "object" ? (v as Record<string | number, unknown>)[k] : undefined, raw); return `${context(issue.path)}: tipo '${String(val)}' não existe.`; }
+    return `${context(issue.path)}: ${issue.message.startsWith("Expected") || issue.message === "Required" || issue.message.startsWith("Invalid") ? "Campo inválido ou obrigatório ausente." : issue.message}`;
+    });
+    throw new Error(messages.join("\n"));
   }
   const template = parsed.data;
   const keys = new Set(template.sections.map(s => s.key));
@@ -140,7 +149,17 @@ export function exportQuizTemplate(quiz: Pick<Quiz, "name" | "settings">, sectio
   }) }));
   return parseQuizTemplate({ format: "modelads-quiz-template", version: 1, name: quiz.name, settings: quiz.settings, sections: portable });
 }
-export const QUIZ_AI_INSTRUCTIONS = `Crie somente JSON válido, sem markdown, no contrato Modelads Quiz:
+export const QUIZ_AI_EXAMPLE = {
+  format: "modelads-quiz-template", version: 1, name: "Diagnóstico de aprendizagem", settings: {},
+  sections: [
+    { key: "s1", name: "Pergunta", type: "question", elements: [{ type: "options", content: { description: "Quanto você já praticou?", options: [{ label: "Estou começando", value: 0 }, { label: "Já pratico", value: 5 }] }, settings: { selection: "single", required: true } }] },
+    { key: "s2", name: "Resultado", type: "result", elements: [{ type: "result", content: { title: "Seu resultado", ranges: [{ min: 0, max: 4, title: "Primeiros passos", description: "Comece pelo básico." }, { min: 5, max: null, title: "Próximo nível", description: "Aprofunde sua prática." }] }, settings: { loading: false, showScore: true, showButton: true, buttonAction: "none", buttonDelaySeconds: 0 } }] },
+    { key: "s3", name: "Captura", type: "capture", elements: [{ type: "text", content: { text: "Seus dados serão usados para entrar em contato. Consulte nossa política de privacidade." }, settings: {} }, { type: "fields", content: { fields: [{ key: "name", label: "Nome", enabled: true, required: true }, { key: "whatsapp", label: "WhatsApp", enabled: true, required: true }] }, settings: {} }] },
+  ],
+};
+const AI_OUTPUT_RULE = "Responda SOMENTE com o JSON, dentro de um único bloco de código, sem texto antes ou depois. O nível de cima do JSON deve ter exatamente: format, version, name, description (opcional), settings e sections. NÃO use chaves como funnel, template, questions, entry ou template_name.";
+export const QUIZ_AI_INSTRUCTIONS = `${AI_OUTPUT_RULE}
+Use o contrato Modelads Quiz:
 {"format":"modelads-quiz-template","version":1,"name":"Nome do quiz","description":"Opcional","settings":{},"sections":[{"key":"s1","name":"Capa","type":"cover","elements":[{"type":"text","content":{"text":"Seu título","runs":[{"t":"Seu título","b":true}]},"settings":{"size":32}},{"type":"button","content":{"label":"Começar"},"settings":{"cta":"none","delaySeconds":0}}]}]}
 Não inclua ids, user, slug ou leads. Máximo 1 MB, 40 seções e 60 elementos por seção.
 Tipos de seção: cover, content, question, result, capture. Tipos de elemento: ${types.join(", ")}.
@@ -150,4 +169,12 @@ Resultado: content.title/titleRuns, subtitle/subtitleRuns, description/descripti
 Tipografia settings: fontFamily,size:10..120,weight:300..800,align=left|center|right,color,spacing,fontStyle=normal|italic,textDecoration=none|underline,lineHeight:1..2.2,letterSpacing:0..12,animation=none|fade-in|fade-up|fade-down|fade-left|fade-right|zoom-in|zoom-out|bounce|pulse,animationDuration:0.2..3,animationDelay:0..2. Botão/imagem: width,radius,height,bg.
 Runs: [{t:string,color?,font?,b?,i?,u?}], mantendo texto simples sincronizado. Cores SOMENTE #rrggbb. Fontes SOMENTE ${QUIZ_FONTS.join(", ")}. Links SOMENTE http/https/tel/mailto, nunca javascript, HTML ou scripts.
 Settings globais: font; background:{type:color|gradient|image,color,gradientFrom,gradientTo,imageUrl}; colors:{primary,secondary,text,button,buttonText}; button:{radius,height,width:auto|full}; layout:{contentWidth,spacing,align}; progress:{enabled,showPercentage,thickness,radius,style:solid|gradient}.
-Cada seção tem key única. Destinos next referenciam keys, não ids. Não crie ciclos. Todos os campos visuais opcionais usam os padrões do editor.`;
+Cada seção tem key única. Destinos next referenciam keys, não ids. Não crie ciclos. Todos os campos visuais opcionais usam os padrões do editor.
+O Modelads soma pontos: cada opção pode ter value (inteiro ≥ 0) e o bloco result usa ranges (min/max) pela soma total; NÃO existe pontuação por perfil/categoria. Para resultados diferentes por resposta use options[].next apontando para a key de uma seção (só para seções à frente). Cada seção é uma tela; se não houver botão aparece 'Continuar' automaticamente. Não existe caixa de consentimento nem eventos de rastreamento; coloque o aviso de privacidade como um elemento text. Quando não souber um link, use https://exemplo.com/substituir. Se o usuário pedir algo que o Modelads não suporta, adapte ao que existe em vez de inventar campos. Peça e gere um quiz por vez.
+Segundo exemplo — pergunta com pontos, resultado por faixas e captura:
+${JSON.stringify(QUIZ_AI_EXAMPLE, null, 2)}
+${AI_OUTPUT_RULE}`;
+
+export function buildQuizAiPrompt(userRequest: string): string {
+  return `${QUIZ_AI_INSTRUCTIONS}\n\nPEDIDO DO USUÁRIO:\n${userRequest.trim()}\n\n${AI_OUTPUT_RULE}`;
+}
