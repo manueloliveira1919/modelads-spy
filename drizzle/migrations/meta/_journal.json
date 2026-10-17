@@ -106,6 +106,13 @@
       "when": 1792198327660,
       "tag": "0014_isolated_offer_previews",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792201714257,
+      "tag": "0015_extension_creative_thumbnails",
+      "breakpoints": true
     }
   ]
 }
