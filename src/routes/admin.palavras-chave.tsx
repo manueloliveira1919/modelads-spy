@@ -93,6 +93,7 @@ function downloadCsv(filename: string, content: string) {
 
 
 export const Route = createFileRoute("/admin/palavras-chave")({
+  head: () => ({ meta: [{ title: "Palavras-chave — Admin Modelads" }, { name: "description", content: "Gerencie as palavras-chave comerciais do Modelads." }, { property: "og:title", content: "Palavras-chave — Admin Modelads" }, { property: "og:description", content: "Gerencie as palavras-chave comerciais do Modelads." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: KeywordsPage,
 });
 

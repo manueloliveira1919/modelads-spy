@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/table";
 
 export const Route = createFileRoute("/admin/suporte")({
+  head: () => ({ meta: [{ title: "Suporte administrativo — Admin Modelads" }, { name: "description", content: "Acompanhe os atendimentos da plataforma Modelads." }, { property: "og:title", content: "Suporte administrativo — Admin Modelads" }, { property: "og:description", content: "Acompanhe os atendimentos da plataforma Modelads." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: SuportePage,
 });
 

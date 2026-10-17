@@ -45,6 +45,7 @@ import { MoreHorizontal, Search, UserX, UserCheck, Repeat, Coins } from "lucide-
 import { adminAdjustCredits } from "@/lib/entitlements";
 
 export const Route = createFileRoute("/admin/clientes")({
+  head: () => ({ meta: [{ title: "Clientes — Admin Modelads" }, { name: "description", content: "Administre os clientes e planos do Modelads." }, { property: "og:title", content: "Clientes — Admin Modelads" }, { property: "og:description", content: "Administre os clientes e planos do Modelads." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ClientesPage,
 });
 

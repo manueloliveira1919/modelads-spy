@@ -50,6 +50,7 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/blacklist")({
+  head: () => ({ meta: [{ title: "Blacklist — Admin Modelads" }, { name: "description", content: "Gerencie as exclusões comerciais do Modelads." }, { property: "og:title", content: "Blacklist — Admin Modelads" }, { property: "og:description", content: "Gerencie as exclusões comerciais do Modelads." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: BlacklistPage,
 });
 
