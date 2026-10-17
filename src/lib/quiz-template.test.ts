@@ -11,7 +11,7 @@ describe("Portable quiz template rules", () => {
   it("enforces 40 sections", () => expect(() => parseQuizTemplate({ ...base(), sections: Array.from({ length: 41 }, (_, i) => ({ ...base().sections[0], key: `s${i}` })) })).toThrow("40 seções"));
   it("enforces 60 elements per section", () => { const t = base(); t.sections[0].elements = Array.from({ length: 61 }, () => t.sections[0].elements[0]); expect(() => parseQuizTemplate(t)).toThrow("60 elementos"); });
   it("enforces 1 MB including unknown fields", () => expect(() => parseQuizTemplate({ ...base(), extra: "a".repeat(QUIZ_TEMPLATE_MAX_BYTES) })).toThrow("1 MB"));
-  it.each(["javascript:alert(1)", "data:text/html,evil", "vbscript:evil", "//evil.example"])('rejects unsafe href %s even as an unknown field', href => expect(() => parseQuizTemplate({ ...base(), href })).toThrow("Link não permitido"));
+  it.each(["javascript:alert(1)", "data:text/html,evil", "vbscript:evil", "//evil.example"])('rejects unsafe href %s even as an unknown field', href => expect(() => parseQuizTemplate({ ...base(), href })).toThrow(/link não permitido/i));
   it("permits only allowed protocols", () => { for (const url of ["https://example.com", "http://example.com", "tel:+5511999999999", "mailto:a@example.com"]) expect(parseQuizTemplate({ ...base(), sections: [{ ...base().sections[0], elements: [{ type: "button", content: {}, settings: { ctaUrl: url } }] }] }).sections[0].elements[0].settings.ctaUrl).toBe(url); });
   it("rejects non-hex colors", () => expect(() => parseQuizTemplate({ ...base(), settings: { colors: { primary: "red" } } })).toThrow("#rrggbb"));
   it("rejects unsupported fonts", () => expect(() => parseQuizTemplate({ ...base(), settings: { font: "Comic Sans" } })).toThrow("Fonte"));
