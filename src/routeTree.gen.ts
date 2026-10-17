@@ -51,6 +51,7 @@ import { Route as CriadorPaginasIdRouteImport } from './routes/criador-paginas.$
 import { Route as CriadorPaginasGerarComIaRouteImport } from './routes/criador-paginas.gerar-com-ia'
 import { Route as ModelarQuizIndexRouteImport } from './routes/modelar-quiz.index'
 import { Route as ModelarQuizIdRouteImport } from './routes/modelar-quiz.$id'
+import { Route as ModelarQuizGerarComIaRouteImport } from './routes/modelar-quiz.gerar-com-ia'
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as QuizSlugRouteImport } from './routes/quiz.$slug'
@@ -273,6 +274,11 @@ const ModelarQuizIdRoute = ModelarQuizIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => ModelarQuizRoute,
 } as any)
+const ModelarQuizGerarComIaRoute = ModelarQuizGerarComIaRouteImport.update({
+  id: '/gerar-com-ia',
+  path: '/gerar-com-ia',
+  getParentRoute: () => ModelarQuizRoute,
+} as any)
 const OfertaIdRoute = OfertaIdRouteImport.update({
   id: '/oferta/$id',
   path: '/oferta/$id',
@@ -369,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/criador-paginas/$id': typeof CriadorPaginasIdRoute
   '/criador-paginas/gerar-com-ia': typeof CriadorPaginasGerarComIaRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
+  '/modelar-quiz/gerar-com-ia': typeof ModelarQuizGerarComIaRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
@@ -420,6 +427,7 @@ export interface FileRoutesByTo {
   '/criador-paginas/$id': typeof CriadorPaginasIdRoute
   '/criador-paginas/gerar-com-ia': typeof CriadorPaginasGerarComIaRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
+  '/modelar-quiz/gerar-com-ia': typeof ModelarQuizGerarComIaRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
@@ -475,6 +483,7 @@ export interface FileRoutesById {
   '/criador-paginas/$id': typeof CriadorPaginasIdRoute
   '/criador-paginas/gerar-com-ia': typeof CriadorPaginasGerarComIaRoute
   '/modelar-quiz/$id': typeof ModelarQuizIdRoute
+  '/modelar-quiz/gerar-com-ia': typeof ModelarQuizGerarComIaRoute
   '/oferta/$id': typeof OfertaIdRoute
   '/p/$slug': typeof PSlugRoute
   '/quiz/$slug': typeof QuizSlugRoute
@@ -531,6 +540,7 @@ export interface FileRouteTypes {
     | '/criador-paginas/$id'
     | '/criador-paginas/gerar-com-ia'
     | '/modelar-quiz/$id'
+    | '/modelar-quiz/gerar-com-ia'
     | '/oferta/$id'
     | '/p/$slug'
     | '/quiz/$slug'
@@ -582,6 +592,7 @@ export interface FileRouteTypes {
     | '/criador-paginas/$id'
     | '/criador-paginas/gerar-com-ia'
     | '/modelar-quiz/$id'
+    | '/modelar-quiz/gerar-com-ia'
     | '/oferta/$id'
     | '/p/$slug'
     | '/quiz/$slug'
@@ -636,6 +647,7 @@ export interface FileRouteTypes {
     | '/criador-paginas/$id'
     | '/criador-paginas/gerar-com-ia'
     | '/modelar-quiz/$id'
+    | '/modelar-quiz/gerar-com-ia'
     | '/oferta/$id'
     | '/p/$slug'
     | '/quiz/$slug'
@@ -986,6 +998,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ModelarQuizIdRouteImport
       parentRoute: typeof ModelarQuizRoute
     }
+    '/modelar-quiz/gerar-com-ia': {
+      id: '/modelar-quiz/gerar-com-ia'
+      path: '/gerar-com-ia'
+      fullPath: '/modelar-quiz/gerar-com-ia'
+      preLoaderRoute: typeof ModelarQuizGerarComIaRouteImport
+      parentRoute: typeof ModelarQuizRoute
+    }
     '/oferta/$id': {
       id: '/oferta/$id'
       path: '/oferta/$id'
@@ -1105,12 +1124,14 @@ const CriadorPaginasRouteWithChildren = CriadorPaginasRoute._addFileChildren(
 
 interface ModelarQuizRouteChildren {
   ModelarQuizIdRoute: typeof ModelarQuizIdRoute
+  ModelarQuizGerarComIaRoute: typeof ModelarQuizGerarComIaRoute
   ModelarQuizIndexRoute: typeof ModelarQuizIndexRoute
   ModelarQuizLeadsIdRoute: typeof ModelarQuizLeadsIdRoute
 }
 
 const ModelarQuizRouteChildren: ModelarQuizRouteChildren = {
   ModelarQuizIdRoute: ModelarQuizIdRoute,
+  ModelarQuizGerarComIaRoute: ModelarQuizGerarComIaRoute,
   ModelarQuizIndexRoute: ModelarQuizIndexRoute,
   ModelarQuizLeadsIdRoute: ModelarQuizLeadsIdRoute,
 }
