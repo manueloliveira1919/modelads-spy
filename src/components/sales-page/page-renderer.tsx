@@ -454,7 +454,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
       if (child.type !== E) next = cloneElement(next, { style: { ...p.style, ...elementCss(override, s) } });
       return { key, node: ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} group={parent} ctx={{ ...ctx, onOrder: (sid, order) => ctx.onOrder?.(sid, order, parent) }} order={() => entries.filter(e => !e.key.startsWith("static-")).map(e => e.key)}>{next}</SectionElement> : next };
     });
-    const order = section.groupOrders?.[parent];
+    const order = section.groupOrders?.[parent] ?? (section.type === "hero" && parent === "root.0" ? section.groupOrders?.["root.0.0"] : undefined);
     if (order) entries.sort((a, b) => (order.indexOf(a.key) < 0 ? 999 : order.indexOf(a.key)) - (order.indexOf(b.key) < 0 ? 999 : order.indexOf(b.key)));
     return entries.map(e => e.node);
   }
