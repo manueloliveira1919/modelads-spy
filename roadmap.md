@@ -5,9 +5,9 @@
 - [x] Agendamento automático dispensado pelo usuário
 
 # Extensão 1.4.0 — capas
-- [ ] Miniaturas administrativas com fallback no navegador e lotes leves
-- [ ] Recebimento seguro, armazenamento por anúncio e associação isolada às ofertas
-- [ ] Desativar cópia Meta, atualizar versão/pacote e validar regras e fluxo
+- [x] Miniaturas administrativas com fallback no navegador e lotes leves
+- [x] Recebimento seguro, armazenamento por anúncio e associação isolada às ofertas
+- [x] Desativar cópia Meta, atualizar versão/pacote e validar regras e fluxo
 
 # Extensão 1.2.0
 
