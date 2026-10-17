@@ -1,3 +1,9 @@
+# Modelar Quiz — templates, IA preparada e botões
+- [ ] Contrato JSON seguro, exportação/importação e caminho único de criação
+- [ ] Gerador IA desativado com formulário e autorização Pro no servidor
+- [ ] Atrasos e botão interno de Resultado preservando quizzes antigos
+- [ ] Testes de segurança, compatibilidade, fluxo e navegador
+
 # Vitrine — capas de criativos
 - [x] Verificar fontes e criar fila isolada, gerador e botão administrativo
 - [x] Exibir capas/placeholder preservando dados; testes e navegador com conta admin
