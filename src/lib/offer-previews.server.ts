@@ -14,7 +14,7 @@ async function freshSnapshotUrl(pageId: string): Promise<string | null> {
   const params = new URLSearchParams({
     access_token: token,
     search_page_ids: JSON.stringify([pageId]),
-    ad_reached_countries: JSON.stringify(["ALL"]),
+    ad_reached_countries: JSON.stringify(["BR"]),
     ad_active_status: "ALL",
     ad_type: "ALL",
     limit: "5",
