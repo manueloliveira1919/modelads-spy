@@ -1,3 +1,8 @@
+# Criador de Páginas — Receitas Naturais e topo
+- [x] Botões abaixo da mídia por padrão, preservando reordenação manual
+- [x] Template Receitas Naturais editável com fontes, oferta, contagem e carrossel
+- [x] Testes e verificação no computador e celular
+
 # Modelar Quiz — guia de IA e cópia confiável
 - [x] Guia reutilizável na lista, importação e gerador
 - [x] Cópia com fallback e diálogo manual em todos os botões do quiz

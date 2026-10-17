@@ -25,8 +25,8 @@ export const PAGE_CSS = `
 .sp-offer{position:relative;box-shadow:0 22px 60px -28px color-mix(in srgb,currentColor 30%,transparent)}.sp-offer-label{display:inline-block;padding:7px 18px;border-radius:var(--sp-r);font-size:12px;font-weight:800;margin-bottom:20px}.sp-offer .sp-btn{display:block;width:100%;text-align:center}.sp-element-tools{top:-28px}.sp-carousel-track>.sp-element{flex:0 0 calc(100% / var(--sp-per-view,1));min-width:0}.sp-carousel-track>.sp-element>figure{width:100%;padding:0 8px}.sp-flex-grid>.sp-element{min-width:0;height:100%}.sp-flex-grid>.sp-element>article{height:100%}.sp-root section{scroll-margin-top:20px}.sp-root p,.sp-root span{overflow-wrap:anywhere}
 .sp-btn{display:inline-block;padding:18px 36px;font-weight:800;font-size:18px;text-decoration:none;border-radius:var(--sp-r);box-shadow:0 10px 24px -10px rgba(0,0,0,.45);transition:transform .15s;cursor:pointer;border:0}
 .sp-btn:hover{transform:translateY(-2px)}
-.sp-hero{display:grid;gap:40px;align-items:center}
-.sp-hero.has-img{grid-template-columns:1.1fr 1fr}
+.sp-hero{display:flex;flex-direction:column;gap:24px;align-items:stretch}
+.sp-hero .sp-h{margin-bottom:0}.sp-hero [data-sp-key^="button:"]{margin-top:0!important}
 .sp-video{position:relative;padding-top:56.25%;border-radius:var(--sp-r);overflow:hidden;background:#000;margin:24px 0}
 .sp-video iframe,.sp-video video{position:absolute;inset:0;width:100%;height:100%;border:0}
 .sp-ph{display:grid;place-items:center;aspect-ratio:4/3;border-radius:var(--sp-r);background:var(--sp-card);opacity:.7;font-size:14px}
@@ -199,20 +199,20 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
     case "announcement":
       body = <div data-sp-announcement data-mode={c.mode || (c.showDate ? "date" : "text")} data-expiry={c.expiry || "text"} data-expired-text={c.expiredText || "Oferta encerrada"}><div data-sp-announcement-main>{P("text", c.text, { as: "p", className: "sp-p", style: { fontWeight: 700, display: "inline" } })}{(c.mode === "date" || c.showDate === true || c.showDate === "true") && (c.dateAutomatic !== "false" ? <span className="sp-today" data-sp-today>{ctx.editable ? new Date().toLocaleDateString("pt-BR") : ""}</span> : P("dateText", c.dateText || "", { style: { marginLeft: 8 } }))}{c.mode === "countdown" && <div data-sp-timer data-end={c.timerType === "duration" ? undefined : c.endAt} data-duration={c.timerType === "duration" ? Number(c.durationSeconds) || 3600 : undefined}><span data-sp-timer-value>00d 00h 00m 00s</span></div>}</div><p data-sp-expired hidden>{c.expiredText || "Oferta encerrada"}</p></div>;
       break;
-    case "hero":
+    case "hero": {
+      const heroVideo = videoEmbed(c.videoUrl);
       body = (
-        <div className={`sp-hero ${c.image || ctx.editable ? "has-img" : ""}`} style={{ textAlign: align }}>
-          <div>
+        <div className="sp-hero" style={{ textAlign: align }}>
             {(c.eyebrow || ctx.editable) && P("eyebrow", c.eyebrow, { as: "p", className: "sp-p", style: { color: accent, fontWeight: 800, letterSpacing: ".12em", fontSize: 13, marginBottom: 12 } })}
             {c.highlight && !ctx.editable && String(c.title).includes(c.highlight) ? <h2 className="sp-h" style={{ fontSize: ts, fontFamily: st.font || s.headingFont }}>{String(c.title).split(c.highlight).map((part, i) => <span key={i}>{i > 0 && <em style={{ color: accent }}>{c.highlight}</em>}{part}</span>)}</h2> : title()}
             {P("subtitle", c.subtitle, { as: "p", className: "sp-p", style: { fontSize: (st.textSize ?? 18) + 1, opacity: 0.85 } })}
+            {heroVideo ? <div data-sp-key="videoUrl" className="sp-video">{heroVideo.kind === "iframe" ? <iframe src={heroVideo.src} title="Vídeo do produto" allowFullScreen/> : <video src={heroVideo.src} controls playsInline/>}</div> : c.image || ctx.editable ? img("image", "Imagem do produto (opcional)") : c.showMediaPlaceholder ? <div data-sp-key="image" className="sp-ph">Foto ou vídeo do material</div> : null}
             {button()}
             {c.miniBadges && <div data-sp-key="miniBadges" className="sp-mini-badges sp-strip">{ctx.editable ? P("miniBadges", c.miniBadges) : String(c.miniBadges).split("\n").map((line, i) => <span key={i} className="sp-strip-item">{line}</span>)}</div>}
-          </div>
-          {img("image", "Imagem do produto (opcional)")}
         </div>
       );
       break;
+    }
     case "video": {
       const v = videoEmbed(c.videoUrl);
       body = (
@@ -265,6 +265,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
       body = (
         <>
           {title()}
+          {c.subtitle && P("subtitle", c.subtitle, { as: "p", className: "sp-p", style: { color: s.colors.muted } })}
           <div className="sp-grid">
             {items.map((it, i) => (
               <div key={i} data-sp-key={`items.${i}`} className="sp-card">
@@ -322,6 +323,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
         <div data-sp-key="offerCard" className="sp-card sp-offer" style={{ maxWidth: 600, margin: "0 auto", padding: 36, border: `1px solid ${accent}`, background: card }} >
           {P("badge", c.badge || "", { className: "sp-offer-label", style: { background: accent, color: btnColor } })}
           {title()}
+          {(c.timerEnabled === true || c.timerEnabled === "true") && <div data-sp-key="offerTimer"><div>{P("timerTitle", c.timerTitle || "Essa oferta termina em", { as: "p", className: "sp-p" })}</div><div data-sp-key="countdown" data-sp-offer-timer data-duration={Math.max(1, Math.min(86400, Number(c.durationSeconds) || 900))} className="sp-cd" role="timer" aria-label="Tempo restante da oferta"><div><b data-sp-minutes>{String(Math.floor((Number(c.durationSeconds) || 900) / 60)).padStart(2, "0")}</b><small>min</small></div><div><b data-sp-seconds>{String((Number(c.durationSeconds) || 900) % 60).padStart(2, "0")}</b><small>seg</small></div></div></div>}
           <div style={{ textAlign: "left", margin: "16px 0" }}>
             {items.map((it, i) => (
               <div key={i} data-sp-key={`items.${i}`} className="sp-check">
@@ -452,7 +454,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
       if (child.type !== E) next = cloneElement(next, { style: { ...p.style, ...elementCss(override, s) } });
       return { key, node: ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} group={parent} ctx={{ ...ctx, onOrder: (sid, order) => ctx.onOrder?.(sid, order, parent) }} order={() => entries.filter(e => !e.key.startsWith("static-")).map(e => e.key)}>{next}</SectionElement> : next };
     });
-    const order = section.groupOrders?.[parent];
+    const order = section.groupOrders?.[parent] ?? (section.type === "hero" && parent === "root.0" ? section.groupOrders?.["root.0.0"] : undefined);
     if (order) entries.sort((a, b) => (order.indexOf(a.key) < 0 ? 999 : order.indexOf(a.key)) - (order.indexOf(b.key) < 0 ? 999 : order.indexOf(b.key)));
     return entries.map(e => e.node);
   }

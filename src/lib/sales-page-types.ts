@@ -195,7 +195,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Hero / Topo",
     emoji: "🚀",
     description: "Título principal, subtítulo, imagem e botão",
-    fields: [T("eyebrow", "Chamada pequena"), T("title", "Título", "textarea"), T("subtitle", "Subtítulo", "textarea"), T("image", "Imagem", "image"), T("highlight", "Palavra em itálico"), T("miniBadges", "Mini-selos (um por linha)", "textarea"), ...BTN],
+    fields: [T("eyebrow", "Chamada pequena"), T("title", "Título", "textarea"), T("subtitle", "Subtítulo", "textarea"), T("image", "Imagem", "image"), T("videoUrl", "Vídeo (substitui a imagem)", "video"), T("highlight", "Palavra em itálico"), T("miniBadges", "Mini-selos (um por linha)", "textarea"), ...BTN],
     hasButton: true,
     defaults: () => ({
       eyebrow: "MÉTODO COMPROVADO",
@@ -255,7 +255,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Como funciona",
     emoji: "🧭",
     description: "Etapas numeradas",
-    fields: [T("title", "Título")],
+    fields: [T("title", "Título"), T("subtitle", "Subtítulo", "textarea")],
     items: { label: "Etapa", fields: [T("icon", "Ícone (opcional)"), T("title", "Título"), T("text", "Texto", "textarea")], blank: { title: "Nova etapa", text: "Descreva a etapa." } },
     defaults: () => ({
       title: "Como funciona",
@@ -296,7 +296,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Oferta com preço",
     emoji: "💰",
     description: "Preço, itens inclusos e botão de compra",
-    fields: [T("title", "Título"), T("badge", "Etiqueta de destaque"), T("oldPrice", "Preço antigo (riscado)"), T("price", "Preço"), T("installments", "Parcelamento"), ...BTN, T("note", "Observação abaixo do botão")],
+    fields: [T("title", "Título"), T("badge", "Etiqueta de destaque"), T("timerEnabled", "Mostrar contagem regressiva", "checkbox"), T("timerTitle", "Texto da contagem"), { ...T("durationSeconds", "Duração em segundos", "number"), min: 1, max: 86400 }, T("oldPrice", "Preço antigo (riscado)"), T("price", "Preço"), T("installments", "Parcelamento"), ...BTN, T("note", "Observação abaixo do botão")],
     items: { label: "Item incluso", fields: [T("text", "Texto")], blank: { text: "Novo item incluso" } },
     hasButton: true,
     defaults: () => ({
@@ -411,7 +411,7 @@ export const BLOCKS: BlockDef[] = [
     defaults: () => ({ title: "Mais recursos para você", items: [{ image: "", title: "Guia de início rápido", text: "Um resumo prático para começar.", value: "De R$ 47", badge: "GRÁTIS" }, { image: "", title: "Planner de atividades", text: "Organize sua próxima semana.", value: "De R$ 37", badge: "GRÁTIS" }] }), style: { columns: 2 },
   },
   {
-    type: "printCarousel", label: "Carrossel de prints", emoji: "📸", description: "Imagens com setas e navegação", fields: [T("title", "Título"), { ...T("carouselMode", "Modo do carrossel", "select"), options: [{ value: "manual", label: "Manual" }, { value: "auto", label: "Automático" }] }, T("intervalSeconds", "Intervalo em segundos", "number"), { ...T("perView", "Imagens visíveis no computador", "select"), options: [{ value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }] }, { ...T("imageRatio", "Proporção das imagens", "select"), options: [{ value: "4/3", label: "Paisagem 4:3" }, { value: "1/1", label: "Quadrado" }, { value: "3/4", label: "Retrato" }, { value: "16/9", label: "Paisagem 16:9" }] }, T("imageRadius", "Arredondamento das imagens", "number"), T("showArrows", "Mostrar setas", "checkbox"), T("showDots", "Mostrar pontos", "checkbox")],
+    type: "printCarousel", label: "Carrossel de prints", emoji: "📸", description: "Imagens com setas e navegação", fields: [T("title", "Título"), T("subtitle", "Subtítulo", "textarea"), { ...T("carouselMode", "Modo do carrossel", "select"), options: [{ value: "manual", label: "Manual" }, { value: "auto", label: "Automático" }] }, T("intervalSeconds", "Intervalo em segundos", "number"), { ...T("perView", "Imagens visíveis no computador", "select"), options: [{ value: "1", label: "1" }, { value: "2", label: "2" }, { value: "3", label: "3" }] }, { ...T("imageRatio", "Proporção das imagens", "select"), options: [{ value: "4/3", label: "Paisagem 4:3" }, { value: "1/1", label: "Quadrado" }, { value: "3/4", label: "Retrato" }, { value: "16/9", label: "Paisagem 16:9" }] }, T("imageRadius", "Arredondamento das imagens", "number"), T("showArrows", "Mostrar setas", "checkbox"), T("showDots", "Mostrar pontos", "checkbox")],
     items: { label: "Print", fields: [T("image", "Imagem", "image"), T("caption", "Legenda / descrição")], blank: { image: "", caption: "Seu depoimento aqui" } },
     defaults: () => ({ title: "Experiências de quem já começou", carouselMode: "manual", intervalSeconds: "5", perView: "1", imageRatio: "4/3", imageRadius: "8", showArrows: "true", showDots: "true", items: [{ image: "", caption: "Insira um depoimento autorizado" }, { image: "", caption: "Insira outro depoimento autorizado" }, { image: "", caption: "Mais uma experiência real" }] }),
   },
@@ -575,6 +575,50 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       sections[12] = newSection("guarantee", { days: "7", badge: { days: "7", variant: "purple", size: 190 }, title: "Sua escolha com tranquilidade", text: "Você tem 7 dias para avaliar o material. Ajuste este texto às condições reais da sua oferta." });
       sections[14] = newSection("finalCta", undefined, { color: "#ffffff", background: { type: "gradient", gradientType: "linear", stops: [{ color: "#6530a8", position: 0 }, { color: "#a245b0", position: 100 }], angle: 110, centerX: 50, centerY: 50, image: "" } });
       return sections;
+    },
+  },
+
+  {
+    key: "natural-recipes", name: "Receitas Naturais", emoji: "", description: "Receitas, benefícios, bônus, oferta, exemplos e garantia.",
+    settings: {
+      font: "Nunito Sans", headingFont: "Fraunces", radius: 18, maxWidth: 1080,
+      colors: { primary: "#3F6B2E", bg: "#F5F8EE", text: "#26301F", muted: "#55624A", surface: "#FFFFFF", buttonText: "#FFFFFF" },
+    },
+    build: () => {
+      const offer = newSection("offer", { title: "", badge: "OFERTA POR TEMPO LIMITADO", timerEnabled: "true", timerTitle: "Essa oferta termina em", durationSeconds: "900", oldPrice: "De R$ 97,00", price: "R$ 27,00", installments: "Pagamento único. Acesso imediato.", buttonText: "Quero aproveitar agora", note: "Compra segura. Garantia de 7 dias.", items: [] }, { bg: "#EAF1DA", paddingY: 88 });
+      const button = (text: string) => ({ id: uid(), text, url: `#sp-section-${offer.id}`, destination: { type: "section" as const, sectionId: offer.id }, radius: 999, size: 18 });
+      offer.content.buttons = [button("Quero aproveitar agora")];
+      offer.elementStyles = { offerCard: { bg: "#FFFFFF", borderWidth: 2, borderColor: "#3F6B2E", radius: 24 }, badge: { bg: "#F2C14E", color: "#26301F", radius: 999 }, price: { size: 60 } };
+      const hero = newSection("hero", { eyebrow: "RECEITAS NATURAIS", title: "Receitas naturais simples para o seu dia a dia", subtitle: "Chás, sucos, temperos e preparos caseiros com ingredientes que você encontra no mercado, em passo a passo fácil de seguir.", image: "", showMediaPlaceholder: true, buttons: [button("Quero meu material")] }, { bg: "#EAF1DA", paddingY: 72, maxWidth: 900, titleSize: 52 });
+      hero.elementStyles = { eyebrow: { bg: "#F2C14E", color: "#26301F", radius: 999, paddingTop: 8, paddingBottom: 8, paddingX: 20, width: 44, align: "center" }, subtitle: { color: "#55624A" }, image: { width: 78, align: "center", radius: 18, bg: "#E3EDCF" } };
+      const receive = newSection("steps", { title: "O que você vai receber", subtitle: "Um material digital completo, pronto para abrir no celular ou imprimir.", items: [
+        { icon: "01", title: "+100 receitas", text: "Chás, sucos, infusões e preparos organizados por categoria." },
+        { icon: "02", title: "Passo a passo ilustrado", text: "Ingredientes, medidas e modo de preparo sem complicação." },
+        { icon: "03", title: "Lista de compras", text: "Tudo o que comprar para começar, com opções de substituição." },
+        { icon: "04", title: "Acesso imediato", text: "Receba no e-mail logo após a compra." },
+      ] }, { bg: "#F5F8EE", columns: 4, paddingY: 88 });
+      const benefits = newSection("benefits", { title: "Por que escolher nosso material?", items: [
+        { icon: "", title: "Ingredientes simples", text: "Use ingredientes fáceis de encontrar no mercado." },
+        { icon: "", title: "Rápido de preparar", text: "Preparos práticos que cabem na rotina." },
+        { icon: "", title: "Feito para iniciantes", text: "Instruções claras para começar com confiança." },
+      ] }, { bg: "#26301F", color: "#F5F8EE", paddingY: 88 });
+      const bonus = newSection("bonusCards", { title: "Você ainda leva 3 bônus", items: [
+        { image: "", title: "Bônus 1: Guia de ervas e temperos", text: "Conheça combinações e formas simples de usar ervas e temperos.", badge: "GRÁTIS", value: "" },
+        { image: "", title: "Bônus 2: Cardápio semanal natural", text: "Ideias para organizar seus preparos ao longo da semana.", badge: "GRÁTIS", value: "" },
+        { image: "", title: "Bônus 3: Receitas de sucos e águas saborizadas", text: "Combinações de frutas e ingredientes para variar os sabores.", badge: "GRÁTIS", value: "" },
+      ] }, { bg: "#F5F8EE", columns: 3, paddingY: 88 });
+      const carousel = newSection("printCarousel", { title: "Veja exemplos do material", subtitle: "Deslize para ver algumas páginas por dentro.", carouselMode: "manual", perView: "3", imageRatio: "3/4", imageRadius: "18", items: Array.from({ length: 5 }, (_, i) => ({ image: "", caption: `Página ${i + 1} do material` })) }, { bg: "#F5F8EE", paddingY: 88 });
+      const testimonials = newSection("testimonials", { title: "Quem comprou, aprovou", items: [
+        { name: "Mariana S.", text: "Gostei da organização das receitas. O passo a passo é fácil de acompanhar.", image: "" },
+        { name: "Carlos R.", text: "A lista de compras ajudou bastante. Encontrei tudo para começar.", image: "" },
+        { name: "Joana P.", text: "O material é bonito e prático. Adorei as ideias para variar os preparos.", image: "" },
+      ] }, { bg: "#E3EDCF", paddingY: 88 });
+      const guarantee = newSection("guarantee", { days: "7", title: "Garantia de 7 dias", text: "Garantia de 7 dias: acesse o material e teste as receitas. Se por qualquer motivo você não gostar, é só pedir o reembolso em até 7 dias e devolvemos 100% do valor.", badge: { days: "7", variant: "custom", color: "#3F6B2E", size: 170, topText: "GARANTIA", bottomText: "DE SATISFAÇÃO" } }, { bg: "#F5F8EE", paddingY: 88, align: "left" });
+      for (const section of [receive, bonus, testimonials]) {
+        section.elementStyles = Object.fromEntries((section.content.items || []).map((_: Item, i: number) => [`items.${i}`, { bg: "#FFFFFF", borderColor: "#DDE6CC", borderWidth: 1, radius: 18 }]));
+      }
+      bonus.elementStyles = { ...bonus.elementStyles, ...Object.fromEntries([0, 1, 2].map(i => [`items.${i}.badge`, { bg: "#F2C14E", color: "#26301F" }])) };
+      return [hero, receive, benefits, bonus, offer, carousel, testimonials, guarantee, newSection("footer", { text: "Todos os direitos reservados." }, { bg: "#26301F", color: "#EAF1DA", paddingY: 28 })];
     },
   },
 

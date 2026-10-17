@@ -12,7 +12,7 @@ Do not rewrite published Git history; keep synced branches working.
 - Sales page element overrides, custom elements and sibling-group ordering are optional section JSON interpreted by the shared renderer; legacy flattened ordering is preserved — prevents edits to one element from mutating siblings or persisted history.
 - Sales page button destinations resolve against visible section IDs and the selected popular plan in one shared helper; interactive scripts own carousel, accordion and countdown teardown — keeps editor warnings and exported navigation consistent without new backend logic.
 - Sales page share links use a single published-origin resolver, with current origin on published/custom domains and a production fallback on preview hosts — prevents copying draft preview URLs.
-- Sales-page interactions serialize scoped delegation into export; SVG badges and JSON fields preserve output parity without quiz/schema changes.
+- Sales-page interactions, including optional offer duration timers, serialize into export for output parity. Hero defaults use shared heading/media/button siblings; explicit manual orders remain authoritative without rewriting legacy pages.
 
 - QuizElementView serves editor/runner/public; QuizRunner owns navigation, scoring and leads to prevent drift.
 - Quiz creation defaults stay separate from legacy normalization — preserve saved styles and opt-in result buttons.

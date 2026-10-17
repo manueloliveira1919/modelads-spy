@@ -9,10 +9,10 @@ export const Route = createFileRoute("/p/$slug")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Página de vendas" },
-      { name: "description", content: "Conheça esta oferta especial." },
-      { property: "og:title", content: "Página de vendas" },
-      { property: "og:description", content: "Conheça esta oferta especial." },
+      { title: "Página de vendas — Modelads" },
+      { name: "description", content: "Conheça o material e a oferta nesta página de vendas publicada no Modelads." },
+      { property: "og:title", content: "Página de vendas — Modelads" },
+      { property: "og:description", content: "Conheça o material e a oferta nesta página de vendas publicada no Modelads." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
