@@ -347,3 +347,6 @@
 .q-result-list,.q-result-analysis{display:flex;flex-direction:column;gap:18px;width:100%}.q-result-analysis{padding:12px 0 24px}.q-result-analysis h2{font-size:22px;font-weight:700;text-align:center}.q-result-indicator{width:100%;font-size:13px}.q-result-indicator>div:first-child{margin-bottom:8px}.q-result-indicator strong{font-variant-numeric:tabular-nums}.q-result-check{color:var(--q-secondary)}.q-result-reveal{animation:quiz-fade-up .5s ease both}
 @media(prefers-reduced-motion:reduce){.q-result-reveal{animation:none}}
 @media(max-width:640px){.q-rich-toolbar{flex-wrap:wrap}.q-result-shell{padding:18px 14px}}
+.q-delayed-button{position:relative}.q-button-hidden{visibility:hidden;pointer-events:none}.q-button-reveal{animation:quiz-fade-up .4s ease both}.q-delay-label{display:block;margin-top:5px;text-align:center;font-size:11px;color:var(--q-text);opacity:.65}
+.q-ai-secondary{border-color:var(--brand);background:linear-gradient(var(--secondary),var(--secondary)) padding-box,var(--gradient-brand) border-box}
+@media(prefers-reduced-motion:reduce){.q-button-reveal{animation:none}}

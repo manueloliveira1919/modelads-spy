@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/admin/configuracoes")({
+  head: () => ({ meta: [{ title: "Configurações administrativas — Admin Modelads" }, { name: "description", content: "Gerencie as configurações da plataforma Modelads." }, { property: "og:title", content: "Configurações administrativas — Admin Modelads" }, { property: "og:description", content: "Gerencie as configurações da plataforma Modelads." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: ConfiguracoesAdminPage,
 });
 

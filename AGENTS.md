@@ -19,14 +19,15 @@
 - Sales page element overrides, custom elements and sibling-group ordering are optional section JSON interpreted by the shared renderer; legacy flattened ordering is preserved — prevents edits to one element from mutating siblings or persisted history.
 - Sales page button destinations resolve against visible section IDs and the selected popular plan in one shared helper; interactive scripts own carousel, accordion and countdown teardown — keeps editor warnings and exported navigation consistent without new backend logic.
 - Sales page share links use a single published-origin resolver, with current origin on published/custom domains and a production fallback on preview hosts — prevents copying draft preview URLs.
-- Sales-page-only interactive sections use scoped data-attribute event delegation serialized into HTML export, while guarantee badges are self-contained SVG and section fields remain JSON — ensures editor/public/export parity without touching the quiz engine or adding schema.
+- Sales-page interactions serialize scoped delegation into export; SVG badges and JSON fields preserve output parity without quiz/schema changes.
 
-- Quiz elements render through `QuizElementView` in editor and runner; session, navigation, scoring and lead submission stay in `QuizRunner` — prevents visual drift without changing execution rules.
-- Quiz creation defaults are separate from legacy normalization defaults — new styling never overwrites saved or missing legacy settings.
-- Quiz image uploads reuse the existing authenticated private asset upload helper — persist signed URLs rather than embedding file data in JSON.
-- Quiz rich text is data-only validated runs with synchronized plain text; selection edits update the focused DOM before autosave to preserve the cursor and avoid user HTML execution.
-- Quiz font stylesheets are stable per editor or complete runner dataset; await font faces before applying selections to prevent fallback flashes.
-- Result presentation owns analysis/count-up timing and signals readiness to the runner; session navigation, scoring and lead writes remain unchanged.
+- QuizElementView serves editor/runner/public; QuizRunner owns navigation, scoring and leads to prevent drift.
+- Quiz creation defaults stay separate from legacy normalization — preserve saved styles and opt-in result buttons.
+- Quiz uploads use the authenticated asset helper and signed URLs, never embedded data.
+- Quiz rich text uses validated runs plus synchronized text; edit the focused DOM before autosave to preserve cursors, never execute user HTML.
+- Quiz fonts load once per editor/runner dataset; await font faces before selection to avoid fallback flashes.
+- Quiz result presentation owns analysis timing; per-visit readiness gates delayed buttons and shared runner actions, keeping session/scoring/leads unchanged.
+- Quiz import/export/AI share a validated portable JSON contract and creation path; remapped section keys preserve logic with fresh identities.
 - Extension releases: every change in extension/ must bump manifest.json version and regenerate public/modelads-extension.zip via `bun scripts/pack-extension.ts` — the app reads the version from the manifest, so zip and displayed version must match.
 - Cakto payments: the webhook only verifies the signature and calls SQL `cakto_ingest_event`; matching, subscription writes and plan role sync live in SQL (`cakto_process_event`), and signups replay unmatched events via `handle_new_user` — one idempotent path for webhook and late signup.
 - Effective plan: SQL `get_effective_plan` (admin > manual override in user_plan_overrides > active Cakto subscription > free) is the only plan source; current_plan_code/has_feature/can_view_offers and the UI's isPro derive from it, and only `admin_set_user_plan` (server-checked admin) changes another user's plan — Cakto never overrides a manual plan.

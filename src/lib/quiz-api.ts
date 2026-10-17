@@ -1,6 +1,7 @@
 // Acesso a dados do módulo Modelar Quiz. Usa o client do navegador (RLS ativa:
 // cada usuário só enxerga os próprios quizzes).
 import { supabase } from "@/integrations/supabase/client";
+import { parseQuizTemplate, materializeQuizTemplate, templateSettings, type QuizTemplate } from "./quiz-template";
 import {
   DEFAULT_QUIZ_SETTINGS,
   NEW_QUIZ_SETTINGS,
@@ -160,6 +161,20 @@ async function insertSections(sections: QuizSection[]) {
     })),
   );
   if (eErr) throw eErr;
+}
+
+/** Shared import/AI creation path, with the same slug checks and owner RLS as manual creation. */
+export async function createQuizFromTemplate(input: { userId: string; name: string; slug: string; template: QuizTemplate }): Promise<string> {
+  const template = parseQuizTemplate(input.template);
+  const desired = slugify(input.slug || input.name || template.name);
+  const slug = desired && await isSlugAvailable(desired) ? desired : await uniqueSlug(input.userId, desired);
+  const id = uid();
+  const { error } = await db(QUIZZES).insert({ id, user_id: input.userId, name: input.name.trim() || template.name, slug, status: "draft", settings: templateSettings(template) });
+  if (isUniqueViolation(error)) throw new SlugTakenError();
+  if (error) throw error;
+  try { await insertSections(materializeQuizTemplate(template, id)); }
+  catch (e) { await deleteQuiz(id); throw e; }
+  return id;
 }
 
 export async function loadQuiz(quizId: string): Promise<{ quiz: Quiz; sections: QuizSection[] }> {

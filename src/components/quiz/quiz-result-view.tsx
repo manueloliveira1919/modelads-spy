@@ -170,13 +170,14 @@ function Indicator({ item, target, index, animate, editable, onChange, onRemove 
   const value = Math.round(target * p);
   return <div className="q-result-indicator"><div className="flex items-center gap-2"><EditableText value={item.label} editable={editable} onChange={onChange} className="min-w-0 flex-1 text-left" /><strong>{value}%</strong>{editable && <Button variant="ghost" size="icon" aria-label="Remover indicador" onClick={onRemove}><X className="h-3 w-3" /></Button>}</div><div className="q-indicator-track"><span style={{ width: `${value}%` }} /></div></div>;
 }
-export function ResultBlockView({ el, settings, score, percent, hasScoring, editor, animationKey = 0, onReady }: {
+export function ResultBlockView({ el, settings, score, percent, hasScoring, editor, animationKey = 0, onReady, renderButton }: {
   el: QuizElement; settings: QuizSettings; score: number; percent: number | null; hasScoring: boolean; editor?: ResultEditorHooks; animationKey?: number; onReady?: () => void;
+  renderButton?: (ready: boolean, editable: boolean) => React.ReactNode;
 }) {
   // An animation preview remounts this presentation only, never the quiz session.
-  return <ResultPresentation key={`${el.id}-${animationKey}`} el={el} settings={settings} score={score} percent={percent} hasScoring={hasScoring} editor={editor} previewAnimation={animationKey > 0} onReady={onReady} />;
+  return <ResultPresentation key={`${el.id}-${animationKey}`} el={el} settings={settings} score={score} percent={percent} hasScoring={hasScoring} editor={editor} previewAnimation={animationKey > 0} onReady={onReady} renderButton={renderButton} />;
 }
-function ResultPresentation({ el, settings, score, percent, hasScoring, editor, previewAnimation, onReady }: { el: QuizElement; settings: QuizSettings; score: number; percent: number | null; hasScoring: boolean; editor?: ResultEditorHooks; previewAnimation: boolean; onReady?: () => void }) {
+function ResultPresentation({ el, settings, score, percent, hasScoring, editor, previewAnimation, onReady, renderButton }: { el: QuizElement; settings: QuizSettings; score: number; percent: number | null; hasScoring: boolean; editor?: ResultEditorHooks; previewAnimation: boolean; onReady?: () => void; renderButton?: (ready: boolean, editable: boolean) => React.ReactNode }) {
   const ct = el.content as Record<string, any>, st = el.settings as Record<string, any>;
   const playing = !editor || previewAnimation;
   const duration = [3, 5, 8].includes(Number(st.loadingSeconds)) ? Number(st.loadingSeconds) * 1000 : 5000;
@@ -226,6 +227,7 @@ function ResultPresentation({ el, settings, score, percent, hasScoring, editor, 
       {(description || editor) && part("description", description, "description")}
       {st.showBars === true && <div className="q-result-list">{bars.map((item, i) => <Indicator key={`${item.id}-${ready}`} item={item} target={item.followScore ? pct ?? 0 : clamp(item.value)} index={i} animate={playing && ready} editable={editable} onChange={label => listChange("bars", bars, item.id, { label })} onRemove={() => setCt({ bars: bars.filter(x => x.id !== item.id) })} />)}{editable && <Button variant="ghost" className="q-add" onClick={() => setCt({ bars: [...bars, { id: uid(), label: "Novo indicador", value: 50, followScore: false }] })}><Plus className="h-3 w-3" />Adicionar indicador</Button>}</div>}
       {st.showChecklist === true && <div className="q-result-list">{checklist.map(item => <div key={item.id} className="flex items-center gap-3"><Check className="q-result-check h-5 w-5 shrink-0" /><EditableText value={editor ? item.label : f(item.label)} editable={editable} className="min-w-0 flex-1 text-left" onChange={label => listChange("checklist", checklist, item.id, { label })} />{editable && <Button variant="ghost" size="icon" aria-label="Remover destaque" onClick={() => setCt({ checklist: checklist.filter(x => x.id !== item.id) })}><X className="h-3 w-3" /></Button>}</div>)}{editable && <Button variant="ghost" className="q-add" onClick={() => setCt({ checklist: [...checklist, { id: uid(), label: "Novo destaque" }] })}><Plus className="h-3 w-3" />Adicionar destaque</Button>}</div>}
+      {renderButton?.(ready, editable)}
     </div>}
   </div>;
 }

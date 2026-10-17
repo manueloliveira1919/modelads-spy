@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/logs")({
+  head: () => ({ meta: [{ title: "Logs — Admin Modelads" }, { name: "description", content: "Consulte o histórico administrativo do Modelads." }, { property: "og:title", content: "Logs — Admin Modelads" }, { property: "og:description", content: "Consulte o histórico administrativo do Modelads." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: LogsPage,
 });
 

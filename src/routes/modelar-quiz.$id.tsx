@@ -45,6 +45,8 @@ import { QuizFonts } from "@/components/quiz/quiz-element-view";
 import { DEFAULT_QUIZ_SETTINGS } from "@/lib/quiz-types";
 import { ThemePanel, ElementEditor, SectionProperties } from "@/components/quiz/quiz-panels";
 import { isSlugAvailable, loadQuiz, saveQuiz, SlugTakenError } from "@/lib/quiz-api";
+import { QuizExportMenu, QuizImportDialog } from "@/components/quiz/quiz-template-controls";
+import { materializeQuizTemplate, templateSettings } from "@/lib/quiz-template";
 import { useSlugAvailability } from "@/lib/use-slug-availability";
 import {
   SECTION_LABEL,
@@ -117,6 +119,8 @@ function EditorContent() {
   const [runKey, setRunKey] = useState(0);
   const [dragId, setDragId] = useState<string | null>(null);
   const [selectedElementId, setSelectedElementId] = useState<string | null>(null);
+
+  const [importOpen, setImportOpen] = useState(false);
 
   // Trocar de seção limpa a seleção de elemento.
   useEffect(() => {
@@ -431,7 +435,7 @@ function EditorContent() {
             </SelectItem>
           ))}
         </SelectContent>
-      </Select>
+      </Select><Button variant="outline" className="w-full" onClick={() => setImportOpen(true)}>Importar template</Button>
     </div>
   );
 
@@ -532,7 +536,7 @@ function EditorContent() {
                   variant="ghost"
                   size="sm"
                   className="text-[11px] font-semibold text-brand underline"
-                  onClick={() => updateQuiz({ slug: slugCheck.suggestion! })}
+                  onClick={() => { if (slugCheck.suggestion) updateQuiz({ slug: slugCheck.suggestion }); }}
                 >
                   Usar {slugCheck.suggestion}
                 </Button>
@@ -547,7 +551,7 @@ function EditorContent() {
           )}
         </div>
         <SaveIndicator state={saveState} />
-        <div className="ml-auto flex flex-wrap items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2"><QuizExportMenu getData={() => ({ quiz, sections })} />
           <Button asChild variant="ghost" size="sm">
             <Link to="/modelar-quiz/leads/$id" params={{ id: quiz.id }}>
               <Users className="mr-1.5 h-4 w-4" /> Leads
@@ -635,6 +639,13 @@ function EditorContent() {
         </div>
       )}
 
+      {importOpen && <QuizImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={(template, replace) => {
+        if (!replace && sections.length + template.sections.length > 40) { toast.error("O quiz pode ter no máximo 40 seções."); return; }
+        const imported = materializeQuizTemplate(template, quiz.id, replace ? 0 : sections.length);
+        touch(); setSections(replace ? imported : [...sections, ...imported]);
+        if (replace) setQuiz({ ...quiz, name: template.name, settings: templateSettings(template) });
+        setSelectedId(imported[0]?.id ?? null); toast.success("Template importado. Salvando alterações.");
+      }} />}
       {/* Mobile / tablet: abas */}
       <div className="xl:hidden">
         <Tabs value={mobilePanel} onValueChange={(v) => setMobilePanel(v as typeof mobilePanel)}>

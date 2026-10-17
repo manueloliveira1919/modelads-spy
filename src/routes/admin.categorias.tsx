@@ -21,6 +21,7 @@ import {
 import { Plus, Pencil, Trash2, Tag, Power } from "lucide-react";
 
 export const Route = createFileRoute("/admin/categorias")({
+  head: () => ({ meta: [{ title: "Categorias — Admin Modelads" }, { name: "description", content: "Organize as categorias da plataforma Modelads." }, { property: "og:title", content: "Categorias — Admin Modelads" }, { property: "og:description", content: "Organize as categorias da plataforma Modelads." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
   component: CategoriasPage,
 });
 

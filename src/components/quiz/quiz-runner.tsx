@@ -11,7 +11,9 @@ import {
   type OptionsAnswer,
   type QuizSessionState,
 } from "@/lib/quiz-session";
-import { ctaHref, isValidEmail, isValidPhone, readCta, storablePhone } from "@/lib/quiz-conversion";
+import { isValidEmail, isValidPhone, storablePhone } from "@/lib/quiz-conversion";
+import { executeQuizButton, quizButtonSettings, sectionAnalysisPending } from "@/lib/quiz-button";
+import { QuizDelayedButton } from "./quiz-delayed-button";
 import { submitQuizLead } from "@/lib/quiz-public";
 import { resolveNextIndex } from "@/lib/quiz-logic";
 import {
@@ -60,6 +62,7 @@ export function QuizRunner({
   const [error, setError] = useState<string | null>(null);
   const [anim, setAnim] = useState<"in" | "out">("in");
   const [saving, setSaving] = useState(false);
+  const [visit, setVisit] = useState(0);
 
   const total = sections.length;
   const index = Math.min(session.current_section, Math.max(0, total - 1));
@@ -72,6 +75,7 @@ export function QuizRunner({
       setError(null);
       setAnim("out");
       window.setTimeout(() => {
+        setVisit(v => v + 1);
         setSession((s) => {
           const last = Math.max(0, total - 1);
           const cur = Math.min(s.current_section, last);
@@ -100,6 +104,7 @@ export function QuizRunner({
   const restart = useCallback(() => {
     setError(null);
     setSession(newSession(quizId));
+    setVisit(v => v + 1);
   }, [quizId]);
 
   const setOptions = (sectionId: string, elementId: string, optionIds: string[]) => {
@@ -209,17 +214,7 @@ export function QuizRunner({
 
   const runCta = useCallback(
     (el: QuizElement) => {
-      const href = ctaHref(readCta(el.settings as Record<string, unknown>));
-      if (!href) {
-        void advance();
-        return;
-      }
-      if (mode !== "live") {
-        setError("Pré-visualização: o botão abriria " + href);
-        return;
-      }
-      const target = (el.settings as Sx).ctaTarget === "_self" ? "_self" : "_blank";
-      window.open(href, target, target === "_blank" ? "noopener,noreferrer" : undefined);
+      executeQuizButton(quizButtonSettings(el), { advance: () => void advance(), preview: mode !== "live", onPreview: href => setError("Pré-visualização: o botão abriria " + href), open: (href, target) => { window.open(href, target, target === "_blank" ? "noopener,noreferrer" : undefined); } });
     },
     [advance, mode],
   );
@@ -238,7 +233,11 @@ export function QuizRunner({
     (e) => e.type === "result" && (e.settings as Sx).confetti !== false,
   );
   const [readyResults, setReadyResults] = useState<Set<string>>(() => new Set());
-  const resultReady = !!section?.elements.some(e => e.type === "result" && readyResults.has(`${session.session_id}-${section.id}-${e.id}`));
+  // Readiness is scoped to each visit, including Back and Restart, never reused across analyses.
+  const visitKey = `${session.session_id}-${section?.id}-${visit}`;
+  const readyIds = new Set(section?.elements.filter(e => readyResults.has(`${visitKey}-${e.id}`)).map(e => e.id));
+  const buttonsReady = !section || !sectionAnalysisPending(section, readyIds);
+  const resultReady = !!section?.elements.some(e => e.type === "result" && readyIds.has(e.id));
   const allElements = useMemo(() => sections.flatMap(s => s.elements), [sections]);
 
   // Confete uma única vez por conclusão (sessão); Voltar/avançar de novo não repete.
@@ -254,7 +253,7 @@ export function QuizRunner({
     setConfettiKey(`${session.session_id}-${section.id}`);
   }, [showConfetti, resultReady, section, session.session_id]);
 
-  const hasButton = useMemo(() => !!section?.elements.some((e) => e.type === "button"), [section]);
+  const hasButton = useMemo(() => !!section?.elements.some((e) => e.type === "button" || e.type === "result" && e.settings.showButton === true), [section]);
 
   if (!section) {
     return (
@@ -268,7 +267,7 @@ export function QuizRunner({
     const ans = session.answers[answerKey(section.id, el.id)];
     return (
       <QuizElementView
-        key={el.id}
+        key={`${visitKey}-${el.id}`}
         el={el}
         settings={settings}
         percent={percent}
@@ -281,7 +280,8 @@ export function QuizRunner({
         score={score}
         resultPercent={resultPercent}
         hasScoring={maxScore > 0}
-        onResultReady={() => setReadyResults(prev => { const key = `${session.session_id}-${section.id}-${el.id}`; if (prev.has(key)) return prev; return new Set([...prev, key]); })}
+        buttonsReady={buttonsReady}
+        onResultReady={() => setReadyResults(prev => { const key = `${visitKey}-${el.id}`; if (prev.has(key)) return prev; return new Set([...prev, key]); })}
       />
     );
   };
@@ -354,7 +354,7 @@ export function QuizRunner({
 
           <QuizFonts settings={settings} elements={allElements} />
           <div
-            key={section.id}
+            key={visitKey}
             className={cn(
               "q-section-entry flex w-full flex-1 flex-col justify-center transition-all duration-150",
               anim === "in" ? "translate-y-0 opacity-100" : "translate-y-1 opacity-0",
@@ -371,12 +371,14 @@ export function QuizRunner({
 
             {/* Botão padrão quando a seção não tem botão e a navegação precisa continuar */}
             {!hasButton && !isLast && (
+              <QuizDelayedButton delaySeconds={0} ready={buttonsReady}>
               <PrimaryButton
                 label="Continuar"
                 settings={settings}
                 loading={saving}
                 onClick={() => void advance()}
               />
+              </QuizDelayedButton>
             )}
           </div>
 

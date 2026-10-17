@@ -21,6 +21,8 @@ import {
 } from "@/lib/quiz-types";
 import { maskPhone } from "@/lib/quiz-conversion";
 import { cn } from "@/lib/utils";
+import { QuizDelayedButton } from "./quiz-delayed-button";
+import { quizButtonSettings } from "@/lib/quiz-button";
 
 export function QuizFonts({
   settings,
@@ -139,6 +141,7 @@ export interface QuizElementViewProps {
   hasScoring?: boolean;
   resultAnimationKey?: number;
   onResultReady?: () => void;
+  buttonsReady?: boolean;
 }
 /** Shared visual only: session, navigation, scoring and capture remain in QuizRunner. */
 export function QuizElementView({
@@ -158,6 +161,7 @@ export function QuizElementView({
   hasScoring = true,
   resultAnimationKey = 0,
   onResultReady,
+  buttonsReady = true,
 }: QuizElementViewProps) {
   const st = el.settings,
     ct = el.content;
@@ -189,6 +193,7 @@ export function QuizElementView({
       );
     case "button":
       return (
+        <QuizDelayedButton delaySeconds={st.delaySeconds} ready={buttonsReady} editable={editable}>
         <QuizPrimaryButton
           label={String(ct.label || "Continuar")}
           settings={settings}
@@ -199,6 +204,7 @@ export function QuizElementView({
           onClick={onAction}
           onText={(v, runs) => onContentChange?.({ label: v, text: v, runs })}
         />
+        </QuizDelayedButton>
       );
     case "image":
       return ct.url ? (
@@ -237,6 +243,7 @@ export function QuizElementView({
           ) : (
             <iframe
               src={src}
+              sandbox="allow-scripts allow-presentation"
               title="Vídeo do quiz"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
               allowFullScreen
@@ -403,6 +410,7 @@ export function QuizElementView({
           hasScoring={hasScoring}
           animationKey={resultAnimationKey}
           onReady={onResultReady}
+          renderButton={(ready, resultEditable) => st.showButton === true ? <QuizDelayedButton delaySeconds={st.buttonDelaySeconds} ready={ready && buttonsReady} editable={resultEditable}><QuizPrimaryButton label={String(ct.buttonText || "Continuar")} runs={ct.buttonTextRuns} settings={settings} st={quizButtonSettings(el)} editable={resultEditable} onText={(buttonText, buttonTextRuns) => onContentChange?.({ buttonText, buttonTextRuns })} onClick={onAction} loading={loading} /></QuizDelayedButton> : null}
           editor={
             editable
               ? { selectedPart: null, onSelectPart: () => {}, onTextChange: onContentChange }

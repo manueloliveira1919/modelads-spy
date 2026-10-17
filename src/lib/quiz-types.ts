@@ -204,6 +204,7 @@ export function makeElement(
         ctaPhone: "",
         ctaMessage: "",
         ctaTarget: "_blank",
+        delaySeconds: 0,
       },
     },
 
@@ -248,6 +249,7 @@ export function makeElement(
         ],
         checklist: [],
         loadingTitle: "Analisando suas respostas...",
+        buttonText: "Continuar",
         loadingSteps: [
           { id: uid(), label: "Analisando suas respostas" },
           { id: uid(), label: "Calculando seu perfil" },
@@ -265,6 +267,9 @@ export function makeElement(
         showBars: true,
         showBadge: true,
         showChecklist: false,
+        showButton: true,
+        buttonAction: "none",
+        buttonDelaySeconds: 3,
       },
     },
   };
