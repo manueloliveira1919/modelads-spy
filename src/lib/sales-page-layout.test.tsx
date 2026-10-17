@@ -8,6 +8,30 @@ import { buildPageHtml } from "./sales-page-export";
 import { buttonDestination, elementCss, contentAt, parseDestination } from "./sales-page-elements";
 
 describe("Sales page compatibility and output parity", () => {
+  const recipes = () => {
+    const template = PAGE_TEMPLATES.find(t => t.key === "natural-recipes");
+    if (!template) throw new Error("Missing natural recipes template");
+    return template.build();
+  };
+  it("starts the natural recipes offer with a fifteen-minute duration", () => {
+    expect(recipes().find(s => s.type === "offer")?.content.durationSeconds).toBe("900");
+  });
+  it("uses a seven-day guarantee", () => {
+    expect(recipes().find(s => s.type === "guarantee")?.content.days).toBe("7");
+  });
+  it("starts with five manually navigated carousel placeholders", () => {
+    const carousel = recipes().find(s => s.type === "printCarousel");
+    expect(carousel?.content.carouselMode).toBe("manual");
+    expect(carousel?.content.items).toHaveLength(5);
+  });
+  it("defaults every recipes button to its own existing offer section", () => {
+    const sections = recipes();
+    const offer = sections.find(s => s.type === "offer");
+    if (!offer) throw new Error("Missing offer");
+    const buttons = sections.flatMap(sectionButtons);
+    expect(buttons).toHaveLength(2);
+    for (const button of buttons) expect(buttonDestination(button, sections)).toEqual({ href: `#sp-section-${offer.id}` });
+  });
   it("overrides one element without changing siblings and preserves parent structure", () => {
     const section = newSection("hero", { title: "Independent title", subtitle: "Unchanged sibling" });
     section.elementStyles = { title: { size: 42, color: "#123456", marginBottom: 24 } };
@@ -48,7 +72,7 @@ describe("Sales page compatibility and output parity", () => {
     expect(buildPageHtml("Image badge", DEFAULT_PAGE_SETTINGS, [badge])).toContain('src="https://example.com/badge.png"');
   });
   it("adds complete editable templates without changing legacy templates", () => {
-    expect(PAGE_TEMPLATES).toHaveLength(7);
+    expect(PAGE_TEMPLATES).toHaveLength(8);
     for (const key of ["education-kids", "modern-purple"]) {
       const template = PAGE_TEMPLATES.find(t => t.key === key);
       expect(template).toBeDefined();

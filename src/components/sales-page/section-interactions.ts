@@ -81,6 +81,18 @@ export function installPageInteractions(root: HTMLElement) {
       if (left === 0 || !Number.isFinite(left)) { if (bar.dataset.expiry === "hide") { const section = bar.closest<HTMLElement>("section"); if (section) section.hidden = true; } else { const main = bar.querySelector<HTMLElement>("[data-sp-announcement-main]"); const expired = bar.querySelector<HTMLElement>("[data-sp-expired]"); if (main) main.hidden = true; if (expired) expired.hidden = false; } }
     }; tick(); const interval = window.setInterval(tick, 1000); cleanup.push(() => clearInterval(interval));
   });
+  root.querySelectorAll<HTMLElement>("[data-sp-offer-timer]").forEach(timer => {
+    const end = Date.now() + Math.max(1, Math.min(86400, Number(timer.dataset.duration) || 900)) * 1000;
+    const tick = () => {
+      const seconds = Math.max(0, Math.ceil((end - Date.now()) / 1000));
+      const minutes = timer.querySelector("[data-sp-minutes]");
+      const remainder = timer.querySelector("[data-sp-seconds]");
+      if (minutes) minutes.textContent = String(Math.floor(seconds / 60)).padStart(2, "0");
+      if (remainder) remainder.textContent = String(seconds % 60).padStart(2, "0");
+    };
+    tick(); const interval = window.setInterval(tick, 1000);
+    cleanup.push(() => clearInterval(interval));
+  });
   root.addEventListener("click", click);
   root.querySelectorAll<HTMLElement>("[data-sp-today]").forEach(el => { el.textContent = new Date().toLocaleDateString("pt-BR"); });
   return () => { root.removeEventListener("click", click); cleanup.forEach(fn => fn()); };
