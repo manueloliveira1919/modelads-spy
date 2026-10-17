@@ -277,6 +277,33 @@ export type Database = {
           },
         ]
       }
+      extension_preview_assets: {
+        Row: {
+          ad_archive_id: string
+          last_error: string | null
+          status: string
+          submitted_by: string
+          updated_at: string
+          url: string | null
+        }
+        Insert: {
+          ad_archive_id: string
+          last_error?: string | null
+          status?: string
+          submitted_by: string
+          updated_at?: string
+          url?: string | null
+        }
+        Update: {
+          ad_archive_id?: string
+          last_error?: string | null
+          status?: string
+          submitted_by?: string
+          updated_at?: string
+          url?: string | null
+        }
+        Relationships: []
+      }
       extension_rate_events: {
         Row: {
           ads: number
@@ -1531,6 +1558,10 @@ export type Database = {
         Args: { p_plan: string; p_user_id: string }
         Returns: Json
       }
+      attach_extension_preview: {
+        Args: { p_ad_id: string }
+        Returns: undefined
+      }
       cakto_claim_pending: {
         Args: { p_email: string; p_user: string }
         Returns: undefined
@@ -1961,6 +1992,10 @@ export type Database = {
       quiz_suggest_slug: {
         Args: { p_exclude_id?: string; p_slug: string }
         Returns: string
+      }
+      reconcile_extension_previews: {
+        Args: { p_offer_ids: string[] }
+        Returns: undefined
       }
       revoke_extension_token: { Args: { p_id: string }; Returns: boolean }
       submit_quiz_lead: {

@@ -1,6 +1,8 @@
 // Content script for https://www.facebook.com/ads/library*
 (() => {
   const MAX_PER_SUBMIT = 50;
+  const THUMBNAIL_BATCH = Math.min(MAX_PER_SUBMIT, 10);
+  const SEND_INTERVAL = 2500; // 24 requests/min maximum, leaving room for validation/status.
   const MONTHS = {
     jan: 0, fev: 1, feb: 1, mar: 2, abr: 3, apr: 3, mai: 4, may: 4, jun: 5, jul: 6,
     ago: 7, aug: 7, set: 8, sep: 8, out: 9, oct: 9, nov: 10, dez: 11, dec: 11,
@@ -15,6 +17,8 @@
   let state = { token: null, plan: null, minDays: 0, minAds: 0, collapsed: false, duration: 2, target: 0 };
   let panel, msgEl, mineBtn, countEl;
   const cache = new Map();
+  const thumbnails = new Map();
+  const thumbnailInFlight = new Set();
   const galleryItems = new Map();
   let gallery, galleryGrid, galleryCount, viewBtn;
   let galleryActive = true, sortMode = "scale", searchScope = "";
@@ -130,8 +134,11 @@
       const src = v.currentSrc || v.src || v.querySelector("source[src]")?.src;
       return { type: "video", url: src && /^https?:/.test(src) ? src : null, poster: v.poster || null };
     }
-    const img = [...card.el.querySelectorAll("img[src]")].map((i) => i.src)
-      .find((s) => /scontent|fbcdn/.test(s) && !/s60x60|p60x60/.test(s));
+    const img = [...card.el.querySelectorAll("img[src]")]
+      .filter((i) => !i.closest(UI_SELECTOR) && /scontent|fbcdn/.test(i.currentSrc || i.src) &&
+        !/s60x60|p60x60/.test(i.src) && Math.max(i.naturalWidth, i.width) >= 100 && Math.max(i.naturalHeight, i.height) >= 100)
+      .sort((a, b) => (b.naturalWidth * b.naturalHeight) - (a.naturalWidth * a.naturalHeight))
+      .map((i) => i.currentSrc || i.src)[0];
     return img ? { type: "image", url: img } : null;
   }
 
@@ -274,6 +281,20 @@
     snapshot.candidate.active_days = snapshot.data.days;
     snapshot.candidate.creative_text = creative;
     cache.set(card.id, { id: card.id, snapshot });
+    // Capture readable original pixels before Meta virtualizes the DOM. Keep
+    // only data in a separate cache, never DOM nodes in gallery snapshots.
+    if (state.plan === "admin" && !thumbnails.has(card.id) && !thumbnailInFlight.has(card.id) && thumbnailInFlight.size < 2) {
+      const url = snapshot.media?.type === "video" ? snapshot.media.poster : snapshot.media?.url;
+      const source = [...card.el.querySelectorAll("img")].find((i) => !i.closest(UI_SELECTOR) && (i.currentSrc || i.src) === url && i.complete);
+      if (source) {
+        const scope = searchScope;
+        thumbnailInFlight.add(card.id);
+        mdlEncodeThumbnail(source).then((thumbnail) => {
+          if (scope === searchScope && state.plan === "admin" && cache.has(card.id)) thumbnails.set(card.id, thumbnail);
+        }).catch(() => { /* CORS fallback runs only during explicit admin submission. */ })
+          .finally(() => thumbnailInFlight.delete(card.id));
+      }
+    }
   }
 
   const scaleRank = (d) => d.days >= 30 && d.repeated >= 30 ? 3
@@ -377,7 +398,7 @@
   function resetGallery() {
     document.querySelectorAll(".mdl-original-hidden, .mdl-hidden").forEach((e) => e.classList.remove("mdl-original-hidden", "mdl-hidden"));
     gallery?.remove(); gallery = null; galleryGrid = null;
-    cache.clear(); galleryItems.clear();
+    cache.clear(); galleryItems.clear(); thumbnails.clear(); thumbnailInFlight.clear();
   }
 
   function applyFilterInner() {
@@ -534,10 +555,27 @@
 
   // Shared submit with 429 handling. Admin only.
   let nextSubmitAt = 0;
+  let sendBusy = false, lastSubmitAt = 0;
   async function submit(batch) {
     if (state.plan !== "admin" || !state.token) return { err: "Envio permitido somente para admin conectado." };
     if (Date.now() < nextSubmitAt) return { err: `Limite atingido. Aguarde ${Math.ceil((nextSubmitAt - Date.now()) / 1000)} segundos e tente de novo.` };
-    const r = await mdlCall("submit", state.token, { candidates: batch });
+    const scope = searchScope;
+    const token = state.token;
+    const candidates = [];
+    const originals = findCards();
+    for (const item of batch) {
+      const card = cache.get(item.ad_archive_id);
+      const media = card ? mediaOf(card) : null;
+      const url = media?.type === "video" ? media.poster : media?.url;
+      const original = originals.find((c) => c.id === item.ad_archive_id);
+      const source = original ? [...original.el.querySelectorAll("img")].find((i) => !i.closest(UI_SELECTOR) && (i.currentSrc || i.src) === url) : null;
+      const thumbnail = thumbnails.has(item.ad_archive_id) ? { thumbnail: thumbnails.get(item.ad_archive_id) } : await mdlCaptureThumbnail(url, source);
+      candidates.push({ ...item, ...thumbnail });
+    }
+    await sleep(Math.max(0, lastSubmitAt + SEND_INTERVAL - Date.now()));
+    if (state.plan !== "admin" || state.token !== token || scope !== queryScope()) return { err: "Envio interrompido: conexão ou busca mudou." };
+    lastSubmitAt = Date.now();
+    const r = await mdlCall("submit", token, { candidates });
     if (r.status === 429) {
       nextSubmitAt = Date.now() + (r.retryAfter || 60) * 1000;
       return { err: `Limite atingido. Aguarde ${r.retryAfter || 60} segundos e tente de novo.` };
@@ -547,37 +585,46 @@
       received: r.data.received || 0,
       inserted: r.data.inserted ?? r.data.new ?? 0,
       skipped: r.data.skipped ?? r.data.ignored ?? 0,
+      covers: r.data.thumbnails?.saved || 0,
+      coverFailures: r.data.thumbnails?.failed || 0,
+      coverErrors: r.data.thumbnails?.errors || [],
     };
   }
 
   async function sendOne(card, btn) {
-    if (state.plan !== "admin") return;
+    if (state.plan !== "admin" || sendBusy) return;
+    sendBusy = true;
     btn.disabled = true;
     const r = await submit([candidate(card)]);
+    sendBusy = false;
     btn.disabled = false;
     if (r.err) { msg(r.err); return flash(btn, "Erro"); }
-    msg(`Anúncio ${card.id}: ${r.inserted ? "novo" : "já existia / ignorado"}.`);
+    msg(`Anúncio ${card.id}: ${r.inserted ? "novo" : "já existia / ignorado"}. Capas: ${r.covers} · Sem capa: ${r.coverFailures}${r.coverErrors.length ? " · " + r.coverErrors[0].message : ""}`);
     flash(btn, "Enviado!");
   }
 
   async function mineAndSend() {
-    if (state.plan !== "admin") return;
+    if (state.plan !== "admin" || sendBusy) return;
     const items = collect();
     if (!items.length) return msg("Nenhum anúncio na galeria para enviar.");
     mineBtn.disabled = true;
-    let received = 0, inserted = 0, skipped = 0;
-    for (let i = 0; i < items.length; i += MAX_PER_SUBMIT) {
-      const batch = items.slice(i, i + MAX_PER_SUBMIT);
-      msg(`Enviando lote ${Math.floor(i / MAX_PER_SUBMIT) + 1} de ${Math.ceil(items.length / MAX_PER_SUBMIT)} · ${i + batch.length}/${items.length} anúncios...`);
+    sendBusy = true;
+    let received = 0, inserted = 0, skipped = 0, covers = 0, coverFailures = 0;
+    for (let i = 0; i < items.length; i += THUMBNAIL_BATCH) {
+      const batch = items.slice(i, i + THUMBNAIL_BATCH);
+      msg(`Enviando lote ${Math.floor(i / THUMBNAIL_BATCH) + 1} de ${Math.ceil(items.length / THUMBNAIL_BATCH)} · ${i + batch.length}/${items.length} anúncios · Capas salvas: ${covers}...`);
       const r = await submit(batch);
       if (r.err) {
         mineBtn.disabled = false;
+        sendBusy = false;
         return msg(`${r.err}\nJá enviados: ${received}.`);
       }
       received += r.received; inserted += r.inserted; skipped += r.skipped;
+      covers += r.covers; coverFailures += r.coverFailures;
     }
     mineBtn.disabled = false;
-    msg(`Enviado! Recebidos: ${received} · Novos: ${inserted} · Ignorados: ${skipped}`);
+    sendBusy = false;
+    msg(`Enviado! Recebidos: ${received} · Novos: ${inserted} · Ignorados: ${skipped} · Capas salvas: ${covers} · Sem capa: ${coverFailures}`);
   }
 
   function setCollapsed(v) {

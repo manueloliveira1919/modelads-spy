@@ -69,6 +69,7 @@ function ExtensionDownload() {
       <p className="mt-2 text-xs text-muted-foreground">
         Depois, atualize a página da Biblioteca de Anúncios (F5).
       </p>
+      <p className="mt-2 text-xs text-muted-foreground">A v1.4.0 pede acesso às imagens em *.fbcdn.net para salvar miniaturas dos criativos. Somente contas admin enviam anúncios e capas; clientes continuam com filtros locais.</p>
     </div>
   );
 }
