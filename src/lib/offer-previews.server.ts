@@ -117,6 +117,21 @@ export async function generateOfferPreviews(db: SupabaseClient<Database>) {
           }
           if (image) { adId = ad.ad_archive_id; break; }
         }
+        if (!image) {
+          // Stored URLs expired: fetch one fresh snapshot URL for this page.
+          const offer = await db.from("offers").select("page_id").eq("id", row.offer_id).maybeSingle();
+          const fresh = offer.data?.page_id ? await freshSnapshotUrl(offer.data.page_id) : null;
+          if (fresh) {
+            try {
+              const snapshot = await download(fresh, 2 * 1024 * 1024);
+              const candidates = snapshotImageUrls(new TextDecoder().decode(snapshot.bytes), true);
+              for (const url of candidates.slice(0, 3)) {
+                try { const file = await download(url, PREVIEW_MAX_BYTES); format = validatePreviewImage(file.bytes, file.contentType); image = file; break; }
+                catch { /* Try next thumbnail. */ }
+              }
+            } catch { /* Fresh snapshot also unavailable. */ }
+          }
+        }
         if (!image || !format) throw new Error("Nenhuma imagem ou capa de vídeo disponível no anúncio");
         // Claim-specific path prevents stale workers overwriting a newer attempt.
         const path = `${row.offer_id}/${row.claim_token}.${format.extension}`;
