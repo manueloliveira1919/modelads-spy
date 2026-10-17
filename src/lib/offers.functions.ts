@@ -21,6 +21,10 @@ export const listOffers = createServerFn({ method: "GET" })
   // A ordem já vem do banco por confiança (destino, preço, estrutura, escala e
   // tempo no ar) — não reordenar por volume bruto de anúncios.
   const rows = (data ?? []) as Parameters<typeof rowToOffer>[0][];
+  // Repair concurrent asset/ad-link commits without changing catalogue rows.
+  for (let start = 0; start < rows.length; start += 250) {
+    await supabase.rpc("reconcile_extension_previews", { p_offer_ids: rows.slice(start, start + 250).map((row) => row.id) });
+  }
   const previews = rows.length ? await supabase.from("offer_previews").select("offer_id,url").eq("status", "ok").in("offer_id", rows.map((row) => row.id)) : { data: [] };
   const covers = new Map((previews.data ?? []).map((preview) => [preview.offer_id, preview.url]));
   return { offers: rows.map((row) => ({ ...rowToOffer(row), previewUrl: covers.get(row.id) ?? null })), error: null as string | null };
@@ -55,6 +59,7 @@ export const getOffer = createServerFn({ method: "GET" })
     }
 
     const row = (offerRes.data ?? [])[0] as Parameters<typeof rowToOffer>[0] | undefined;
+    if (row) await supabase.rpc("reconcile_extension_previews", { p_offer_ids: [row.id] });
     const ads: OfferAd[] = ((adsRes.data ?? []) as any[]).map((a) => ({
       id: a.id,
       adArchiveId: a.ad_archive_id ?? null,
