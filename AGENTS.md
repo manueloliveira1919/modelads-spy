@@ -19,7 +19,7 @@
 - Sales page element overrides, custom elements and sibling-group ordering are optional section JSON interpreted by the shared renderer; legacy flattened ordering is preserved — prevents edits to one element from mutating siblings or persisted history.
 - Sales page button destinations resolve against visible section IDs and the selected popular plan in one shared helper; interactive scripts own carousel, accordion and countdown teardown — keeps editor warnings and exported navigation consistent without new backend logic.
 - Sales page share links use a single published-origin resolver, with current origin on published/custom domains and a production fallback on preview hosts — prevents copying draft preview URLs.
-- Sales-page-only interactive sections use scoped data-attribute event delegation serialized into HTML export, while guarantee badges are self-contained SVG and section fields remain JSON — ensures editor/public/export parity without touching the quiz engine or adding schema.
+- Sales-page interactions serialize scoped delegation into export; SVG badges and JSON fields preserve output parity without quiz/schema changes.
 
 - QuizElementView serves editor/runner/public; QuizRunner owns navigation, scoring and leads to prevent drift.
 - Quiz creation defaults stay separate from legacy normalization — preserve saved styles and opt-in result buttons.

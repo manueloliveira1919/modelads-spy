@@ -243,6 +243,7 @@ export function QuizElementView({
           ) : (
             <iframe
               src={src}
+              sandbox="allow-scripts allow-presentation"
               title="Vídeo do quiz"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture"
               allowFullScreen

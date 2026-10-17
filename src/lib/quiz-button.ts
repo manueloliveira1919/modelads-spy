@@ -8,7 +8,12 @@ export function quizButtonSettings(el: QuizElement): Record<string, unknown> {
 }
 /** Same handler contract for independent and result buttons, without changing preview CTA behavior. */
 export function executeQuizButton(settings: Record<string, unknown>, actions: { advance: () => void; preview: boolean; onPreview: (href: string) => void; open: (href: string, target: "_self" | "_blank") => void }): void {
-  const href = ctaHref(readCta(settings));
+  const config = readCta(settings);
+  let href = ctaHref(config);
+  // Portable templates also support phone/mail actions; never allow an executable protocol.
+  if (!href && config.cta !== "none" && config.cta !== "whatsapp") {
+    try { const url = new URL(config.url.trim()); if (["tel:", "mailto:"].includes(url.protocol)) href = config.url.trim(); } catch { /* invalid destination keeps existing advance behavior */ }
+  }
   if (!href) { actions.advance(); return; }
   if (actions.preview) { actions.onPreview(href); return; }
   actions.open(href, settings.ctaTarget === "_self" ? "_self" : "_blank");
