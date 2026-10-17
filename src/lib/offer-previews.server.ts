@@ -1,8 +1,32 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
+import { fetchMeta, META_API } from "./meta-mining.server";
 import { allowedPreviewUrl, PREVIEW_MAX_BYTES, snapshotImageUrls, validatePreviewImage } from "./offer-preview-image";
 
 const BUCKET = "offer-previews";
+
+// Stored snapshot URLs expire. As a last resort, ask the Ad Library API for a
+// fresh snapshot URL of any ad from the offer's page (read-only lookup; the
+// mining pipeline itself is untouched).
+async function freshSnapshotUrl(pageId: string): Promise<string | null> {
+  const token = process.env.META_ACCESS_TOKEN;
+  if (!token || !pageId) return null;
+  const params = new URLSearchParams({
+    access_token: token,
+    search_page_ids: JSON.stringify([pageId]),
+    ad_reached_countries: JSON.stringify(["ALL"]),
+    ad_active_status: "ALL",
+    ad_type: "ALL",
+    limit: "5",
+    fields: "id,ad_snapshot_url",
+  });
+  try {
+    const json = await fetchMeta(`${META_API}?${params.toString()}`);
+    const rows = (json as { data?: { ad_snapshot_url?: string }[] }).data ?? [];
+    for (const row of rows) if (row.ad_snapshot_url) return row.ad_snapshot_url;
+  } catch { /* Fresh lookup is best-effort; stale sources already failed. */ }
+  return null;
+}
 
 async function download(url: string, maxBytes: number) {
   const controller = new AbortController();
