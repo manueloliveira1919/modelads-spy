@@ -57,6 +57,7 @@ import { useQuizCopy } from "@/components/quiz/quiz-copy";
 import type { QuizTemplate } from "@/lib/quiz-template";
 
 export const Route = createFileRoute("/modelar-quiz/")({
+  validateSearch: (search: Record<string, unknown>): { import?: true } => search.import === true || search.import === "true" ? { import: true } : {},
   head: () => ({
     meta: [
       { title: "Modelar Quiz — Modelads" },
@@ -90,6 +91,7 @@ function QuizListPage() {
 }
 
 function QuizListContent() {
+  const search = Route.useSearch();
   const { user } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
@@ -99,6 +101,12 @@ function QuizListContent() {
   const { copy, copyDialog } = useQuizCopy();
   const openImport = () => { setGuideOpen(false); setInitialMode("import"); setCreateOpen(true); };
   const [pendingDelete, setPendingDelete] = useState<QuizListItem | null>(null);
+  useEffect(() => {
+    if (search.import) {
+      setInitialMode("import"); setCreateOpen(true);
+      void navigate({ to: "/modelar-quiz", search: {}, replace: true });
+    }
+  }, [search.import, navigate]);
 
   const { data: quizzes, isLoading, error } = useQuery({
     queryKey: ["quizzes", user?.id],

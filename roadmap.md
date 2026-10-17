@@ -1,3 +1,9 @@
+# Modelar Quiz — guia de IA e cópia confiável
+- [ ] Guia reutilizável na lista, importação e gerador
+- [ ] Cópia com fallback e diálogo manual em todos os botões do quiz
+- [ ] Instruções, exemplos e importação tolerante com erros orientados
+- [ ] Testes de compatibilidade e fluxo desktop/celular
+
 # Modelar Quiz — templates, IA preparada e botões
 - [x] Contrato JSON seguro, exportação/importação e caminho único de criação
 - [x] Gerador IA desativado com formulário e autorização Pro no servidor
