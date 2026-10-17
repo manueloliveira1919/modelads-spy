@@ -13,7 +13,8 @@ export async function copyText(text: string): Promise<boolean> {
   textarea.setAttribute("aria-hidden", "true");
   textarea.style.cssText = "position:fixed;top:0;left:0;opacity:0;font-size:16px;pointer-events:none";
   // Keep it inside an active modal so its focus trap permits selection.
-  (document.querySelector('[role="dialog"][data-state="open"]') ?? document.body).append(textarea);
+  const dialogs = document.querySelectorAll('[role="dialog"][data-state="open"]');
+  (dialogs.item(dialogs.length - 1) ?? document.body).append(textarea);
   try {
     textarea.focus();
     textarea.select();

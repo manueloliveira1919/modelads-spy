@@ -6,7 +6,7 @@ function browser(writeText?: (text: string) => Promise<void>, success = true) {
   const textarea = { value: "", style: { cssText: "" }, setAttribute: vi.fn(), focus: vi.fn(), select: vi.fn(), setSelectionRange: vi.fn(), remove: vi.fn() };
   const execCommand = vi.fn(() => success);
   vi.stubGlobal("navigator", { clipboard: writeText ? { writeText } : undefined });
-  vi.stubGlobal("document", { activeElement: null, createElement: () => textarea, querySelector: () => null, body: { append: vi.fn() }, execCommand });
+  vi.stubGlobal("document", { activeElement: null, createElement: () => textarea, querySelectorAll: () => ({ length: 0, item: () => null }), body: { append: vi.fn() }, execCommand });
   vi.stubGlobal("HTMLElement", class {});
   return { textarea, execCommand };
 }

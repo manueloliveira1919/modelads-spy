@@ -8,6 +8,10 @@ describe("Portable quiz template rules", () => {
   it("accepts BOM, markdown fences and surrounding prose without changing the template", () => {
     expect(parseQuizTemplate(`\uFEFFAqui está:\n\`\`\`json\n${JSON.stringify(base())}\n\`\`\`\nFim.`)).toEqual(parseQuizTemplate(base()));
   });
+  it("does not unwrap arrays of templates", () => {
+    expect(() => parseQuizTemplate([base()])).toThrow();
+    expect(() => parseQuizTemplate(JSON.stringify([base()]))).toThrow();
+  });
   it.each([ { funnel: {} }, { template: { sections: [] } }, { template_name: "Quiz" }, { questions: [] }, { entry: {} } ])("rejects generic or wrapped contracts with guide guidance: %j", value => {
     expect(() => parseQuizTemplate(value)).toThrow("parece gerado sem as instruções");
   });

@@ -88,7 +88,7 @@ export function parseQuizTemplate(input: string | unknown): QuizTemplate {
     if (new TextEncoder().encode(json).byteLength > QUIZ_TEMPLATE_MAX_BYTES) throw new Error("O template deve ter no máximo 1 MB.");
     const cleaned = json.replace(/^\uFEFF/, "").trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
     const first = cleaned.indexOf("{"), last = cleaned.lastIndexOf("}");
-    raw = JSON.parse(first >= 0 && last >= first ? cleaned.slice(first, last + 1) : cleaned);
+    raw = JSON.parse(typeof input === "string" && first >= 0 && last >= first && !cleaned.startsWith("[") ? cleaned.slice(first, last + 1) : cleaned);
   } catch (e) { if (e instanceof Error && e.message.includes("1 MB")) throw e; throw new Error("JSON inválido. Confira vírgulas, aspas e chaves."); }
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
     const obj = raw as Record<string, unknown>;
