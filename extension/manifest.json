@@ -1,19 +1,21 @@
 {
   "manifest_version": 3,
   "name": "Model Ads - Mineração",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Filtro de dias ativos na Biblioteca de Anúncios da Meta e mineração para o Model Ads.",
   "permissions": ["storage"],
   "host_permissions": [
     "https://www.facebook.com/ads/library*",
+    "https://*.fbcdn.net/*",
     "https://modelads-spy.lovable.app/*"
   ],
   "action": { "default_popup": "popup.html", "default_icon": "icon.png" },
+  "background": { "service_worker": "background.js" },
   "icons": { "48": "icon.png", "128": "icon.png" },
   "content_scripts": [
     {
       "matches": ["https://www.facebook.com/ads/library*"],
-      "js": ["api.js", "content.js"],
+      "js": ["api.js", "thumbnail.js", "content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
     }

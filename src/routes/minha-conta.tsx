@@ -13,6 +13,10 @@ export const Route = createFileRoute("/minha-conta")({
     meta: [
       { title: "Minha Conta — Modelads" },
       { name: "description", content: "Gerencie sua conta e assinatura Modelads." },
+      { property: "og:title", content: "Minha Conta — Modelads" },
+      { property: "og:description", content: "Gerencie sua conta, assinatura e extensão Modelads." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: () => (
