@@ -17,6 +17,8 @@
   let state = { token: null, plan: null, minDays: 0, minAds: 0, collapsed: false, duration: 2, target: 0 };
   let panel, msgEl, mineBtn, countEl;
   const cache = new Map();
+  const thumbnails = new Map();
+  const thumbnailInFlight = new Set();
   const galleryItems = new Map();
   let gallery, galleryGrid, galleryCount, viewBtn;
   let galleryActive = true, sortMode = "scale", searchScope = "";
@@ -279,6 +281,20 @@
     snapshot.candidate.active_days = snapshot.data.days;
     snapshot.candidate.creative_text = creative;
     cache.set(card.id, { id: card.id, snapshot });
+    // Capture readable original pixels before Meta virtualizes the DOM. Keep
+    // only data in a separate cache, never DOM nodes in gallery snapshots.
+    if (state.plan === "admin" && !thumbnails.has(card.id) && !thumbnailInFlight.has(card.id) && thumbnailInFlight.size < 2) {
+      const url = snapshot.media?.type === "video" ? snapshot.media.poster : snapshot.media?.url;
+      const source = [...card.el.querySelectorAll("img")].find((i) => !i.closest(UI_SELECTOR) && (i.currentSrc || i.src) === url && i.complete);
+      if (source) {
+        const scope = searchScope;
+        thumbnailInFlight.add(card.id);
+        mdlEncodeThumbnail(source).then((thumbnail) => {
+          if (scope === searchScope && state.plan === "admin" && cache.has(card.id)) thumbnails.set(card.id, thumbnail);
+        }).catch(() => { /* CORS fallback runs only during explicit admin submission. */ })
+          .finally(() => thumbnailInFlight.delete(card.id));
+      }
+    }
   }
 
   const scaleRank = (d) => d.days >= 30 && d.repeated >= 30 ? 3
@@ -382,7 +398,7 @@
   function resetGallery() {
     document.querySelectorAll(".mdl-original-hidden, .mdl-hidden").forEach((e) => e.classList.remove("mdl-original-hidden", "mdl-hidden"));
     gallery?.remove(); gallery = null; galleryGrid = null;
-    cache.clear(); galleryItems.clear();
+    cache.clear(); galleryItems.clear(); thumbnails.clear(); thumbnailInFlight.clear();
   }
 
   function applyFilterInner() {
@@ -546,14 +562,14 @@
     const scope = searchScope;
     const token = state.token;
     const candidates = [];
+    const originals = findCards();
     for (const item of batch) {
       const card = cache.get(item.ad_archive_id);
       const media = card ? mediaOf(card) : null;
       const url = media?.type === "video" ? media.poster : media?.url;
-      const original = findCards().find((c) => c.id === item.ad_archive_id);
-      const source = original ? [...original.el.querySelectorAll("img")].find((i) => (i.currentSrc || i.src) === url)
-        || (media?.type === "video" ? original.el.querySelector("video") : null) : null;
-      const thumbnail = await mdlCaptureThumbnail(url, source);
+      const original = originals.find((c) => c.id === item.ad_archive_id);
+      const source = original ? [...original.el.querySelectorAll("img")].find((i) => !i.closest(UI_SELECTOR) && (i.currentSrc || i.src) === url) : null;
+      const thumbnail = thumbnails.has(item.ad_archive_id) ? { thumbnail: thumbnails.get(item.ad_archive_id) } : await mdlCaptureThumbnail(url, source);
       candidates.push({ ...item, ...thumbnail });
     }
     await sleep(Math.max(0, lastSubmitAt + SEND_INTERVAL - Date.now()));

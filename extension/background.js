@@ -6,7 +6,10 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
       !/^https:\/\/www\.facebook\.com\/ads\/library(?:[/?#]|$)/.test(sender.url || "")) {
     reply({ thumbnail_error: "cors_or_download" }); return false;
   }
-  mdlFetchCreative(message.url).then(mdlBlobThumbnail)
+  chrome.storage.local.get(["mdlPlan"]).then((data) => {
+    if (data.mdlPlan !== "admin") throw new Error("cors_or_download");
+    return mdlFetchCreative(message.url);
+  }).then(mdlBlobThumbnail)
     .then((thumbnail) => reply({ thumbnail }))
     .catch((error) => reply({ thumbnail_error: error.message === "too_large" ? "too_large" : "cors_or_download" }));
   return true;

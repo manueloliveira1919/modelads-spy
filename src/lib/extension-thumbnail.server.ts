@@ -18,14 +18,11 @@ export async function saveExtensionThumbnails(db: SupabaseClient<Database>, user
       });
       if (upload.error) throw new Error("Falha ao salvar miniatura");
       const { data } = db.storage.from("offer-previews").getPublicUrl(path);
-      const previous = await db.from("extension_preview_assets").select("url").eq("ad_archive_id", row.ad_archive_id).maybeSingle();
       // The isolated trigger links this asset to every existing offer for this ad.
       const write = await db.from("extension_preview_assets").upsert({ ad_archive_id: row.ad_archive_id,
         submitted_by: userId, url: data.publicUrl, status: "ok", last_error: null, updated_at: new Date().toISOString(),
       });
       if (write.error) throw new Error("Falha ao associar miniatura");
-      // Old objects are retained: an in-flight catalogue read can still reference them.
-      void previous;
       saved++;
     } catch (error) {
       if (path) await db.storage.from("offer-previews").remove([path]);
