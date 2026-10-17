@@ -1,9 +1,10 @@
-# Extensão 1.2.0
 # Vitrine — capas de criativos
-- [ ] Verificar fontes e criar armazenamento/fila isolados
-- [ ] Gerar lotes seguros e botão administrativo; avaliar agendamento disponível
-- [ ] Exibir capas preservando dados e validar fluxo
+- [x] Verificar fontes e criar fila isolada, gerador e botão administrativo
+- [x] Exibir capas/placeholder preservando dados; testes e navegador com conta admin
+- [ ] Ativar bucket público e testar cópia real — bloqueado pela política do workspace; bucket privado criado sem consumir tentativas
+- [ ] Agendamento automático — indisponível neste projeto antigo (sem helper/ferramentas de callbacks gerenciados); não alterar cron da mineração
 
+# Extensão 1.2.0
 
 - [x] Galeria com cache, ordenação e alternância da lista original
 - [x] Envio administrativo em lotes e atualização do ZIP
