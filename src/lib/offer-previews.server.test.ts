@@ -6,7 +6,7 @@ import { generateOfferPreviews } from "./offer-previews.server";
 function fixture(publicBucket: boolean, withImage: boolean) {
   const writes: { table: string; data: Record<string, unknown> }[] = [];
   const claimed = { offer_id: "offer-1", claim_token: "claim-1", attempts: 1 };
-  const upload = vi.fn(async () => ({ error: null }));
+  const upload = vi.fn(async (_path: string, _bytes: Uint8Array, _options: unknown) => ({ error: null }));
   const rpc = vi.fn(async () => ({ data: [claimed], error: null }));
   const db = {
     rpc,
