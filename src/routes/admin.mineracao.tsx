@@ -7,6 +7,7 @@ import { categoriesQueryOptions } from "@/hooks/use-categories";
 import { logSystem } from "@/lib/admin-log";
 import { AdminPageHeader } from "@/components/admin-shell";
 import { ExtensionCandidatesCard } from "@/components/extension-candidates-card";
+import { OfferPreviewsAdmin } from "@/components/offer-previews-admin";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -63,6 +64,14 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/admin/mineracao")({
+  head: () => ({ meta: [
+    { title: "Mineração e capas — Modelads Admin" },
+    { name: "description", content: "Operação administrativa da mineração e das capas da Vitrine Modelads." },
+    { property: "og:title", content: "Mineração e capas — Modelads Admin" },
+    { property: "og:description", content: "Operação administrativa da mineração e das capas da Vitrine Modelads." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: MineracaoPage,
 });
 
@@ -421,6 +430,7 @@ function MineracaoPage() {
         }
       />
       <ExtensionCandidatesCard />
+      <OfferPreviewsAdmin />
 
       {last && summary && (
         <Card className="mb-6 border-brand/30 bg-brand/5">

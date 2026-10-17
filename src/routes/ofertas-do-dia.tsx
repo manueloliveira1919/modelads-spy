@@ -36,6 +36,8 @@ export const Route = createFileRoute("/ofertas-do-dia")({
         content: "Ofertas já garimpadas e validadas na Meta Ad Library — nada em fase de teste.",
       },
       { property: "og:title", content: "Ofertas do Dia — Modelads" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:description", content: "Ofertas já garimpadas e validadas." },
     ],
   }),
