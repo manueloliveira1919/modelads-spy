@@ -21,11 +21,11 @@
 - Sales page share links use a single published-origin resolver, with current origin on published/custom domains and a production fallback on preview hosts — prevents copying draft preview URLs.
 - Sales-page-only interactive sections use scoped data-attribute event delegation serialized into HTML export, while guarantee badges are self-contained SVG and section fields remain JSON — ensures editor/public/export parity without touching the quiz engine or adding schema.
 
-- Quiz elements render through `QuizElementView` in editor and runner; session, navigation, scoring and lead submission stay in `QuizRunner` — prevents visual drift without changing execution rules.
+- QuizElementView serves editor/runner/public; QuizRunner owns navigation, scoring and leads to prevent drift.
 - Quiz creation defaults stay separate from legacy normalization — preserve saved styles and opt-in result buttons.
-- Quiz image uploads reuse the existing authenticated private asset upload helper — persist signed URLs rather than embedding file data in JSON.
-- Quiz rich text is data-only validated runs with synchronized plain text; selection edits update the focused DOM before autosave to preserve the cursor and avoid user HTML execution.
-- Quiz font stylesheets are stable per editor or complete runner dataset; await font faces before applying selections to prevent fallback flashes.
+- Quiz uploads use the authenticated asset helper and signed URLs, never embedded data.
+- Quiz rich text uses validated runs plus synchronized text; edit the focused DOM before autosave to preserve cursors, never execute user HTML.
+- Quiz fonts load once per editor/runner dataset; await font faces before selection to avoid fallback flashes.
 - Quiz result presentation owns analysis timing; per-visit readiness gates delayed buttons and shared runner actions, keeping session/scoring/leads unchanged.
 - Quiz import/export/AI share a validated portable JSON contract and creation path; remapped section keys preserve logic with fresh identities.
 - Extension releases: every change in extension/ must bump manifest.json version and regenerate public/modelads-extension.zip via `bun scripts/pack-extension.ts` — the app reads the version from the manifest, so zip and displayed version must match.
