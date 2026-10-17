@@ -52,9 +52,12 @@ import { useSlugAvailability } from "@/lib/use-slug-availability";
 import { QUIZ_TEMPLATES, slugify, type QuizListItem } from "@/lib/quiz-types";
 
 import { QuizExportMenu, QuizTemplateInput } from "@/components/quiz/quiz-template-controls";
+import { QuizAiGuide, QuizAiGuideDialog } from "@/components/quiz/quiz-ai-guide";
+import { useQuizCopy } from "@/components/quiz/quiz-copy";
 import type { QuizTemplate } from "@/lib/quiz-template";
 
 export const Route = createFileRoute("/modelar-quiz/")({
+  validateSearch: (search: Record<string, unknown>): { import?: true } => search.import === true || search.import === "true" ? { import: true } : {},
   head: () => ({
     meta: [
       { title: "Modelar Quiz — Modelads" },
@@ -88,11 +91,22 @@ function QuizListPage() {
 }
 
 function QuizListContent() {
+  const search = Route.useSearch();
   const { user } = useAuth();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [createOpen, setCreateOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [initialMode, setInitialMode] = useState<"blank" | "import">("blank");
+  const { copy, copyDialog } = useQuizCopy();
+  const openImport = () => { setGuideOpen(false); setInitialMode("import"); setCreateOpen(true); };
   const [pendingDelete, setPendingDelete] = useState<QuizListItem | null>(null);
+  useEffect(() => {
+    if (search.import) {
+      setInitialMode("import"); setCreateOpen(true);
+      void navigate({ to: "/modelar-quiz", search: {}, replace: true });
+    }
+  }, [search.import, navigate]);
 
   const { data: quizzes, isLoading, error } = useQuery({
     queryKey: ["quizzes", user?.id],
@@ -120,8 +134,8 @@ function QuizListContent() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-end gap-3"><QuizAiLink />
-        <Button onClick={() => setCreateOpen(true)} className="bg-gradient-brand text-white">
+      <div className="flex flex-wrap items-center justify-end gap-3"><QuizAiLink /><Button variant="outline" onClick={() => setGuideOpen(true)}><Sparkles className="h-4 w-4" />Criar com ChatGPT/Claude</Button>
+        <Button onClick={() => { setInitialMode("blank"); setCreateOpen(true); }} className="bg-gradient-brand text-white">
           <Plus className="mr-1.5 h-4 w-4" /> Criar novo Quiz
         </Button>
       </div>
@@ -149,7 +163,7 @@ function QuizListContent() {
           <p className="mx-auto mt-2 max-w-sm text-sm text-muted-foreground">
             Comece do zero ou use um template pronto para captar leads e vender mais.
           </p>
-          <Button onClick={() => setCreateOpen(true)} className="mt-5 bg-gradient-brand text-white">
+          <Button onClick={() => { setInitialMode("blank"); setCreateOpen(true); }} className="mt-5 bg-gradient-brand text-white">
             <Plus className="mr-1.5 h-4 w-4" /> Criar novo Quiz
           </Button><div className="mt-3"><QuizAiLink /></div>
         </div>
@@ -202,8 +216,7 @@ function QuizListContent() {
                   variant="outline"
                   onClick={() => {
                     const url = `${window.location.origin}/quiz/${q.slug}`;
-                    void navigator.clipboard.writeText(url);
-                    toast.success("Link do quiz copiado");
+                    void copy(url, "Link do quiz copiado");
                   }}
                 >
                   <LinkIcon className="mr-1 h-3.5 w-3.5" /> Copiar link
@@ -231,7 +244,10 @@ function QuizListContent() {
         ))}
       </div>
 
+      {copyDialog}
+      <QuizAiGuideDialog open={guideOpen} onOpenChange={setGuideOpen} onImport={openImport} />
       <NewQuizDialog
+        initialMode={initialMode}
         open={createOpen}
         onOpenChange={setCreateOpen}
         onCreated={(id) => {
@@ -272,10 +288,12 @@ function NewQuizDialog({
   open,
   onOpenChange,
   onCreated,
+  initialMode,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onCreated: (id: string) => void;
+  initialMode: "blank" | "import";
 }) {
   const { user } = useAuth();
   const [name, setName] = useState("");
@@ -286,7 +304,8 @@ function NewQuizDialog({
   const [templateKey, setTemplateKey] = useState(QUIZ_TEMPLATES[0].key);
 
   useEffect(() => {
-    if (!open) {
+    if (open) setMode(initialMode);
+    else {
       setName("");
       setSlug("");
       setSlugTouched(false);
@@ -294,7 +313,7 @@ function NewQuizDialog({
       setImported(null);
       setTemplateKey(QUIZ_TEMPLATES[0].key);
     }
-  }, [open]);
+  }, [open, initialMode]);
 
   const autoSlug = useMemo(() => slugify(name), [name]);
   const effectiveSlug = slugTouched ? slug : autoSlug;
@@ -404,7 +423,7 @@ function NewQuizDialog({
             ))}
           </div>
 
-          {mode === "import" && <QuizTemplateInput onParsed={t => { setImported(t); if (t && !name.trim()) setName(t.name); }} />}
+          {mode === "import" && <div className="space-y-4"><details><summary className="cursor-pointer text-sm font-medium">Não tem um template? Gere um com IA</summary><div className="pt-4"><QuizAiGuide onImport={() => { setMode("import"); document.querySelector<HTMLTextAreaElement>('[aria-label="JSON do template"]')?.focus(); }} /></div></details><QuizTemplateInput onParsed={t => { setImported(t); if (t && !name.trim()) setName(t.name); }} /></div>}
           {mode === "ai" && <div className="space-y-3"><p className="text-sm text-muted-foreground">A geração de quizzes com IA estará disponível em breve.</p><Button asChild variant="secondary"><Link to="/modelar-quiz/gerar-com-ia"><Sparkles className="h-4 w-4" />Abrir gerador</Link></Button></div>}
           {mode === "template" && (
             <div className="space-y-2">

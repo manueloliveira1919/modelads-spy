@@ -45,6 +45,7 @@ import { QuizFonts } from "@/components/quiz/quiz-element-view";
 import { DEFAULT_QUIZ_SETTINGS } from "@/lib/quiz-types";
 import { ThemePanel, ElementEditor, SectionProperties } from "@/components/quiz/quiz-panels";
 import { isSlugAvailable, loadQuiz, saveQuiz, SlugTakenError } from "@/lib/quiz-api";
+import { useQuizCopy } from "@/components/quiz/quiz-copy";
 import { QuizExportMenu, QuizImportDialog } from "@/components/quiz/quiz-template-controls";
 import { materializeQuizTemplate, templateSettings } from "@/lib/quiz-template";
 import { useSlugAvailability } from "@/lib/use-slug-availability";
@@ -102,6 +103,7 @@ function EditorPage() {
 }
 
 function EditorContent() {
+  const { copy, copyDialog } = useQuizCopy();
   const { id } = Route.useParams();
   const { user } = useAuth();
   const [propertyTab, setPropertyTab] = useState("secao");
@@ -625,8 +627,7 @@ function EditorContent() {
             variant="outline"
             size="sm"
             onClick={() => {
-              void navigator.clipboard.writeText(publicUrl);
-              toast.success("Link copiado");
+              void copy(publicUrl, "Link copiado");
             }}
           >
             <Copy className="mr-1.5 h-3.5 w-3.5" /> Copiar link
@@ -639,6 +640,7 @@ function EditorContent() {
         </div>
       )}
 
+      {copyDialog}
       {importOpen && <QuizImportDialog open={importOpen} onOpenChange={setImportOpen} onImport={(template, replace) => {
         if (!replace && sections.length + template.sections.length > 40) { toast.error("O quiz pode ter no máximo 40 seções."); return; }
         const imported = materializeQuizTemplate(template, quiz.id, replace ? 0 : sections.length);

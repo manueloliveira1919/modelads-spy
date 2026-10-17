@@ -1,10 +1,42 @@
 import { describe, expect, it } from "vitest";
-import { parseQuizTemplate, materializeQuizTemplate, exportQuizTemplate, templateSettings, QUIZ_TEMPLATE_MAX_BYTES } from "./quiz-template";
+import { parseQuizTemplate, materializeQuizTemplate, exportQuizTemplate, templateSettings, QUIZ_TEMPLATE_MAX_BYTES, QUIZ_AI_EXAMPLE, QUIZ_AI_INSTRUCTIONS, buildQuizAiPrompt } from "./quiz-template";
 import { DEFAULT_QUIZ_SETTINGS, makeElement, uid, type QuizSection } from "./quiz-types";
 import { answerKey } from "./quiz-session";
 import { resolveNextIndex } from "./quiz-logic";
 const base = () => ({ format: "modelads-quiz-template", version: 1, name: "Teste", settings: {}, sections: [{ key: "s1", name: "Capa", elements: [{ type: "text", content: { text: "Olá" }, settings: {} }] }] });
 describe("Portable quiz template rules", () => {
+  it("accepts BOM, markdown fences and surrounding prose without changing the template", () => {
+    expect(parseQuizTemplate(`\uFEFFAqui está:\n\`\`\`json\n${JSON.stringify(base())}\n\`\`\`\nFim.`)).toEqual(parseQuizTemplate(base()));
+  });
+  it("does not unwrap arrays of templates", () => {
+    expect(() => parseQuizTemplate([base()])).toThrow();
+    expect(() => parseQuizTemplate(JSON.stringify([base()]))).toThrow();
+  });
+  it.each([ { funnel: {} }, { template: { sections: [] } }, { template_name: "Quiz" }, { questions: [] }, { entry: {} } ])("rejects generic or wrapped contracts with guide guidance: %j", value => {
+    expect(() => parseQuizTemplate(value)).toThrow("parece gerado sem as instruções");
+  });
+  it("reports at most five validation failures with element context", () => {
+    const t = { ...base(), sections: [{ ...base().sections[0], elements: Array.from({ length: 6 }, () => ({ type: "unknown", content: {}, settings: {} })) }] };
+    try { parseQuizTemplate(t); throw new Error("Should reject"); } catch (e) {
+      const lines = (e as Error).message.split("\n");
+      expect(lines).toHaveLength(5);
+      expect(lines[4]).toContain("Seção 1, elemento 5");
+    }
+  });
+  it("imports the complete examples embedded in the instructions", () => {
+    const first = QUIZ_AI_INSTRUCTIONS.split("\n").find(line => line.startsWith('{"format"'));
+    expect(parseQuizTemplate(first).sections).toHaveLength(1);
+    const parsed = parseQuizTemplate(QUIZ_AI_EXAMPLE);
+    expect(parsed.sections).toHaveLength(3);
+    expect(parsed.sections[0].elements[0].content.options?.[1].value).toBe(5);
+    expect(parsed.sections[1].elements[0].content.ranges?.[1].min).toBe(5);
+    expect(QUIZ_AI_INSTRUCTIONS).toContain(JSON.stringify(QUIZ_AI_EXAMPLE, null, 2));
+  });
+  it("includes the user request and shared instructions in the ready prompt", () => {
+    const prompt = buildQuizAiPrompt("  Curso de maquiagem, 8 perguntas  ");
+    expect(prompt).toContain(QUIZ_AI_INSTRUCTIONS);
+    expect(prompt).toContain("PEDIDO DO USUÁRIO:\nCurso de maquiagem, 8 perguntas");
+  });
   it("rejects invalid JSON", () => expect(() => parseQuizTemplate('{"name":')).toThrow("JSON inválido"));
   it("rejects unknown versions", () => expect(() => parseQuizTemplate({ ...base(), version: 2 })).toThrow("Versão"));
   it("reports unknown element with section and element numbers", () => { const t = base(); t.sections[0].elements[0].type = "xyz"; expect(() => parseQuizTemplate(t)).toThrow("Seção 1, elemento 1: tipo 'xyz' não existe"); });
