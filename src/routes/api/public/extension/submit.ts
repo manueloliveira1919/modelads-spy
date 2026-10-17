@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { sha256Hex } from "@/lib/account-guard.server";
 import { checkExtensionRate, rateLimitedResponse } from "@/lib/extension-rate-limit.server";
+import { readExtensionBody } from "@/lib/extension-thumbnail";
 
 const MAX_PER_CALL = 50;
 
@@ -32,6 +33,8 @@ const Candidate = z.object({
   link_url: httpUrl,
   active_days: z.number().int().min(0).max(5000).optional().nullable(),
   repeated_ads_count: z.number().int().min(0).max(100000).optional().nullable(),
+  thumbnail: z.string().max(110000).optional().nullable(),
+  thumbnail_error: z.enum(["no_creative", "cors_or_download", "encode_failed", "too_large"]).optional().nullable(),
 });
 const Body = z.object({ candidates: z.array(Candidate).min(1) });
 
@@ -69,9 +72,10 @@ export const Route = createFileRoute("/api/public/extension/submit")({
 
         let body: unknown;
         try {
-          body = await request.json();
-        } catch {
-          return json({ ok: false, reason: "invalid_body", message: "JSON inválido." }, 400);
+          body = await readExtensionBody(request);
+        } catch (error) {
+          const tooLarge = error instanceof Error && error.message === "payload_too_large";
+          return json({ ok: false, reason: tooLarge ? "payload_too_large" : "invalid_body", message: tooLarge ? "Envio muito grande. Reduza o lote." : "JSON inválido." }, tooLarge ? 413 : 400);
         }
         const parsed = Body.safeParse(body);
         if (!parsed.success) {
@@ -84,12 +88,19 @@ export const Route = createFileRoute("/api/public/extension/submit")({
         const unique = [...new Map(parsed.data.candidates.map((c) => [c.ad_archive_id, c])).values()];
         const adsRate = await checkExtensionRate(supabaseAdmin, tokenHash, unique.length, false);
         if (!adsRate.ok) return rateLimitedResponse(adsRate, cors);
-        const { data: result, error: insErr } = await supabaseAdmin.rpc("extension_submit_candidates", {
+        // Existing catalogue evidence receives a cover only, never a new classify run.
+        const existing = await supabaseAdmin.from("meta_offers").select("ad_archive_id").in("ad_archive_id", unique.map((r) => r.ad_archive_id)).not("offer_id", "is", null);
+        if (existing.error) return json({ ok: false, reason: "error" }, 500);
+        const known = new Set((existing.data ?? []).map((r) => r.ad_archive_id));
+        const candidateRows = unique.filter((r) => !known.has(r.ad_archive_id)).map(({ thumbnail, thumbnail_error, ...candidate }) => candidate);
+        const { data: result, error: insErr } = candidateRows.length ? await supabaseAdmin.rpc("extension_submit_candidates", {
           p_user_id: res.user_id,
-          p_rows: unique as never,
-        });
+          p_rows: candidateRows as never,
+        }) : { data: { inserted: 0, updated: 0, skipped: 0 }, error: null };
         if (insErr) return json({ ok: false, reason: "error" }, 500);
-        return json({ ok: true, received: parsed.data.candidates.length, ...(result as object) }, 200);
+        const { saveExtensionThumbnails } = await import("@/lib/extension-thumbnail.server");
+        const thumbnails = await saveExtensionThumbnails(supabaseAdmin, res.user_id, unique);
+        return json({ ok: true, received: parsed.data.candidates.length, ...(result as object), existing_offers: known.size, thumbnails }, 200);
       },
     },
   },

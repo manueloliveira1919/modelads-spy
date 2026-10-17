@@ -35,12 +35,13 @@ export function OfferPreviewsAdmin() {
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-border py-4">
       <div>
         <h2 className="font-display text-base font-semibold">Capas da Vitrine</h2>
+        <p className="mt-1 max-w-xl text-xs text-muted-foreground">As capas vêm dos envios administrativos da extensão v1.4.0. A cópia direta pela Meta está desativada: hoje ela não entrega o criativo ao servidor. Nenhuma tentativa é consumida.</p>
         <p className="mt-1 text-xs text-muted-foreground">
           {stats.data?.ready ?? 0} prontas · {stats.data?.failed ?? 0} falhas · {stats.data?.exhausted ?? 0} com tentativas esgotadas
         </p>
         {mutation.data?.ok === false && <p className="mt-2 max-w-xl text-sm text-destructive">{mutation.data.message}</p>}
       </div>
-      <Button variant="outline" disabled={mutation.isPending} onClick={() => mutation.mutate()} className="gap-2">
+      <Button variant="outline" disabled title="Cópia direta pela Meta desativada; use a extensão" onClick={() => mutation.mutate()} className="gap-2">
         {mutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
         {mutation.isPending ? "Gerando capas..." : "Gerar previews pendentes"}
       </Button>
