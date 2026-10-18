@@ -3,6 +3,7 @@ import { useAuth } from "@/lib/auth-context";
 import {
   fetchEntitlements,
   fetchPlans,
+  freeEntitlements,
   type Entitlements,
   type FeatureKey,
 } from "@/lib/entitlements";
@@ -18,14 +19,16 @@ export function useEntitlements() {
     queryFn: fetchEntitlements,
     enabled: Boolean(user),
     staleTime: 30_000,
+    retry: false,
   });
 
-  const ent = query.data ?? null;
+  const ent = query.isError ? freeEntitlements(user?.id ?? "") : query.data ?? freeEntitlements(user?.id ?? "");
 
   return {
     entitlements: ent,
     loading: query.isLoading,
-    planCode: ent?.planCode ?? "starter",
+    error: query.error,
+    planCode: ent.planCode,
     unlimited: ent?.unlimited ?? false,
     balance: ent?.balance ?? 0,
     hasFeature: (key: FeatureKey) => Boolean(ent?.unlimited) || Boolean(ent?.features.includes(key)),
@@ -37,5 +40,5 @@ export function useEntitlements() {
 }
 
 export function usePlans() {
-  return useQuery({ queryKey: ["plans"], queryFn: fetchPlans, staleTime: 5 * 60_000 });
+  return useQuery({ queryKey: ["plans"], queryFn: fetchPlans, staleTime: 5 * 60_000, retry: false });
 }

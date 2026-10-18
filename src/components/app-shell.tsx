@@ -220,7 +220,7 @@ function UserFooter() {
   const { user, isPro, isAdmin, signOut } = useAuth();
   const { entitlements, unlimited, balance } = useEntitlements();
   const navigate = useNavigate();
-  const plan = entitlements ? planLabel(entitlements.planCode) : isAdmin ? "Admin" : isPro ? "PRO" : "Starter";
+  const plan = entitlements ? planLabel(entitlements.planCode) : "Free";
   const email = user?.email ?? "Convidado";
 
   return (

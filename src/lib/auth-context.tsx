@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { normalizePlanCode } from "@/lib/entitlements";
 
 export type AppRole = "starter" | "plus" | "pro" | "premium" | "admin";
 
@@ -34,12 +35,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPlan("free");
       return;
     }
-    const [{ data }, planRes] = await Promise.all([
-      supabase.from("user_roles").select("role").eq("user_id", uid),
-      supabase.rpc("get_my_plan"),
-    ]);
-    setRoles(((data ?? []) as { role: AppRole }[]).map((r) => r.role));
-    setPlan(((planRes.data as { plan?: string } | null)?.plan ?? "free") as string);
+    try {
+      const [{ data }, planRes] = await Promise.all([
+        supabase.from("user_roles").select("role").eq("user_id", uid).abortSignal(AbortSignal.timeout(8000)),
+        supabase.rpc("get_my_plan").abortSignal(AbortSignal.timeout(8000)),
+      ]);
+      setRoles(((data ?? []) as { role: AppRole }[]).map((r) => r.role));
+      setPlan(planRes.error ? "free" : normalizePlanCode((planRes.data as { plan?: string } | null)?.plan));
+    } catch {
+      setRoles([]);
+      setPlan("free");
+    }
   }
 
   useEffect(() => {
