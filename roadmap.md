@@ -1,7 +1,8 @@
 # Planos — fallback e avisos de upgrade
 - [x] Garantir plano free e leitura autenticada do catálogo comercial
 - [x] Corrigir fallback, planos e mensagem de bloqueio sem liberar recursos
-- [ ] Concluir leitura real dos planos e cenários free/manual/Cakto: aguarda recuperação do Lovable Cloud (503/PGRST002 e falha auth→database)
+- [x] Recuperar Lovable Cloud e confirmar catálogo, recursos e assinatura Starter na conta do solicitante, sem erros de execução e com consultas HTTP 200
+- [ ] Confirmar os cenários free/manual/Cakto no navegador: requer sessões autorizadas das contas correspondentes; a sessão disponível é admin
 
 # Criador de Páginas — Receitas Naturais e topo
 - [x] Botões abaixo da mídia por padrão, preservando reordenação manual
