@@ -1,3 +1,8 @@
+# Planos — fallback e avisos de upgrade
+- [ ] Garantir plano free e leitura autenticada do catálogo comercial
+- [ ] Corrigir fallback, planos e mensagem de bloqueio sem liberar recursos
+- [ ] Verificar chamadas, console e cenários free/manual/Cakto
+
 # Criador de Páginas — Receitas Naturais e topo
 - [x] Botões abaixo da mídia por padrão, preservando reordenação manual
 - [x] Template Receitas Naturais editável com fontes, oferta, contagem e carrossel
