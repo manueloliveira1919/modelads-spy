@@ -1,3 +1,8 @@
+# Planos — fallback e avisos de upgrade
+- [x] Garantir plano free e leitura autenticada do catálogo comercial
+- [x] Corrigir fallback, planos e mensagem de bloqueio sem liberar recursos
+- [ ] Concluir leitura real dos planos e cenários free/manual/Cakto: aguarda recuperação do Lovable Cloud (503/PGRST002 e falha auth→database)
+
 # Criador de Páginas — Receitas Naturais e topo
 - [x] Botões abaixo da mídia por padrão, preservando reordenação manual
 - [x] Template Receitas Naturais editável com fontes, oferta, contagem e carrossel

@@ -61,6 +61,16 @@ export interface Plan {
   availability: string;
   sort_order: number;
   description: string | null;
+  checkout_url: string | null;
+}
+
+export function normalizePlanCode(value: unknown): PlanCode {
+  return value === "starter" || value === "pro" || value === "premium" || value === "admin" ? value : "free";
+}
+
+export function freeEntitlements(userId: string): Entitlements {
+  return { userId, planCode: "free", isAdmin: false, unlimited: false, balance: 0,
+    totalEarned: 0, totalSpent: 0, features: [], costs: {}, usageToday: {} };
 }
 
 export interface LedgerEntry {
@@ -75,13 +85,13 @@ export interface LedgerEntry {
 }
 
 export async function fetchEntitlements(): Promise<Entitlements | null> {
-  const { data, error } = await supabase.rpc("get_my_entitlements");
+  const { data, error } = await supabase.rpc("get_my_entitlements").abortSignal(AbortSignal.timeout(8000));
   if (error) throw error;
   if (!data) return null;
   const d = data as Record<string, unknown>;
   return {
     userId: String(d["user_id"] ?? ""),
-    planCode: (d["plan_code"] as PlanCode) ?? "free",
+    planCode: normalizePlanCode(d["plan_code"]),
     isAdmin: Boolean(d["is_admin"]),
     unlimited: Boolean(d["unlimited"]),
     balance: Number(d["balance"] ?? 0),
@@ -96,9 +106,10 @@ export async function fetchEntitlements(): Promise<Entitlements | null> {
 export async function fetchPlans(): Promise<Plan[]> {
   const { data, error } = await supabase
     .from("plans")
-    .select("code, name, price_cents, monthly_credits, display_price, availability, sort_order, description")
+    .select("code, name, price_cents, monthly_credits, display_price, availability, sort_order, description, checkout_url")
     .eq("is_active", true)
-    .order("sort_order");
+    .order("sort_order")
+    .abortSignal(AbortSignal.timeout(8000));
   if (error) throw error;
   return (data ?? []) as Plan[];
 }

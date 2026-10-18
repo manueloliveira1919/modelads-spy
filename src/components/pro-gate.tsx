@@ -14,7 +14,7 @@ interface ProGateProps {
 export function ProGate({ title, description, icon: Icon, children }: ProGateProps) {
   const { isPro, loading } = useAuth();
   const { planCode, entitlements } = useEntitlements();
-  const isFree = Boolean(entitlements) && planCode === "free";
+  const isFree = planCode === "free";
 
   if (loading) {
     return (

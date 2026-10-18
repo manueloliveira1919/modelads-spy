@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePlans } from "@/hooks/use-entitlements";
 import { useEntitlements } from "@/hooks/use-entitlements";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/upgrade")({
   head: () => ({
@@ -51,11 +52,13 @@ function UpgradePage() {
 
   const featuresQuery = useQuery({
     queryKey: ["plan-features"],
+    retry: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("plan_features")
         .select("plan_code, feature_key")
-        .eq("enabled", true);
+        .eq("enabled", true)
+        .abortSignal(AbortSignal.timeout(8000));
       if (error) throw error;
       const map = new Map<string, string[]>();
       (data ?? []).forEach((f) => {
@@ -84,6 +87,20 @@ function UpgradePage() {
             Escolha o plano ideal para acelerar suas campanhas. Cancele quando quiser.
           </p>
         </div>
+
+        {!plansQuery.isLoading && plans.length === 0 && (
+          <div className="mx-auto max-w-xl space-y-4 border border-border bg-card p-6 text-center rounded-lg" role="status">
+            <h2 className="font-display text-xl font-bold">Ative seu plano Modelads</h2>
+            <p className="text-sm text-muted-foreground">Starter para acessar as ofertas. Pro e Premium para as ferramentas de IA.</p>
+            <p className="text-sm text-muted-foreground">Não foi possível carregar os preços e links de assinatura. Tente novamente.</p>
+            <Button onClick={() => { void plansQuery.refetch(); void featuresQuery.refetch(); }}><Sparkles />Ver planos e assinar</Button>
+          </div>
+        )}
+        {featuresQuery.isError && plans.length > 0 && (
+          <div className="text-center text-sm text-muted-foreground" role="status">
+            Não foi possível carregar a lista de recursos. <Button variant="link" onClick={() => { void featuresQuery.refetch(); }}>Tentar novamente</Button>
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-3 lg:gap-8 max-w-6xl mx-auto w-full">
           {plansQuery.isLoading &&
@@ -143,24 +160,18 @@ function UpgradePage() {
                   ))}
                 </ul>
 
-                <button
-                  disabled
-                  className={cn(
-                    "mt-8 w-full inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-semibold opacity-70 cursor-not-allowed",
-                    plan.code === "premium"
-                      ? "bg-gradient-gold font-bold"
-                      : "border border-border bg-background text-foreground",
-                  )}
-                >
-                  {current ? "Plano atual" : comingSoon ? "Em breve" : "Em breve — checkout"}
-                </button>
+                {!current && !comingSoon && plan.checkout_url?.startsWith("https://pay.cakto.com.br/") ? (
+                  <Button asChild size="lg" className="mt-8 w-full"><a href={plan.checkout_url} target="_blank" rel="noopener noreferrer"><Sparkles />Assinar {plan.name}</a></Button>
+                ) : (
+                  <Button disabled variant="outline" size="lg" className="mt-8 w-full">{current ? "Plano atual" : "Em breve"}</Button>
+                )}
               </div>
             );
           })}
         </div>
 
         <p className="text-center text-xs text-muted-foreground">
-          Pagamento seguro. Em breve — checkout integrado.{" "}
+          Pagamento seguro pela Cakto.{" "}
           <Link to="/" className="underline hover:text-foreground">
             Voltar ao Dashboard
           </Link>
