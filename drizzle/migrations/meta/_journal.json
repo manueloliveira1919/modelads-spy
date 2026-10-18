@@ -120,6 +120,13 @@
       "when": 1792201944647,
       "tag": "0016_extension_preview_reconciliation",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792362355947,
+      "tag": "0017_free_plan_fallback_and_catalog_reads",
+      "breakpoints": true
     }
   ]
 }
