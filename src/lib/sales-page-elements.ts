@@ -61,7 +61,12 @@ export function buttonDestination(button: PageButton, sections: PageSection[]): 
 export function contentAt(section: PageSection, key: string): string {
   if (key.startsWith("custom:")) return section.customElements?.find(e => e.id === key.slice(7))?.value || "";
   if (key.startsWith("button:")) return section.content.buttons?.find((b: PageButton) => b.id === key.slice(7))?.text || section.content.buttonText || "";
-  const list = key.match(/^items\.(\d+)\.(features|checklist)\.(\d+)$/);
+  const list = key.match(/^items\.(\d+)\.(features|checklist|excluded)\.(\d+)$/);
   if (list) return (section.content.items?.[Number(list[1])]?.[list[2]] || "").split("\n")[Number(list[3])] || "";
   return key.split(".").reduce<any>((value, part) => value?.[part], section.content) ?? "";
+}
+/** The explicit "Modo do aviso" wins; the legacy showDate flag only applies to bars saved before modes existed. */
+export function announcementMode(content: Record<string, any>): "text" | "date" | "countdown" {
+  if (content.mode === "text" || content.mode === "date" || content.mode === "countdown") return content.mode;
+  return content.showDate === true || content.showDate === "true" ? "date" : "text";
 }

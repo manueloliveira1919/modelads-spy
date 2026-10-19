@@ -32,7 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
 import { DEFAULT_PAGE_BACKGROUND, newPageButton, sectionButtons, salesPageUrl } from "@/lib/sales-page-layout";
-import { parseDestination } from "@/lib/sales-page-elements";
+import { announcementMode, parseDestination } from "@/lib/sales-page-elements";
 import { cn } from "@/lib/utils";
 import { BackgroundPanel, Choice, ElementPanel, DestinationPanel, Numeric } from "@/components/sales-page/element-panel";
 import { PageRenderer } from "@/components/sales-page/page-renderer";
@@ -222,7 +222,7 @@ function Editor({ initial }: { initial: SalesPage }) {
   const setContent = (id: string, path: string, v: unknown) => updateSection(id, s => {
     if (path.startsWith("button:")) return { ...s, content: { ...s.content, buttons: sectionButtons(s).map(b => b.id === path.slice(7) ? { ...b, text: String(v) } : b) } };
     if (path.startsWith("custom:")) return { ...s, customElements: s.customElements?.map(el => el.id === path.slice(7) ? { ...el, value: String(v), button: el.button ? { ...el.button, text: String(v) } : undefined } : el) };
-    const list = path.match(/^items\.(\d+)\.(checklist|features)\.(\d+)$/);
+    const list = path.match(/^items\.(\d+)\.(checklist|features|excluded)\.(\d+)$/);
     if (list) { const lines = (s.content.items?.[Number(list[1])]?.[list[2]] || "").split("\n"); lines[Number(list[3])] = String(v); return { ...s, content: setPath(s.content, `items.${list[1]}.${list[2]}`, lines.join("\n")) }; }
     return { ...s, content: setPath(s.content, path, v) };
   }, `${id}:c:${path}`);
@@ -645,7 +645,7 @@ function SectionPanel({
         {def.fields.filter(f => {
           if (["buttonText", "buttonUrl"].includes(f.key)) return false;
           if (section.type !== "announcement") return true;
-          const mode = section.content.mode || "text";
+          const mode = announcementMode(section.content);
           if (["dateAutomatic", "dateText"].includes(f.key)) return mode === "date" && (f.key !== "dateText" || section.content.dateAutomatic === "false");
           if (["timerType", "endAt", "durationSeconds", "expiry", "expiredText"].includes(f.key)) return mode === "countdown" && (f.key !== "endAt" || section.content.timerType !== "duration") && (f.key !== "durationSeconds" || section.content.timerType === "duration");
           return true;
