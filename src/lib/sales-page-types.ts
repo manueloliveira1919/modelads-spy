@@ -541,24 +541,79 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     ],
   },
   {
-    key: "education-kids", name: "Infoproduto Educação Kids", emoji: "🌈", description: "Kit educativo colorido, atividades, bônus e garantia.",
-    settings: { colors: { ...DEFAULT_PAGE_SETTINGS.colors, primary: "#169447", bg: "#ffffff", text: "#203047", muted: "#526079", surface: "#eef8ff" }, radius: 20, headingFont: "Nunito", font: "Nunito" },
+    key: "activities-kids", name: "Infoprodutos Atividades Kids", emoji: "🧩", description: "Atividades para professores: hero com vídeo, identificação, planos, garantia e FAQ.",
+    settings: {
+      font: "Nunito", headingFont: "Poppins", radius: 16, maxWidth: 1080,
+      colors: { primary: "#5B2AA6", bg: "#FBF7EE", text: "#2B1B3A", muted: "#6B5E7A", surface: "#FFFFFF", buttonText: "#2B1B3A" },
+    },
     build: () => {
-      const sequence: SectionType[] = ["announcement", "hero", "pains", "text", "textPhoto", "iconCards", "video", "steps", "printCarousel", "benefits", "steps", "bonusCards", "offer", "guarantee", "trustBadges", "faq", "finalCta", "footer"];
-      const sections = sequence.map((type, i) => newSection(type, undefined, { bg: ["#ffffff", "#eef8ff", "#fff6dc", "#f6eeff"][i % 4] }));
-      sections[0] = newSection("announcement", { text: "Condição especial para começar hoje", mode: "date" }, { bg: "#f9db69", color: "#203047", paddingY: 12 });
-      sections[1] = newSection("hero", { eyebrow: "KIT DE ATIVIDADES EDUCATIVAS", title: "Aprender também pode ser uma grande brincadeira", subtitle: "Um kit digital com ideias criativas para explorar letras, números e novas descobertas no ritmo de cada criança.", miniBadges: "📥 Acesso imediato\n🖨️ Pronto para imprimir\n🛡️ 30 dias de garantia", buttonText: "QUERO CONHECER O KIT", buttonUrl: "#oferta", buttons: [{ id: uid(), text: "QUERO CONHECER O KIT", url: "#oferta", guarantee: { days: "30", size: 80, variant: "green" } }] }, { paddingY: 56, align: "left" });
-      sections[2].content = { ...sections[2].content, title: "Faltam ideias para variar as atividades?", items: [{ text: "Você quer atividades simples de preparar" }, { text: "Busca momentos de aprendizado mais criativos" }, { text: "Precisa de materiais organizados em um só lugar" }] };
-      sections[3].content = { title: "Conheça o seu kit de descobertas", body: "Atividades digitais para imprimir, explorar e adaptar à rotina. Este é um exemplo de apresentação: descreva aqui o conteúdo real do seu produto." };
-      sections[4].content.title = "Pequenos momentos, grandes descobertas";
-      sections[7].content.title = "Benefícios para a sua rotina";
-      sections[9].content.title = "O que você recebe no kit";
-      sections[10].content = { title: "Comece em três passos", items: [{ title: "Receba por e-mail", text: "Acesse os arquivos após a confirmação." }, { title: "Imprima", text: "Escolha as atividades que fazem sentido." }, { title: "Use e explore", text: "Crie momentos de descoberta." }] };
-      sections[13] = newSection("guarantee", { days: "30", title: "Garantia incondicional de 30 dias", text: "Avalie o material com tranquilidade. Descreva aqui as condições reais de reembolso do seu produto.", badge: { days: "30", variant: "gold", size: 190 } }, { bg: "#fff6dc" });
-      sections[15].content.items = [{ q: "Como recebo o kit?", a: "O acesso digital chega após a confirmação do pagamento." }, { q: "Posso imprimir?", a: "Descreva aqui os formatos e condições de uso do seu material." }, { q: "Qual é a garantia?", a: "Você tem 30 dias para avaliar o material conforme as condições da oferta." }];
-      sections[16] = newSection("finalCta", { title: "Leve mais criatividade para a rotina", text: "Escolha seu kit e comece novas descobertas.", buttonText: "QUERO MEU KIT", buttonUrl: "#oferta" }, { bg: "#169447", color: "#ffffff" });
-      sections[17] = newSection("footer");
-      return sections;
+      const card = { bg: "#FFFFFF", borderColor: "#ECE4F5", borderWidth: 1, radius: 16 };
+      const cards = (n: number) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`items.${i}`, card]));
+      const toPopular = (text: string) => ({ id: uid(), text, url: "", destination: { type: "popular" as const, popularAction: "scroll" as const }, radius: 999, size: 18, bg: "#F5B82E", color: "#2B1B3A" });
+      const eyebrow = { color: "#5B2AA6" };
+      const announcement = newSection("announcement", { text: "Oferta especial disponível por tempo limitado", mode: "countdown", timerType: "midnight", timerBoxes: "true", expiry: "text", expiredText: "Oferta encerrada" }, { bg: "#2B1457", color: "#FFFFFF", paddingY: 12 });
+      const hero = newSection("hero", {
+        eyebrow: "PARA QUEM DÁ AULA PARA CRIANÇAS", title: "+150 Dinâmicas de [SEU PRODUTO] prontas para aplicar já na próxima aula", highlight: "prontas para aplicar", highlightItalic: "false",
+        subtitle: "Planeje suas aulas em menos de 10 minutos e nunca mais fique sem ideias para manter as crianças engajadas.",
+        proof: "Material utilizado por +[X] professores para reduzir o tempo de planejamento",
+        image: "", showMediaPlaceholder: true, mediaVertical: "true", mediaCaption: "Assista em 1 minuto o que você vai receber",
+        buttons: [toPopular("QUERO RECEBER O [SEU PRODUTO]")], priceLine: "Comece a partir de R$ [X] no Plano Básico",
+        checks: "Acesso imediato\nArquivos em PDF para imprimir\nGarantia de 7 dias", checkColor: "#1FA463", rating: "Mais de [X] professores já utilizam",
+      }, { paddingY: 64, maxWidth: 860, titleSize: 44, align: "center" });
+      hero.elementStyles = { eyebrow: { bg: "#EFE6FB", color: "#5B2AA6", radius: 999, paddingTop: 6, paddingBottom: 6, paddingX: 16, width: 46, align: "center" }, subtitle: { color: "#6B5E7A" }, proof: { bg: "#FFFFFF", borderColor: "#ECE4F5", borderWidth: 1, radius: 999 }, priceLine: { color: "#6B5E7A" } };
+      const pains = newSection("iconCards", { eyebrow: "SE VOCÊ SE IDENTIFICA, É PRA VOCÊ", title: "Você vive alguma dessas situações?", closing: "Você não precisa mais criar tudo do zero.", items: [
+        { icon: "⏳", title: "Passa horas procurando atividades", text: "Perde tempo buscando ideias em vários lugares." },
+        { icon: "🔁", title: "Repete sempre as mesmas brincadeiras", text: "As aulas acabam ficando parecidas." },
+        { icon: "🎭", title: "Precisa improvisar durante as aulas", text: "Falta um plano pronto para o momento certo." },
+        { icon: "😴", title: "As crianças perdem o interesse rapidamente", text: "Fica difícil manter a turma engajada." },
+        { icon: "📋", title: "Gasta mais tempo planejando do que ensinando", text: "O planejamento toma o seu tempo livre." },
+        { icon: "✨", title: "Gostaria de preparar aulas melhores em poucos minutos", text: "Quer praticidade sem perder a qualidade." },
+      ] }, { columns: 3, paddingY: 80 });
+      pains.elementStyles = { ...cards(6), eyebrow };
+      const creator = newSection("textPhoto", { eyebrow: "QUEM CRIOU", title: "[NOME DA CRIADORA]", text: "Escreva aqui uma mini bio: formação, tempo de experiência com crianças e por que criou este material.", image: "", reverse: false, items: [], buttons: [] }, { paddingY: 72, align: "left", bg: "#FFFFFF" });
+      creator.elementStyles = { eyebrow, image: { radius: 16 } };
+      const banner = newSection("textPhoto", { title: "Conheça o [SEU PRODUTO]", text: "Descreva em poucas linhas o que é o material e como ele ajuda no dia a dia das aulas.", image: "", panel: "true", reverse: false, items: [{ icon: "📚", text: "+150 dinâmicas prontas" }, { icon: "🖨️", text: "Pronto para imprimir" }, { icon: "⚡", text: "Acesso imediato" }], buttons: [toPopular("QUERO O [SEU PRODUTO]")] }, { paddingY: 72, align: "left" });
+      banner.elementStyles = { panel: { bg: "#FFFFFF", borderColor: "#ECE4F5", borderWidth: 1, radius: 24, paddingTop: 32, paddingBottom: 32, paddingX: 32 } };
+      const change = newSection("iconCards", { eyebrow: "A MUDANÇA NA SUA ROTINA", title: "O que muda quando você começa a usar o [SEU PRODUTO]", items: [
+        "Planeje suas aulas muito mais rápido", "Nunca mais fique sem ideias", "Atividades organizadas por faixa etária", "Material pronto para imprimir",
+        "Crianças mais engajadas", "Menos estresse para preparar aulas", "Utilize materiais simples", "Acesso vitalício",
+      ].map(title => ({ icon: "✓", title, text: "" })), buttons: [toPopular("QUERO COMEÇAR AGORA")] }, { columns: 4, paddingY: 80, accent: "#1FA463", bg: "#FFFFFF" });
+      change.elementStyles = { ...cards(8), eyebrow: { color: "#5B2AA6" } };
+      const prints = newSection("printCarousel", { eyebrow: "PROVA SOCIAL", title: "Quem compra, continua usando.", carouselMode: "manual", perView: "3", imageRatio: "3/4", imageRadius: "16", showArrows: "true", showDots: "true", items: [1, 2, 3].map(n => ({ image: "", caption: `Print de conversa ${n}` })) }, { paddingY: 72 });
+      prints.elementStyles = { eyebrow };
+      const reviews = newSection("testimonials", { title: "", items: [
+        { name: "Professora A.", role: "Educação Infantil", text: "Escreva aqui uma avaliação real e autorizada de quem usa o material.", image: "" },
+        { name: "Professor B.", role: "Ensino Fundamental", text: "Escreva aqui uma avaliação real e autorizada de quem usa o material.", image: "" },
+        { name: "Recreadora C.", role: "Recreação infantil", text: "Escreva aqui uma avaliação real e autorizada de quem usa o material.", image: "" },
+      ] }, { paddingY: 40 });
+      reviews.elementStyles = cards(3);
+      const receive = newSection("iconCards", { eyebrow: "O QUE VOCÊ RECEBE", title: "Um kit completo para utilizar durante todo o ano.", items: [
+        { icon: "📘", title: "Livro principal", text: "As dinâmicas organizadas e prontas para aplicar." },
+        { icon: "🎨", title: "Atividades abertas", text: "Propostas para adaptar à sua turma." },
+        { icon: "🗓️", title: "Planner anual", text: "Organize as aulas do ano inteiro." },
+        { icon: "👶", title: "Guia por faixa etária", text: "Saiba qual atividade usar com cada idade." },
+        { icon: "✅", title: "Kit de avaliação", text: "Acompanhe a evolução das crianças." },
+        { icon: "✂️", title: "Lista de materiais", text: "Tudo o que separar antes da aula." },
+      ] }, { columns: 3, paddingY: 80, bg: "#FFFFFF" });
+      receive.elementStyles = { ...cards(6), eyebrow };
+      const plans = newSection("pricingPlans", { eyebrow: "ESCOLHA SEU ACESSO", title: "Tenha acesso à versão completa do [SEU PRODUTO].", note: "Escolhendo o Premium você economiza R$ [X] em relação a comprar cada material separado.", popularPlan: 1, items: [
+        { title: "Plano Básico", badge: "", highlighted: "false", oldPrice: "", price: "R$ 5,90", period: "Pagamento único", includedLabel: "INCLUI", features: "Livro principal com as dinâmicas\nArquivos em PDF\nAcesso imediato", excludedLabel: "NÃO INCLUI", excluded: "Atividades abertas\nPlanner anual\nGuia por faixa etária\nKit de avaliação", buttonText: "Quero apenas o Básico", buttonUrl: "", buttonBg: "#5B2AA6", buttonColor: "#5B2AA6", buttonVariant: "outline", cardBg: "#FFFFFF", textColor: "#2B1B3A", checkColor: "#1FA463" },
+        { title: "Plano Premium", badge: "MAIS ESCOLHIDO", highlighted: "true", seal: "GARANTIA 7 DIAS", image: "", description: "O kit completo para usar o ano inteiro.", oldPrice: "De R$ [X]", price: "Por apenas R$ 17,00", period: "Pagamento único. Sem mensalidade.", savings: "Você economiza R$ [X]", includedLabel: "", features: "Tudo do Plano Básico\nAtividades abertas\nPlanner anual\nGuia por faixa etária\nKit de avaliação\nLista de materiais", buttonText: "SIM! QUERO O PREMIUM", buttonUrl: "", buttonBg: "#1FA463", buttonColor: "#FFFFFF", buttonVariant: "solid", paymentNote: "Cartão de crédito | PIX | Compra 100% segura | Acesso imediato por e-mail", cardBg: "#FFFFFF", textColor: "#2B1B3A", checkColor: "#1FA463" },
+      ] }, { bg: "#2B1457", color: "#FFFFFF", accent: "#F5B82E", buttonColor: "#2B1B3A", columns: 2, paddingY: 88 });
+      plans.elementStyles = { eyebrow: { color: "#F5B82E" }, "items.0.price": { color: "#5B2AA6" }, "items.1.price": { color: "#5B2AA6" }, "items.1.seal": { bg: "#1FA463", color: "#FFFFFF" }, "items.1.button": { paddingTop: 18, paddingBottom: 18 } };
+      const guarantee = newSection("guarantee", { days: "7", title: "Garantia de 7 dias", text: "Baixe, imprima e utilize o material durante 7 dias. Se perceber que não é para você, basta solicitar o reembolso dentro do prazo. Sem burocracia.", badge: { days: "7", variant: "green", size: 170, topText: "GARANTIA", bottomText: "DE 7 DIAS" } }, { paddingY: 80, align: "left" });
+      const faq = newSection("faq", { eyebrow: "DÚVIDAS RÁPIDAS", title: "Antes de decidir", openFirst: "true", items: [
+        { q: "Recebo imediatamente?", a: "Sim. O acesso chega no seu e-mail logo após a confirmação do pagamento." },
+        { q: "Como acesso o material?", a: "Pelo link enviado por e-mail, no celular ou no computador." },
+        { q: "Posso imprimir quantas vezes quiser?", a: "Sim. Os arquivos são seus para imprimir sempre que precisar." },
+        { q: "Preciso pagar mensalidade?", a: "Não. O pagamento é único." },
+        { q: "Como funciona a garantia?", a: "Você tem 7 dias para pedir o reembolso, sem burocracia." },
+        { q: "Essas atividades servem para diferentes idades?", a: "Sim. O material traz indicações por faixa etária." },
+      ] }, { paddingY: 80, bg: "#FFFFFF" });
+      faq.elementStyles = { ...cards(6), eyebrow };
+      const final = newSection("finalCta", { title: "Pare de perder horas planejando suas aulas.", text: "Tenha dinâmicas prontas para cada aula e mais tempo para o que importa.", buttons: [toPopular("QUERO RECEBER O [SEU PRODUTO] AGORA")], note: "Acesso imediato • Pagamento único de R$ [X] • Garantia de 7 dias" }, { bg: "#2B1457", color: "#FFFFFF", paddingY: 80 });
+      const footer = newSection("footer", { text: "[SEU PRODUTO] - material digital em PDF para profissionais que trabalham com crianças." }, { bg: "#2B1457", color: "#D9CCF0", paddingY: 28 });
+      return [announcement, hero, pains, creator, banner, change, prints, reviews, receive, plans, guarantee, faq, final, footer];
     },
   },
   {
