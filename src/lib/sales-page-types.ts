@@ -186,7 +186,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Barra de aviso",
     emoji: "📣",
     description: "Faixa fina no topo da página",
-    fields: [T("text", "Texto"), { ...T("mode", "Modo do aviso", "select"), options: [{ value: "text", label: "Texto fixo" }, { value: "date", label: "Texto + data" }, { value: "countdown", label: "Texto + contagem" }] }, T("dateAutomatic", "Data automática", "checkbox"), T("dateText", "Data personalizada"), { ...T("timerType", "Tipo de contagem", "select"), options: [{ value: "date", label: "Data e hora final" }, { value: "duration", label: "Duração" }] }, T("endAt", "Data e hora final", "datetime"), T("durationSeconds", "Duração em segundos", "number"), { ...T("expiry", "Quando terminar", "select"), options: [{ value: "text", label: "Mostrar aviso final" }, { value: "hide", label: "Ocultar faixa" }] }, T("expiredText", "Aviso final")],
+    fields: [T("text", "Texto"), { ...T("mode", "Modo do aviso", "select"), options: [{ value: "text", label: "Texto fixo" }, { value: "date", label: "Texto + data" }, { value: "countdown", label: "Texto + contagem" }] }, T("dateAutomatic", "Data automática", "checkbox"), T("dateText", "Data personalizada"), { ...T("timerType", "Tipo de contagem", "select"), options: [{ value: "date", label: "Data e hora final" }, { value: "duration", label: "Duração" }, { value: "midnight", label: "Até meia-noite (todo dia)" }] }, T("timerBoxes", "Contagem em caixinhas (h:m:s)", "checkbox"), T("endAt", "Data e hora final", "datetime"), T("durationSeconds", "Duração em segundos", "number"), { ...T("expiry", "Quando terminar", "select"), options: [{ value: "text", label: "Mostrar aviso final" }, { value: "hide", label: "Ocultar faixa" }] }, T("expiredText", "Aviso final")],
     defaults: () => ({ text: "Condição especial por tempo limitado", mode: "text", dateAutomatic: "true", timerType: "date", durationSeconds: "3600", expiry: "text", expiredText: "Oferta encerrada" }),
     style: { paddingY: 10, textSize: 14 },
   },
@@ -195,7 +195,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Hero / Topo",
     emoji: "🚀",
     description: "Título principal, subtítulo, imagem e botão",
-    fields: [T("eyebrow", "Chamada pequena"), T("title", "Título", "textarea"), T("subtitle", "Subtítulo", "textarea"), T("image", "Imagem", "image"), T("videoUrl", "Vídeo (substitui a imagem)", "video"), T("highlight", "Palavra em itálico"), T("miniBadges", "Mini-selos (um por linha)", "textarea"), ...BTN],
+    fields: [T("eyebrow", "Chamada pequena"), T("title", "Título", "textarea"), T("subtitle", "Subtítulo", "textarea"), T("image", "Imagem", "image"), T("videoUrl", "Vídeo (substitui a imagem)", "video"), T("highlight", "Palavra em itálico"), T("mediaFirst", "Mídia antes do título", "checkbox"), T("miniBadges", "Mini-selos (um por linha)", "textarea"), ...BTN],
     hasButton: true,
     defaults: () => ({
       eyebrow: "MÉTODO COMPROVADO",
@@ -331,7 +331,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Garantia",
     emoji: "🛡️",
     description: "Selo de garantia",
-    fields: [T("title", "Título"), T("text", "Texto", "textarea")],
+    fields: [T("title", "Título"), T("text", "Texto", "textarea"), T("boxBorderColor", "Borda tracejada (cor)", "color"), T("boxBg", "Fundo da caixa", "color")],
     defaults: () => ({ days: "7", title: "Garantia incondicional de 7 dias", text: "Se por qualquer motivo você não gostar, devolvemos 100% do seu dinheiro. Sem perguntas." }),
   },
   {
@@ -339,7 +339,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Perguntas frequentes",
     emoji: "❓",
     description: "Perguntas e respostas expansíveis",
-    fields: [T("title", "Título")],
+    fields: [T("eyebrow", "Etiqueta"), T("title", "Título")],
     items: { label: "Pergunta", fields: [T("q", "Pergunta"), T("a", "Resposta", "textarea")], blank: { q: "Nova pergunta?", a: "Resposta." } },
     defaults: () => ({
       title: "Perguntas frequentes",
@@ -355,7 +355,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Contagem regressiva",
     emoji: "⏳",
     description: "Cronômetro até uma data",
-    fields: [T("title", "Título"), T("endAt", "Termina em", "datetime"), ...BTN],
+    fields: [T("eyebrow", "Etiqueta"), T("title", "Título"), T("endAt", "Termina em", "datetime"), T("showSeconds", "Mostrar segundos", "checkbox"), T("text", "Texto abaixo da contagem", "textarea"), ...BTN],
     hasButton: true,
     defaults: () => ({ title: "A oferta termina em", endAt: new Date(Date.now() + 2 * 864e5).toISOString().slice(0, 16), buttonText: "APROVEITAR AGORA", buttonUrl: "#oferta" }),
     style: { bg: "primary", color: "#FFFFFF", buttonBg: "#FFFFFF", buttonColor: "#111827" },
@@ -421,7 +421,7 @@ export const BLOCKS: BlockDef[] = [
     defaults: () => ({ title: "Dentro do material", dark: false, items: [{ title: "Primeiros passos", page: "03" }, { title: "Atividades práticas", page: "12" }, { title: "Organização e rotina", page: "24" }] }),
   },
   {
-    type: "pricingPlans", label: "Planos de preço", emoji: "💳", description: "Compare de dois a quatro planos", fields: [T("title", "Título")],
+    type: "pricingPlans", label: "Planos de preço", emoji: "💳", description: "Compare de dois a quatro planos", fields: [T("eyebrow", "Etiqueta"), T("title", "Título"), T("subtitle", "Subtítulo", "textarea"), T("note", "Linha abaixo dos planos")],
     items: { label: "Plano", fields: [T("title", "Nome"), T("badge", "Etiqueta"), T("oldPrice", "Preço de"), T("price", "Preço por"), T("period", "Período / parcelamento"), T("cardBg", "Fundo do plano", "color"), T("textColor", "Cor do texto do plano", "color"), T("features", "Itens (um por linha)", "textarea"), T("buttonText", "Texto do botão"), T("buttonUrl", "Link do botão", "url"), T("buttonBg", "Cor do botão", "color"), T("buttonColor", "Cor do texto do botão", "color"), { ...T("buttonVariant", "Estilo do botão", "select"), options: [{ value: "solid", label: "Preenchido" }, { value: "outline", label: "Contorno" }] }], blank: { title: "Novo plano", badge: "", highlighted: "false", oldPrice: "De R$ 97", price: "R$ 47", features: "Acesso imediato\nMaterial completo", buttonText: "ESCOLHER", buttonUrl: "", buttonVariant: "outline" } },
     defaults: () => ({ title: "Escolha seu acesso", items: [{ title: "Essencial", badge: "", highlighted: "false", oldPrice: "De R$ 97", price: "R$ 47", features: "Material principal\nAcesso imediato", buttonText: "QUERO O ESSENCIAL", buttonUrl: "", buttonVariant: "outline" }, { title: "Completo", badge: "MAIS ESCOLHIDO", highlighted: "true", oldPrice: "De R$ 197", price: "R$ 97", features: "Material principal\nTodos os bônus\nAtualizações incluídas", buttonText: "QUERO O COMPLETO", buttonUrl: "", buttonVariant: "solid" }] }), style: { columns: 2 },
   },
@@ -619,6 +619,62 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       }
       bonus.elementStyles = { ...bonus.elementStyles, ...Object.fromEntries([0, 1, 2].map(i => [`items.${i}.badge`, { bg: "#F2C14E", color: "#26301F" }])) };
       return [hero, receive, benefits, bonus, offer, carousel, testimonials, guarantee, newSection("footer", { text: "Todos os direitos reservados." }, { bg: "#26301F", color: "#EAF1DA", paddingY: 28 })];
+    },
+  },
+
+  {
+    key: "christmas-crafts", name: "Natal - Moldes e Lembrancinhas", emoji: "", description: "Aviso com contagem, passos, produtos, planos, garantia, FAQ e contagem até o Natal.",
+    settings: {
+      font: "Nunito Sans", headingFont: "Outfit", radius: 16, maxWidth: 1080,
+      colors: { primary: "#1F6B3A", bg: "#FFF6EA", text: "#2B1B14", muted: "#6B5A4A", surface: "#FFFFFF", buttonText: "#FFFFFF" },
+    },
+    build: () => {
+      const plans = newSection("pricingPlans", { eyebrow: "ESCOLHA SEU KIT", title: "Uma encomenda paga o kit inteiro", subtitle: "Pagamento único. Sem mensalidade. Você recebe o acesso no e-mail assim que o pagamento é confirmado.", note: "Compra segura | Pix, cartão ou boleto | 7 dias de garantia", popularPlan: 1, items: [
+        { title: "Pack Essencial", badge: "", highlighted: "false", oldPrice: "", price: "R$ 19,90", period: "Pagamento único", features: "+100 moldes prontos de lembrancinhas\nArquivos em PDF e PNG tamanho A4\nLicença comercial para vender as peças", buttonText: "Quero o Pack Essencial", buttonUrl: "", buttonBg: "#1F6B3A", buttonColor: "#FFFFFF", buttonVariant: "solid", cardBg: "#FFFFFF", textColor: "#2B1B14" },
+        { title: "Pack VIP Negócio", badge: "RECOMENDADO PARA VENDER", highlighted: "true", oldPrice: "", price: "R$ 27,90", period: "Pagamento único", features: "Tudo do Pack Essencial\nTabela de precificação\nIdeias de divulgação para WhatsApp e Instagram\nTags, cartões e adesivos\nMoldes de enfeites de árvore", buttonText: "Quero o Pack VIP", buttonUrl: "", buttonBg: "#F2B33D", buttonColor: "#3A2A00", buttonVariant: "solid", cardBg: "#FFFFFF", textColor: "#2B1B14" },
+      ] }, { bg: "#A30F1E", color: "#FFF6EA", accent: "#F2B33D", buttonColor: "#3A2A00", columns: 2, paddingY: 88 });
+      plans.elementStyles = { eyebrow: { color: "#F2B33D" }, "items.0.price": { color: "#1F6B3A" }, "items.1.price": { color: "#A30F1E" } };
+      const toPlans = (text: string, gold = false) => ({ id: uid(), text, url: `#sp-section-${plans.id}`, destination: { type: "section" as const, sectionId: plans.id }, radius: 999, size: 18, ...(gold ? { bg: "#F2B33D", color: "#3A2A00" } : { bg: "#1F6B3A", color: "#FFFFFF" }) });
+      const nextChristmas = () => { const now = new Date(); let y = now.getFullYear(); if (now > new Date(y, 11, 25)) y++; return `${y}-12-25T00:00`; };
+      const card = { bg: "#FFFFFF", borderColor: "#F0DFC8", borderWidth: 1, radius: 16 };
+      const cards = (n: number) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`items.${i}`, card]));
+      const announcement = newSection("announcement", { text: "Preço promocional válido só até meia-noite", mode: "countdown", timerType: "midnight", timerBoxes: "true", expiry: "text", expiredText: "Oferta encerrada" }, { bg: "#B3141F", color: "#FFFFFF", paddingY: 12 });
+      const hero = newSection("hero", { eyebrow: "", mediaFirst: "true", showMediaPlaceholder: true, image: "", title: "Mais de 100 moldes prontos para você imprimir, montar e vender neste Natal", subtitle: "Você imprime, monta e fatura alto vendendo para empresas, escolas, amigos e clientes da sua cidade.", miniBadges: "Acesso imediato\nPagamento único a partir de R$ 19,90\nGarantia de 7 dias", buttons: [toPlans("QUERO COMEÇAR AGORA")] }, { paddingY: 64, maxWidth: 900, titleSize: 46, align: "center" });
+      hero.elementStyles = { image: { width: 80, align: "center", radius: 16 }, subtitle: { color: "#6B5A4A" }, miniBadges: { color: "#6B5A4A", size: 13 } };
+      const strip = newSection("benefitStrip", { items: [{ text: "+100 moldes em PDF" }, { text: "Corte na tesoura" }, { text: "Imprima em casa" }, { text: "Licença para vender" }] }, { bg: "#B3141F", color: "#FFFFFF", accent: "#F2B33D", paddingY: 18 });
+      const steps = newSection("steps", { title: "Como funciona", subtitle: "Quatro passos simples, do download até a venda.", items: [
+        { icon: "PASSO 1", title: "Imprima", text: "Baixe o kit, escolha o molde e imprima em papel A4 na impressora de casa ou na gráfica do bairro." },
+        { icon: "PASSO 2", title: "Monte", text: "Corte na tesoura, dobre nas marcações e cole, sem medir e sem desenhar." },
+        { icon: "PASSO 3", title: "Divulgue", text: "Fotografe as peças prontas e poste no WhatsApp, Instagram e grupos da cidade." },
+        { icon: "PASSO 4", title: "Fature", text: "Receba as encomendas, produza em lote e entregue antes do Natal." },
+      ] }, { columns: 4, paddingY: 80, accent: "#B3141F" });
+      steps.elementStyles = cards(4);
+      const products = newSection("bonusCards", { title: "O que você vai receber", subtitle: "Peças simples de montar, com cara de presente caro. Escolha as que combinam com cada cliente.", items: [
+        { image: "", title: "+100 moldes em PDF", text: "Caixinhas, lembrancinhas e embalagens prontas para imprimir.", value: "", badge: "" },
+        { image: "", title: "Tags, cartões e adesivos", text: "Artes para personalizar cada presente.", value: "", badge: "BÔNUS" },
+        { image: "", title: "Enfeites de árvore", text: "Moldes de enfeites para montar e vender.", value: "", badge: "BÔNUS" },
+        { image: "", title: "Tabela de precificação", text: "Calcule o preço de cada peça com segurança.", value: "", badge: "BÔNUS" },
+      ] }, { bg: "#FFFDF8", columns: 4, paddingY: 80 });
+      products.elementStyles = { ...cards(4), "items.0.badge": { hidden: true }, ...Object.fromEntries([1, 2, 3].map(i => [`items.${i}.badge`, { bg: "#F2B33D", color: "#3A2A00" }])) };
+      const chips = newSection("benefitStrip", { items: [{ text: "PDF e PNG em A4" }, { text: "Tesoura ou máquina de corte" }, { text: "Imprima quantas vezes quiser" }, { text: "Licença para vender as peças" }] }, { bg: "#FFFDF8", color: "#2B1B14", accent: "#1F6B3A", paddingY: 24 });
+      chips.elementStyles = Object.fromEntries(Array.from({ length: 4 }, (_, i) => [`items.${i}`, { bg: "#FFFFFF", borderColor: "#F0DFC8", borderWidth: 1, radius: 999, paddingTop: 8, paddingBottom: 8, paddingX: 16 }]));
+      const guarantee = newSection("guarantee", { days: "7", title: "Imprima, monte e teste. Se não gostar, devolvemos tudo.", text: "Você tem 7 dias para conhecer os moldes. Se achar que não é para você, é só mandar um e-mail e devolvemos 100% do valor, sem perguntas e sem burocracia.", boxBorderColor: "#F2B33D", boxBg: "#FFFFFF", badge: { days: "7", variant: "custom", color: "#B3141F", size: 160, topText: "GARANTIA", bottomText: "DE 7 DIAS" } }, { paddingY: 80, align: "left", titleSize: 28 });
+      const faq = newSection("faq", { eyebrow: "DÚVIDAS COMUNS", title: "Antes de você decidir", items: [
+        { q: "Preciso ter experiência com artesanato?", a: "Não. Os moldes já vêm com marcações de corte e dobra, é só seguir." },
+        { q: "Como recebo os arquivos?", a: "Assim que o pagamento é confirmado, o acesso chega no seu e-mail." },
+        { q: "Preciso de máquina de corte?", a: "Não. Tudo pode ser cortado na tesoura. A máquina é opcional." },
+        { q: "Que papel e impressora eu uso?", a: "Uma impressora comum e papel A4. Papéis mais grossos deixam as peças mais firmes." },
+        { q: "Quanto custa para produzir cada peça?", a: "Depende do papel e da impressão. Use a tabela de precificação para calcular." },
+        { q: "Posso vender as lembrancinhas que eu fizer?", a: "Sim. A licença permite vender as peças montadas." },
+        { q: "Dá tempo de vender ainda neste Natal?", a: "Sim. O acesso é imediato e as peças são rápidas de montar." },
+      ] }, { paddingY: 80, accent: "#B3141F" });
+      faq.elementStyles = cards(7);
+      const final = newSection("countdown", { eyebrow: "O NATAL TEM DATA MARCADA", title: "Cada dia parado é uma encomenda que vai para outra pessoa", endAt: nextChristmas(), showSeconds: "false", text: "até o Natal. Comece hoje por R$ 19,90.", buttons: [toPlans("QUERO MEU KIT AGORA", true)] }, { bg: "#17492B", color: "#FFFFFF", accent: "#F2B33D", paddingY: 80, align: "center" });
+      final.elementStyles = { eyebrow: { bg: "#F2B33D", color: "#3A2A00", radius: 999, paddingTop: 6, paddingBottom: 6, paddingX: 16, width: 40, align: "center" } };
+      plans.elementStyles.eyebrow = { bg: "#F2B33D", color: "#3A2A00", radius: 999, paddingTop: 6, paddingBottom: 6, paddingX: 16, width: 30, align: "center" };
+      faq.elementStyles.eyebrow = { color: "#B3141F" };
+      const footer = newSection("footer", { text: "[SEU PRODUTO] - Moldes de lembrancinhas de Natal. Todos os direitos reservados. Resultados variam de pessoa para pessoa." }, { bg: "#2B1B14", color: "#E9DCCB", paddingY: 28 });
+      return [announcement, hero, strip, steps, products, chips, plans, guarantee, faq, final, footer];
     },
   },
 
