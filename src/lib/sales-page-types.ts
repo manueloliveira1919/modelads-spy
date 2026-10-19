@@ -436,17 +436,17 @@ export const BLOCKS: BlockDef[] = [
     defaults: () => ({ title: "Um recurso para cada situação", items: [{ title: "Para começar", checklist: "Guia prático\nAtividades introdutórias" }, { title: "Para avançar", checklist: "Exercícios complementares\nPlano de acompanhamento" }] }),
   },
   {
-    type: "iconCards", label: "Cards com ícone", emoji: "💡", description: "Três ou quatro cards de aprendizado", fields: [T("title", "Título")],
+    type: "iconCards", label: "Cards com ícone", emoji: "💡", description: "Três ou quatro cards de aprendizado", fields: [T("eyebrow", "Etiqueta"), T("title", "Título"), T("closing", "Frase final")],
     items: { label: "Card", fields: [T("icon", "Ícone / emoji"), T("title", "Título"), T("text", "Descrição", "textarea")], blank: { icon: "✨", title: "Novo card", text: "Descreva o conteúdo." } },
     defaults: () => ({ title: "O que você vai aprender", items: [{ icon: "💡", title: "Criatividade", text: "Explore novas possibilidades." }, { icon: "🎯", title: "Foco", text: "Avance um passo por vez." }, { icon: "📚", title: "Aprendizado", text: "Pratique com clareza." }, { icon: "🌱", title: "Evolução", text: "Construa sua rotina." }] }), style: { columns: 4 },
   },
   {
-    type: "textPhoto", label: "Texto + foto", emoji: "🖼️", description: "Imagem e texto lado a lado", fields: [T("title", "Título"), T("text", "Texto", "textarea"), T("image", "Foto", "image"), T("reverse", "Foto à direita", "checkbox"), ...BTN], hasButton: true,
-    items: { label: "Resultado", fields: [T("text", "Texto")], blank: { text: "Novo resultado" } },
+    type: "textPhoto", label: "Texto + foto", emoji: "🖼️", description: "Imagem e texto lado a lado", fields: [T("eyebrow", "Etiqueta"), T("title", "Título"), T("text", "Texto", "textarea"), T("image", "Foto", "image"), T("reverse", "Foto à direita", "checkbox"), T("panel", "Exibir como card", "checkbox"), ...BTN], hasButton: true,
+    items: { label: "Resultado", fields: [T("icon", "Ícone"), T("text", "Texto")], blank: { text: "Novo resultado" } },
     defaults: () => ({ title: "Uma forma mais simples de começar", text: "Conte como o material pode fazer parte da rotina do seu público.", image: "", reverse: false, buttonText: "CONHECER AGORA", buttonUrl: "#oferta", items: [{ text: "Mais clareza no dia a dia" }, { text: "Recursos práticos sempre à mão" }] }),
   },
   {
-    type: "finalCta", label: "CTA final em faixa", emoji: "🚀", description: "Urgência, faixa colorida ou degradê e botão", fields: [T("title", "Frase de urgência"), T("text", "Texto", "textarea"), ...BTN], hasButton: true,
+    type: "finalCta", label: "CTA final em faixa", emoji: "🚀", description: "Urgência, faixa colorida ou degradê e botão", fields: [T("title", "Frase de urgência"), T("text", "Texto", "textarea"), ...BTN, T("note", "Linha abaixo do botão")], hasButton: true,
     defaults: () => ({ title: "Seu próximo passo pode começar hoje", text: "Garanta seu acesso e explore todas as possibilidades.", buttonText: "QUERO COMEÇAR", buttonUrl: "#oferta" }), style: { bg: "primary", color: "#ffffff", paddingY: 56 },
   },
 
