@@ -406,7 +406,7 @@ export const BLOCKS: BlockDef[] = [
     defaults: () => ({ title: "Encontre seu próximo passo", resultTitle: "Seu próximo passo começa aqui", resultText: "Conheça o material e escolha como começar.", buttonText: "CONHECER O MATERIAL", buttonUrl: "#oferta", items: [{ title: "O que você quer melhorar?", options: "🎯 Minha rotina\n💡 Minhas ideias\n📚 Meu aprendizado" }, { title: "Como você prefere aprender?", options: "📖 Lendo\n🎬 Assistindo\n✍️ Praticando" }] }),
   },
   {
-    type: "bonusCards", label: "Cards de bônus", emoji: "🎁", description: "Imagens, preço riscado e etiqueta editável", fields: [T("title", "Título")],
+    type: "bonusCards", label: "Cards de bônus", emoji: "🎁", description: "Imagens, preço riscado e etiqueta editável", fields: [T("title", "Título"), T("subtitle", "Subtítulo", "textarea")],
     items: { label: "Bônus", fields: [T("image", "Imagem", "image"), T("title", "Nome"), T("text", "Descrição", "textarea"), T("value", "Preço de"), T("badge", "Etiqueta")], blank: { image: "", title: "Novo bônus", text: "Material complementar.", value: "De R$ 47", badge: "GRÁTIS" } },
     defaults: () => ({ title: "Mais recursos para você", items: [{ image: "", title: "Guia de início rápido", text: "Um resumo prático para começar.", value: "De R$ 47", badge: "GRÁTIS" }, { image: "", title: "Planner de atividades", text: "Organize sua próxima semana.", value: "De R$ 37", badge: "GRÁTIS" }] }), style: { columns: 2 },
   },
