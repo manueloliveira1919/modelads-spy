@@ -6,7 +6,7 @@ import { PAGE_INTERACTIONS_SCRIPT } from "@/components/sales-page/section-intera
 import { pageBackground } from "./sales-page-layout";
 
 export const PAGE_FONTS = [
-  "Inter", "Poppins", "Montserrat", "Roboto", "Open Sans", "Lato", "Nunito", "Raleway", "Oswald", "Playfair Display", "Merriweather", "Bebas Neue", "Fraunces", "Nunito Sans",
+  "Inter", "Poppins", "Montserrat", "Roboto", "Open Sans", "Lato", "Nunito", "Raleway", "Oswald", "Playfair Display", "Merriweather", "Bebas Neue", "Fraunces", "Nunito Sans", "Outfit",
 ];
 
 export function pageFontsHref(settings: PageSettings, sections: PageSection[]) {
