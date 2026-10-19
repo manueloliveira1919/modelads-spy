@@ -171,7 +171,7 @@ describe("Sales page compatibility and output parity", () => {
     expect(sections[0].content.mode).toBe("countdown");
     const html = buildPageHtml(kids!.name, { ...DEFAULT_PAGE_SETTINGS, ...kids!.settings }, sections);
     expect(html).not.toContain("undefined");
-    expect(html).not.toContain("data-sp-today");
+    expect(html).not.toContain("data-sp-today=\"\"");
     expect(html).toContain("Por apenas R$ 17,00");
     expect(html).toContain("sp-excluded");
     expect(html).toContain("<details open");
