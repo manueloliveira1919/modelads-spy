@@ -29,7 +29,7 @@ export function ExtendedSection({ section, sections, editable, accent, buttonCol
       const content = <>{P(`items.${i}.subtitle`, it.subtitle, { as: "p", className: "sp-p" })}<div>{list.map((line, j) => <div key={j} className="sp-check" data-sp-key={`items.${i}.checklist.${j}`}><span style={{ color: accent }}>✓</span>{P(`items.${i}.checklist.${j}`, line)}</div>)}</div></>;
       return editable ? <div key={i} data-sp-key={`items.${i}`} className="sp-card" style={{ marginTop: 12 }}><div>{P(`items.${i}.icon`, it.icon)}{P(`items.${i}.title`, it.title, { as: "h3" })}</div>{content}</div> : <details key={i} data-sp-key={`items.${i}`} open={i === 0 && enabled(c.openFirst)}><summary><span>{P(`items.${i}.icon`, it.icon)} {P(`items.${i}.title`, it.title)}</span><span aria-hidden="true">＋</span></summary>{content}</details>;
     })}</div></>;
-    case "pricingPlans": return <div id="oferta">{title()}<div className="sp-flex-grid" style={gridStyle}>{items.map((it, i) => {
+    case "pricingPlans": return <div id="oferta">{title()}{c.subtitle && P("subtitle", c.subtitle, { as: "p", className: "sp-p" })}<div className="sp-flex-grid" style={gridStyle}>{items.map((it, i) => {
       const highlighted = c.popularPlan !== undefined ? Number(c.popularPlan) === i : enabled(it.highlighted);
       const bg = /^#[0-9a-f]{6}$/i.test(it.buttonBg || "") ? it.buttonBg : accent;
       const color = /^#[0-9a-f]{6}$/i.test(it.buttonColor || "") ? it.buttonColor : buttonColor;
@@ -43,7 +43,7 @@ export function ExtendedSection({ section, sections, editable, accent, buttonCol
         {P(`items.${i}.period`, it.period, { as: "p", className: "sp-p" })}<div>{lines(it.features).map((line, j) => <div key={j} data-sp-key={`items.${i}.features.${j}`} className="sp-check"><span style={{ color: accent }}>✓</span>{P(`items.${i}.features.${j}`, line)}</div>)}</div>
         <a data-sp-key={`items.${i}.button`} className="sp-btn" href={href} data-sp-popular={destination.popular || undefined} target={href.startsWith("#") ? undefined : "_top"} aria-disabled={!!destination.warning} title={destination.warning} onClick={editable || destination.warning ? e => e.preventDefault() : undefined} style={{ background: outline ? "transparent" : bg, color: outline ? bg : color, border: `2px solid ${bg}`, marginTop: 24 }}>{P(`items.${i}.buttonText`, it.buttonText)}</a>
       </article>;
-    })}</div></div>;
+    })}</div>{c.note && P("note", c.note, { as: "p", className: "sp-p", style: { marginTop: 24, opacity: .85 } })}</div>;
     case "finalCta": return <>{title()}{P("text", c.text, { as: "p", className: "sp-p" })}{buttons()}</>;
     case "printCarousel": { const visible = Math.max(1, Math.min(3, Number(c.perView) || 1)); return <>{title()}{c.subtitle && P("subtitle", c.subtitle, { as: "p", className: "sp-p" })}<div data-sp-key="carousel" data-sp-carousel data-index="0" data-auto={c.carouselMode === "auto"} data-interval={Math.max(1, Number(c.intervalSeconds) || 5)} data-per-view={visible} className="sp-carousel" style={{ "--sp-per-view": visible, "--sp-image-ratio": c.imageRatio || "4/3", "--sp-image-radius": `${Number(c.imageRadius) || 0}px` } as CSSProperties}>
       <div className="sp-carousel-viewport"><div className="sp-carousel-track">{items.map((it, i) => <figure key={i} data-sp-slide data-sp-key={`items.${i}`}>{itemImage(it, i)}<figcaption>{P(`items.${i}.caption`, it.caption)}</figcaption></figure>)}</div></div>

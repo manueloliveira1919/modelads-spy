@@ -76,8 +76,11 @@ export function installPageInteractions(root: HTMLElement) {
   });
   root.querySelectorAll<HTMLElement>("[data-sp-announcement][data-mode='countdown']").forEach(bar => {
     const timer = bar.querySelector<HTMLElement>("[data-sp-timer]"); if (!timer) return;
-    const end = timer.dataset.duration ? Date.now() + Math.max(0, Number(timer.dataset.duration)) * 1000 : new Date(timer.dataset.end || "").getTime();
+    const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
+    const end = timer.dataset.midnight ? midnight.getTime() : timer.dataset.duration ? Date.now() + Math.max(0, Number(timer.dataset.duration)) * 1000 : new Date(timer.dataset.end || "").getTime();
     const tick = () => { const left = Math.max(0, end - Date.now()); const value = timer.querySelector("[data-sp-timer-value]"); if (value) value.textContent = `${Math.floor(left / 864e5)}d ${String(Math.floor(left / 36e5) % 24).padStart(2, '0')}h ${String(Math.floor(left / 6e4) % 60).padStart(2, '0')}m ${String(Math.floor(left / 1e3) % 60).padStart(2, '0')}s`;
+      const box = (k: string, v: number) => { const el = timer.querySelector(`[data-sp-timer-${k}]`); if (el) el.textContent = String(v).padStart(2, "0"); };
+      box("h", Math.floor(left / 36e5)); box("m", Math.floor(left / 6e4) % 60); box("s", Math.floor(left / 1e3) % 60);
       if (left === 0 || !Number.isFinite(left)) { if (bar.dataset.expiry === "hide") { const section = bar.closest<HTMLElement>("section"); if (section) section.hidden = true; } else { const main = bar.querySelector<HTMLElement>("[data-sp-announcement-main]"); const expired = bar.querySelector<HTMLElement>("[data-sp-expired]"); if (main) main.hidden = true; if (expired) expired.hidden = false; } }
     }; tick(); const interval = window.setInterval(tick, 1000); cleanup.push(() => clearInterval(interval));
   });

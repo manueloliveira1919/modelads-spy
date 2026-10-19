@@ -36,6 +36,8 @@ export const PAGE_CSS = `
 .sp-cd{display:flex;gap:12px;justify-content:center;margin:20px 0}
 .sp-cd div{min-width:76px;padding:12px;border-radius:var(--sp-r);background:rgba(0,0,0,.18)}
 .sp-cd b{display:block;font-size:34px;line-height:1}
+.sp-cd-noseconds .sp-cd div:last-child{display:none}
+.sp-timer-boxes{display:inline-flex;gap:4px;align-items:center;margin-left:10px;font-weight:800}.sp-timer-boxes b{background:#fff;color:#2B1B14;border-radius:6px;padding:2px 8px;min-width:30px;text-align:center}
 .sp-cd small{font-size:11px;text-transform:uppercase;letter-spacing:.1em;opacity:.8}
 .sp-check{display:flex;gap:10px;align-items:flex-start;padding:8px 0}
 .sp-num{display:grid;place-items:center;width:40px;height:40px;border-radius:999px;font-weight:800;margin-bottom:12px}
@@ -175,8 +177,8 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   const P = (path: string, v: string, props: Partial<Parameters<typeof E>[0]> = {}) => (
     <E ctx={ctx} sid={sid} path={path} value={v ?? ""} {...props} />
   );
-  const title = (key = "title") =>
-    (c[key] || ctx.editable) && P(key, c[key], { as: "h2", className: "sp-h", style: { fontSize: ts, fontFamily: `'${st.font || s.headingFont}', sans-serif`, fontWeight: st.weight ?? 800 } });
+  const eyebrow = () => section.type !== "hero" && (c.eyebrow || (ctx.editable && c.eyebrow !== undefined)) ? P("eyebrow", c.eyebrow, { as: "p", className: "sp-p sp-eyebrow", style: { color: accent, fontWeight: 800, letterSpacing: ".12em", fontSize: 13, marginBottom: 12 } }) : null;
+  const title = (key = "title") => <>{key === "title" && eyebrow()}{(c[key] || ctx.editable) && P(key, c[key], { as: "h2", className: "sp-h", style: { fontSize: ts, fontFamily: `'${st.font || s.headingFont}', sans-serif`, fontWeight: st.weight ?? 800 } })}</>;
   const button = () => sectionButtons(section).map((b, i) => { const destination = buttonDestination(b, ctx.sections); return (
     <div key={b.id} data-sp-key={`button:${b.id}`} style={{ marginTop: 28 }}>
       <a className="sp-btn" data-sp-popular={destination.popular || undefined} href={destination.href} target={destination.href.startsWith("#") ? undefined : "_top"} aria-disabled={!!destination.warning} title={destination.warning}
@@ -197,16 +199,18 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   let body: React.ReactNode = null;
   switch (section.type) {
     case "announcement":
-      body = <div data-sp-announcement data-mode={c.mode || (c.showDate ? "date" : "text")} data-expiry={c.expiry || "text"} data-expired-text={c.expiredText || "Oferta encerrada"}><div data-sp-announcement-main>{P("text", c.text, { as: "p", className: "sp-p", style: { fontWeight: 700, display: "inline" } })}{(c.mode === "date" || c.showDate === true || c.showDate === "true") && (c.dateAutomatic !== "false" ? <span className="sp-today" data-sp-today>{ctx.editable ? new Date().toLocaleDateString("pt-BR") : ""}</span> : P("dateText", c.dateText || "", { style: { marginLeft: 8 } }))}{c.mode === "countdown" && <div data-sp-timer data-end={c.timerType === "duration" ? undefined : c.endAt} data-duration={c.timerType === "duration" ? Number(c.durationSeconds) || 3600 : undefined}><span data-sp-timer-value>00d 00h 00m 00s</span></div>}</div><p data-sp-expired hidden>{c.expiredText || "Oferta encerrada"}</p></div>;
+      body = <div data-sp-announcement data-mode={c.mode || (c.showDate ? "date" : "text")} data-expiry={c.expiry || "text"} data-expired-text={c.expiredText || "Oferta encerrada"}><div data-sp-announcement-main>{P("text", c.text, { as: "p", className: "sp-p", style: { fontWeight: 700, display: "inline" } })}{(c.mode === "date" || c.showDate === true || c.showDate === "true") && (c.dateAutomatic !== "false" ? <span className="sp-today" data-sp-today>{ctx.editable ? new Date().toLocaleDateString("pt-BR") : ""}</span> : P("dateText", c.dateText || "", { style: { marginLeft: 8 } }))}{c.mode === "countdown" && <div data-sp-timer data-end={c.timerType === "duration" || c.timerType === "midnight" ? undefined : c.endAt} data-midnight={c.timerType === "midnight" || undefined} data-duration={c.timerType === "duration" ? Number(c.durationSeconds) || 3600 : undefined}>{c.timerBoxes === true || c.timerBoxes === "true" ? <span className="sp-timer-boxes"><b data-sp-timer-h>00</b>:<b data-sp-timer-m>00</b>:<b data-sp-timer-s>00</b></span> : <span data-sp-timer-value>00d 00h 00m 00s</span>}</div>}</div><p data-sp-expired hidden>{c.expiredText || "Oferta encerrada"}</p></div>;
       break;
     case "hero": {
       const heroVideo = videoEmbed(c.videoUrl);
+      const heroMedia = heroVideo ? <div data-sp-key="videoUrl" className="sp-video">{heroVideo.kind === "iframe" ? <iframe src={heroVideo.src} title="Vídeo do produto" allowFullScreen/> : <video src={heroVideo.src} controls playsInline/>}</div> : c.image || ctx.editable ? img("image", "Imagem do produto (opcional)") : c.showMediaPlaceholder ? <div data-sp-key="image" className="sp-ph">Foto ou vídeo do material</div> : null;
       body = (
         <div className="sp-hero" style={{ textAlign: align }}>
+            {(c.mediaFirst === true || c.mediaFirst === "true") && heroMedia}
             {(c.eyebrow || ctx.editable) && P("eyebrow", c.eyebrow, { as: "p", className: "sp-p", style: { color: accent, fontWeight: 800, letterSpacing: ".12em", fontSize: 13, marginBottom: 12 } })}
             {c.highlight && !ctx.editable && String(c.title).includes(c.highlight) ? <h2 className="sp-h" style={{ fontSize: ts, fontFamily: st.font || s.headingFont }}>{String(c.title).split(c.highlight).map((part, i) => <span key={i}>{i > 0 && <em style={{ color: accent }}>{c.highlight}</em>}{part}</span>)}</h2> : title()}
             {P("subtitle", c.subtitle, { as: "p", className: "sp-p", style: { fontSize: (st.textSize ?? 18) + 1, opacity: 0.85 } })}
-            {heroVideo ? <div data-sp-key="videoUrl" className="sp-video">{heroVideo.kind === "iframe" ? <iframe src={heroVideo.src} title="Vídeo do produto" allowFullScreen/> : <video src={heroVideo.src} controls playsInline/>}</div> : c.image || ctx.editable ? img("image", "Imagem do produto (opcional)") : c.showMediaPlaceholder ? <div data-sp-key="image" className="sp-ph">Foto ou vídeo do material</div> : null}
+            {!(c.mediaFirst === true || c.mediaFirst === "true") && heroMedia}
             {button()}
             {c.miniBadges && <div data-sp-key="miniBadges" className="sp-mini-badges sp-strip">{ctx.editable ? P("miniBadges", c.miniBadges) : String(c.miniBadges).split("\n").map((line, i) => <span key={i} className="sp-strip-item">{line}</span>)}</div>}
         </div>
@@ -361,7 +365,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
       break;
     case "guarantee":
       body = (
-        <div style={{ display: "flex", gap: 28, alignItems: "center", justifyContent: "center", flexWrap: "wrap", textAlign: align }}>
+        <div style={{ display: "flex", gap: 28, alignItems: "center", justifyContent: "center", flexWrap: "wrap", textAlign: align, ...(/^#[0-9a-f]{6}$/i.test(c.boxBorderColor || "") ? { border: `2px dashed ${c.boxBorderColor}`, borderRadius: 16, padding: "28px 24px", background: c.boxBg || undefined } : {}) }}>
           <div data-sp-key="guarantee-badge"><GuaranteeBadge badge={{ days: c.days, ...c.badge }} id={sid}/></div>
           <div style={{ maxWidth: 520 }}>
             {title()}
@@ -394,7 +398,8 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
       body = (
         <>
           {title()}
-          <Countdown endAt={c.endAt} />
+          <div data-sp-key="countdown" className={c.showSeconds === false || c.showSeconds === "false" ? "sp-cd-noseconds" : undefined}><Countdown endAt={c.endAt} /></div>
+          {(c.text || (ctx.editable && c.text !== undefined)) && P("text", c.text, { as: "p", className: "sp-p" })}
           {button()}
         </>
       );
