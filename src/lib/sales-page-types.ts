@@ -643,10 +643,10 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
       hero.elementStyles = { image: { width: 80, align: "center", radius: 16 }, subtitle: { color: "#6B5A4A" }, miniBadges: { color: "#6B5A4A", size: 13 } };
       const strip = newSection("benefitStrip", { items: [{ text: "+100 moldes em PDF" }, { text: "Corte na tesoura" }, { text: "Imprima em casa" }, { text: "Licença para vender" }] }, { bg: "#B3141F", color: "#FFFFFF", accent: "#F2B33D", paddingY: 18 });
       const steps = newSection("steps", { title: "Como funciona", subtitle: "Quatro passos simples, do download até a venda.", items: [
-        { icon: "PASSO 1", title: "Imprima", text: "Baixe o kit, escolha o molde e imprima em papel A4 na impressora de casa ou na gráfica do bairro." },
-        { icon: "PASSO 2", title: "Monte", text: "Corte na tesoura, dobre nas marcações e cole, sem medir e sem desenhar." },
-        { icon: "PASSO 3", title: "Divulgue", text: "Fotografe as peças prontas e poste no WhatsApp, Instagram e grupos da cidade." },
-        { icon: "PASSO 4", title: "Fature", text: "Receba as encomendas, produza em lote e entregue antes do Natal." },
+        { icon: "1", title: "PASSO 1 · Imprima", text: "Baixe o kit, escolha o molde e imprima em papel A4 na impressora de casa ou na gráfica do bairro." },
+        { icon: "2", title: "PASSO 2 · Monte", text: "Corte na tesoura, dobre nas marcações e cole, sem medir e sem desenhar." },
+        { icon: "3", title: "PASSO 3 · Divulgue", text: "Fotografe as peças prontas e poste no WhatsApp, Instagram e grupos da cidade." },
+        { icon: "4", title: "PASSO 4 · Fature", text: "Receba as encomendas, produza em lote e entregue antes do Natal." },
       ] }, { columns: 4, paddingY: 80, accent: "#B3141F" });
       steps.elementStyles = cards(4);
       const products = newSection("bonusCards", { title: "O que você vai receber", subtitle: "Peças simples de montar, com cara de presente caro. Escolha as que combinam com cada cliente.", items: [
