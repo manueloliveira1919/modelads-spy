@@ -212,7 +212,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
         <div className="sp-hero" style={{ textAlign: align }}>
             {(c.mediaFirst === true || c.mediaFirst === "true") && heroMedia}
             {(c.eyebrow || ctx.editable) && P("eyebrow", c.eyebrow, { as: "p", className: "sp-p", style: { color: accent, fontWeight: 800, letterSpacing: ".12em", fontSize: 13, marginBottom: 12 } })}
-            {c.highlight && !ctx.editable && String(c.title).includes(c.highlight) ? <h2 className="sp-h" style={{ fontSize: ts, fontFamily: st.font || s.headingFont }}>{String(c.title).split(c.highlight).map((part, i) => <span key={i}>{i > 0 && <em style={{ color: accent }}>{c.highlight}</em>}{part}</span>)}</h2> : title()}
+            {c.highlight && !ctx.editable && String(c.title).includes(c.highlight) ? <h2 className="sp-h" style={{ fontSize: ts, fontFamily: st.font || s.headingFont }}>{String(c.title).split(c.highlight).map((part, i) => <span key={i}>{i > 0 && <em style={{ color: accent, fontStyle: c.highlightItalic === false || c.highlightItalic === "false" ? "normal" : undefined }}>{c.highlight}</em>}{part}</span>)}</h2> : title()}
             {P("subtitle", c.subtitle, { as: "p", className: "sp-p", style: { fontSize: (st.textSize ?? 18) + 1, opacity: 0.85 } })}
             {c.proof && P("proof", c.proof, { as: "p", className: "sp-p sp-proof" })}
             {!(c.mediaFirst === true || c.mediaFirst === "true") && heroMedia}
