@@ -72,7 +72,7 @@ describe("Sales page compatibility and output parity", () => {
     expect(buildPageHtml("Image badge", DEFAULT_PAGE_SETTINGS, [badge])).toContain('src="https://example.com/badge.png"');
   });
   it("adds complete editable templates without changing legacy templates", () => {
-    expect(PAGE_TEMPLATES).toHaveLength(8);
+    expect(PAGE_TEMPLATES).toHaveLength(9);
     for (const key of ["education-kids", "modern-purple"]) {
       const template = PAGE_TEMPLATES.find(t => t.key === key);
       expect(template).toBeDefined();
