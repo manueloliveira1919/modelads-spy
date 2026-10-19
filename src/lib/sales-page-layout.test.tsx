@@ -174,6 +174,6 @@ describe("Sales page compatibility and output parity", () => {
     expect(html).not.toContain("data-sp-today=\"\"");
     expect(html).toContain("Por apenas R$ 17,00");
     expect(html).toContain("sp-excluded");
-    expect(html).toContain("<details open");
+    expect(html).toMatch(/<details[^>]*open=""/);
   });
 });
