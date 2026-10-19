@@ -73,7 +73,7 @@ describe("Sales page compatibility and output parity", () => {
   });
   it("adds complete editable templates without changing legacy templates", () => {
     expect(PAGE_TEMPLATES).toHaveLength(9);
-    for (const key of ["education-kids", "modern-purple"]) {
+    for (const key of ["modern-purple"]) {
       const template = PAGE_TEMPLATES.find(t => t.key === key);
       expect(template).toBeDefined();
       if (!template) return;
@@ -142,5 +142,38 @@ describe("Sales page compatibility and output parity", () => {
     expect(salesPageUrl("oferta", "https://id-preview--test.lovable.app")).toBe("https://modelads-spy.lovable.app/p/oferta");
     expect(salesPageUrl("oferta", "https://modelads-spy.lovable.app")).toBe("https://modelads-spy.lovable.app/p/oferta");
     expect(salesPageUrl("oferta", "https://modelads.com.br")).toBe("https://modelads.com.br/p/oferta");
+  });
+  it("respects the announcement mode: text only, date only or countdown only", () => {
+    const render = (content: Record<string, unknown>) => renderToStaticMarkup(createElement(PageRenderer, { sections: [newSection("announcement", content)], settings: DEFAULT_PAGE_SETTINGS }));
+    const text = render({ mode: "text", showDate: true });
+    expect(text).not.toContain("data-sp-today");
+    expect(text).not.toContain("data-sp-timer");
+    const date = render({ mode: "date" });
+    expect(date).toContain("data-sp-today");
+    expect(date).not.toContain("data-sp-timer");
+    const countdown = render({ mode: "countdown", showDate: true });
+    expect(countdown).toContain("data-sp-timer");
+    expect(countdown).not.toContain("data-sp-today");
+    expect(render({ mode: undefined, showDate: true })).toContain("data-sp-today");
+  });
+  it("lets the announcement date and countdown be hidden individually", () => {
+    const section = newSection("announcement", { mode: "countdown" });
+    section.elementStyles = { countdown: { hidden: true } };
+    expect(renderToStaticMarkup(createElement(PageRenderer, { sections: [section], settings: DEFAULT_PAGE_SETTINGS }))).not.toContain("data-sp-timer");
+  });
+  it("replaces the old kids template with Atividades Kids and gives every template an emoji", () => {
+    expect(PAGE_TEMPLATES.find(t => t.key === "education-kids")).toBeUndefined();
+    expect(PAGE_TEMPLATES.every(t => t.emoji.trim().length > 0)).toBe(true);
+    const kids = PAGE_TEMPLATES.find(t => t.name === "Infoprodutos Atividades Kids");
+    expect(kids?.emoji).toBe("🧩");
+    const sections = kids!.build();
+    expect(sections.map(s => s.type)).toEqual(["announcement", "hero", "iconCards", "textPhoto", "textPhoto", "iconCards", "printCarousel", "testimonials", "iconCards", "pricingPlans", "guarantee", "faq", "finalCta", "footer"]);
+    expect(sections[0].content.mode).toBe("countdown");
+    const html = buildPageHtml(kids!.name, { ...DEFAULT_PAGE_SETTINGS, ...kids!.settings }, sections);
+    expect(html).not.toContain("undefined");
+    expect(html).not.toContain("data-sp-today");
+    expect(html).toContain("Por apenas R$ 17,00");
+    expect(html).toContain("sp-excluded");
+    expect(html).toContain("<details open");
   });
 });
