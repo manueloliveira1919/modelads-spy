@@ -204,15 +204,23 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
       break; }
     case "hero": {
       const heroVideo = videoEmbed(c.videoUrl);
-      const heroMedia = heroVideo ? <div data-sp-key="videoUrl" className="sp-video">{heroVideo.kind === "iframe" ? <iframe src={heroVideo.src} title="Vídeo do produto" allowFullScreen/> : <video src={heroVideo.src} controls playsInline/>}</div> : c.image || ctx.editable ? img("image", "Imagem do produto (opcional)") : c.showMediaPlaceholder ? <div data-sp-key="image" className="sp-ph">Foto ou vídeo do material</div> : null;
+      const vertical = c.mediaVertical === true || c.mediaVertical === "true";
+      const heroMediaRaw = heroVideo ? <div data-sp-key="videoUrl" className="sp-video">{heroVideo.kind === "iframe" ? <iframe src={heroVideo.src} title="Vídeo do produto" allowFullScreen/> : <video src={heroVideo.src} controls playsInline/>}</div> : c.image || ctx.editable ? img("image", "Imagem do produto (opcional)") : c.showMediaPlaceholder ? <div data-sp-key="image" className="sp-ph">Foto ou vídeo do material</div> : null;
+      const heroMedia = vertical && heroMediaRaw ? <div data-sp-key="media" className="sp-media-vertical">{heroMediaRaw}{!heroVideo && !c.image && <span className="sp-play" aria-hidden="true">▶</span>}</div> : heroMediaRaw;
+      const lineList = (v: unknown) => String(v || "").split("\n").filter(l => l.trim());
       body = (
         <div className="sp-hero" style={{ textAlign: align }}>
             {(c.mediaFirst === true || c.mediaFirst === "true") && heroMedia}
             {(c.eyebrow || ctx.editable) && P("eyebrow", c.eyebrow, { as: "p", className: "sp-p", style: { color: accent, fontWeight: 800, letterSpacing: ".12em", fontSize: 13, marginBottom: 12 } })}
             {c.highlight && !ctx.editable && String(c.title).includes(c.highlight) ? <h2 className="sp-h" style={{ fontSize: ts, fontFamily: st.font || s.headingFont }}>{String(c.title).split(c.highlight).map((part, i) => <span key={i}>{i > 0 && <em style={{ color: accent }}>{c.highlight}</em>}{part}</span>)}</h2> : title()}
             {P("subtitle", c.subtitle, { as: "p", className: "sp-p", style: { fontSize: (st.textSize ?? 18) + 1, opacity: 0.85 } })}
+            {c.proof && P("proof", c.proof, { as: "p", className: "sp-p sp-proof" })}
             {!(c.mediaFirst === true || c.mediaFirst === "true") && heroMedia}
+            {c.mediaCaption && P("mediaCaption", c.mediaCaption, { as: "p", className: "sp-p", style: { fontSize: 14, opacity: 0.75, marginTop: 10 } })}
             {button()}
+            {c.priceLine && P("priceLine", c.priceLine, { as: "p", className: "sp-p", style: { fontSize: 14, marginTop: 12 } })}
+            {c.checks && <div data-sp-key="checks" className="sp-strip sp-hero-checks">{ctx.editable ? P("checks", c.checks) : lineList(c.checks).map((line, i) => <span key={i} className="sp-strip-item"><span style={{ color: c.checkColor || accent }}>✓</span>{line}</span>)}</div>}
+            {c.rating && <div data-sp-key="rating" className="sp-rating"><span style={{ color: "#F5B82E" }}>★★★★★</span> {P("rating", c.rating)}</div>}
             {c.miniBadges && <div data-sp-key="miniBadges" className="sp-mini-badges sp-strip">{ctx.editable ? P("miniBadges", c.miniBadges) : String(c.miniBadges).split("\n").map((line, i) => <span key={i} className="sp-strip-item">{line}</span>)}</div>}
         </div>
       );
@@ -300,7 +308,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
                       {(it.name || "?").charAt(0)}
                     </div>
                   )}
-                  {P(`items.${i}.name`, it.name, { style: { fontWeight: 700 } })}
+                  {it.role ? <div>{P(`items.${i}.name`, it.name, { as: "p", style: { fontWeight: 700, margin: 0 } })}{P(`items.${i}.role`, it.role, { as: "p", className: "sp-p", style: { fontSize: 13, opacity: 0.7, margin: 0 } })}</div> : P(`items.${i}.name`, it.name, { style: { fontWeight: 700 } })}
                 </div>
               </div>
             ))}
@@ -386,7 +394,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
                 {P(`items.${i}.a`, it.a, { as: "p", className: "sp-p", style: { opacity: 0.8, marginTop: 8 } })}
               </div>
             ) : (
-              <details key={i} data-sp-key={`items.${i}`} style={{ background: card }}>
+              <details key={i} data-sp-key={`items.${i}`} open={i === 0 && (c.openFirst === true || c.openFirst === "true")} style={{ background: card }}>
                 <summary>{P(`items.${i}.q`, it.q)}</summary>
                 {P(`items.${i}.a`, it.a, { as: "p", className: "sp-p", style: { opacity: 0.8, marginTop: 10 } })}
               </details>
