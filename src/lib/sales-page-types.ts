@@ -339,7 +339,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Perguntas frequentes",
     emoji: "❓",
     description: "Perguntas e respostas expansíveis",
-    fields: [T("eyebrow", "Etiqueta"), T("title", "Título")],
+    fields: [T("eyebrow", "Etiqueta"), T("title", "Título"), T("openFirst", "Primeira pergunta aberta", "checkbox")],
     items: { label: "Pergunta", fields: [T("q", "Pergunta"), T("a", "Resposta", "textarea")], blank: { q: "Nova pergunta?", a: "Resposta." } },
     defaults: () => ({
       title: "Perguntas frequentes",
