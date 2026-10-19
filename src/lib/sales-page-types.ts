@@ -186,7 +186,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Barra de aviso",
     emoji: "📣",
     description: "Faixa fina no topo da página",
-    fields: [T("text", "Texto"), { ...T("mode", "Modo do aviso", "select"), options: [{ value: "text", label: "Texto fixo" }, { value: "date", label: "Texto + data" }, { value: "countdown", label: "Texto + contagem" }] }, T("dateAutomatic", "Data automática", "checkbox"), T("dateText", "Data personalizada"), { ...T("timerType", "Tipo de contagem", "select"), options: [{ value: "date", label: "Data e hora final" }, { value: "duration", label: "Duração" }, { value: "midnight", label: "Até meia-noite (todo dia)" }] }, T("timerBoxes", "Contagem em caixinhas (h:m:s)", "checkbox"), T("endAt", "Data e hora final", "datetime"), T("durationSeconds", "Duração em segundos", "number"), { ...T("expiry", "Quando terminar", "select"), options: [{ value: "text", label: "Mostrar aviso final" }, { value: "hide", label: "Ocultar faixa" }] }, T("expiredText", "Aviso final")],
+    fields: [T("text", "Texto"), { ...T("mode", "Modo do aviso", "select"), options: [{ value: "text", label: "Só texto" }, { value: "date", label: "Texto e data" }, { value: "countdown", label: "Texto e hora (contagem)" }] }, T("dateAutomatic", "Data automática", "checkbox"), T("dateText", "Data personalizada"), { ...T("timerType", "Tipo de contagem", "select"), options: [{ value: "date", label: "Data e hora final" }, { value: "duration", label: "Duração" }, { value: "midnight", label: "Até meia-noite (todo dia)" }] }, T("timerBoxes", "Contagem em caixinhas (h:m:s)", "checkbox"), T("endAt", "Data e hora final", "datetime"), T("durationSeconds", "Duração em segundos", "number"), { ...T("expiry", "Quando terminar", "select"), options: [{ value: "text", label: "Mostrar aviso final" }, { value: "hide", label: "Ocultar faixa" }] }, T("expiredText", "Aviso final")],
     defaults: () => ({ text: "Condição especial por tempo limitado", mode: "text", dateAutomatic: "true", timerType: "date", durationSeconds: "3600", expiry: "text", expiredText: "Oferta encerrada" }),
     style: { paddingY: 10, textSize: 14 },
   },
@@ -195,7 +195,7 @@ export const BLOCKS: BlockDef[] = [
     label: "Hero / Topo",
     emoji: "🚀",
     description: "Título principal, subtítulo, imagem e botão",
-    fields: [T("eyebrow", "Chamada pequena"), T("title", "Título", "textarea"), T("subtitle", "Subtítulo", "textarea"), T("image", "Imagem", "image"), T("videoUrl", "Vídeo (substitui a imagem)", "video"), T("highlight", "Palavra em itálico"), T("mediaFirst", "Mídia antes do título", "checkbox"), T("miniBadges", "Mini-selos (um por linha)", "textarea"), ...BTN],
+    fields: [T("eyebrow", "Chamada pequena"), T("title", "Título", "textarea"), T("subtitle", "Subtítulo", "textarea"), T("image", "Imagem", "image"), T("videoUrl", "Vídeo (substitui a imagem)", "video"), T("highlight", "Palavra em destaque"), T("highlightItalic", "Destaque em itálico", "checkbox"), T("proof", "Cápsula de prova social"), T("mediaFirst", "Mídia antes do título", "checkbox"), T("mediaVertical", "Mídia vertical (9:16)", "checkbox"), T("mediaCaption", "Legenda da mídia"), T("priceLine", "Linha abaixo do botão"), T("checks", "Itens com check (um por linha)", "textarea"), T("rating", "Texto das estrelas"), T("miniBadges", "Mini-selos (um por linha)", "textarea"), ...BTN],
     hasButton: true,
     defaults: () => ({
       eyebrow: "MÉTODO COMPROVADO",
@@ -272,7 +272,7 @@ export const BLOCKS: BlockDef[] = [
     emoji: "💬",
     description: "Prova social de clientes",
     fields: [T("title", "Título")],
-    items: { label: "Depoimento", fields: [T("name", "Nome"), T("text", "Depoimento", "textarea"), T("image", "Foto", "image")], blank: { name: "Cliente", text: "Meu depoimento.", image: "" } },
+    items: { label: "Depoimento", fields: [T("name", "Nome"), T("role", "Cargo / descrição"), T("text", "Depoimento", "textarea"), T("image", "Foto", "image")], blank: { name: "Cliente", text: "Meu depoimento.", image: "" } },
     defaults: () => ({
       title: "Quem já usou, aprova",
       items: [
@@ -422,7 +422,7 @@ export const BLOCKS: BlockDef[] = [
   },
   {
     type: "pricingPlans", label: "Planos de preço", emoji: "💳", description: "Compare de dois a quatro planos", fields: [T("eyebrow", "Etiqueta"), T("title", "Título"), T("subtitle", "Subtítulo", "textarea"), T("note", "Linha abaixo dos planos")],
-    items: { label: "Plano", fields: [T("title", "Nome"), T("badge", "Etiqueta"), T("oldPrice", "Preço de"), T("price", "Preço por"), T("period", "Período / parcelamento"), T("cardBg", "Fundo do plano", "color"), T("textColor", "Cor do texto do plano", "color"), T("features", "Itens (um por linha)", "textarea"), T("buttonText", "Texto do botão"), T("buttonUrl", "Link do botão", "url"), T("buttonBg", "Cor do botão", "color"), T("buttonColor", "Cor do texto do botão", "color"), { ...T("buttonVariant", "Estilo do botão", "select"), options: [{ value: "solid", label: "Preenchido" }, { value: "outline", label: "Contorno" }] }], blank: { title: "Novo plano", badge: "", highlighted: "false", oldPrice: "De R$ 97", price: "R$ 47", features: "Acesso imediato\nMaterial completo", buttonText: "ESCOLHER", buttonUrl: "", buttonVariant: "outline" } },
+    items: { label: "Plano", fields: [T("title", "Nome"), T("badge", "Etiqueta"), T("oldPrice", "Preço de"), T("price", "Preço por"), T("period", "Período / parcelamento"), T("cardBg", "Fundo do plano", "color"), T("textColor", "Cor do texto do plano", "color"), T("image", "Imagem do plano", "image"), T("description", "Descrição", "textarea"), T("savings", "Linha de economia"), T("seal", "Selo redondo no canto"), T("includedLabel", "Título da lista inclui"), T("features", "Itens (um por linha)", "textarea"), T("excludedLabel", "Título da lista não inclui"), T("excluded", "Itens não incluídos (um por linha)", "textarea"), T("checkColor", "Cor dos checks", "color"), T("buttonText", "Texto do botão"), T("buttonUrl", "Link do botão", "url"), T("paymentNote", "Linha abaixo do botão"), T("buttonBg", "Cor do botão", "color"), T("buttonColor", "Cor do texto do botão", "color"), { ...T("buttonVariant", "Estilo do botão", "select"), options: [{ value: "solid", label: "Preenchido" }, { value: "outline", label: "Contorno" }] }], blank: { title: "Novo plano", badge: "", highlighted: "false", oldPrice: "De R$ 97", price: "R$ 47", features: "Acesso imediato\nMaterial completo", buttonText: "ESCOLHER", buttonUrl: "", buttonVariant: "outline" } },
     defaults: () => ({ title: "Escolha seu acesso", items: [{ title: "Essencial", badge: "", highlighted: "false", oldPrice: "De R$ 97", price: "R$ 47", features: "Material principal\nAcesso imediato", buttonText: "QUERO O ESSENCIAL", buttonUrl: "", buttonVariant: "outline" }, { title: "Completo", badge: "MAIS ESCOLHIDO", highlighted: "true", oldPrice: "De R$ 197", price: "R$ 97", features: "Material principal\nTodos os bônus\nAtualizações incluídas", buttonText: "QUERO O COMPLETO", buttonUrl: "", buttonVariant: "solid" }] }), style: { columns: 2 },
   },
   {
