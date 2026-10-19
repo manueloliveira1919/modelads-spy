@@ -27,8 +27,10 @@ export const PAGE_CSS = `
 .sp-btn:hover{transform:translateY(-2px)}
 .sp-hero{display:flex;flex-direction:column;gap:24px;align-items:stretch}
 .sp-hero .sp-h{margin-bottom:0}.sp-hero [data-sp-key^="button:"]{margin-top:0!important}
-.sp-video{position:relative;padding-top:56.25%;border-radius:var(--sp-r);overflow:hidden;background:#000;margin:24px 0}
-.sp-video iframe,.sp-video video{position:absolute;inset:0;width:100%;height:100%;border:0}
+.sp-video{position:relative;border-radius:var(--sp-r);overflow:hidden;margin:24px 0}
+.sp-video-embed{padding-top:56.25%;background:#000}
+.sp-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.sp-video video{width:100%;height:auto;display:block;border-radius:var(--sp-r)}
 .sp-ph{display:grid;place-items:center;aspect-ratio:4/3;border-radius:var(--sp-r);background:var(--sp-card);opacity:.7;font-size:14px}
 .sp-faq details{border-radius:var(--sp-r);background:var(--sp-card);padding:18px 20px;margin-top:12px;text-align:left}
 .sp-faq summary{cursor:pointer;font-weight:700;list-style:none}
@@ -205,7 +207,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
     case "hero": {
       const heroVideo = videoEmbed(c.videoUrl);
       const vertical = c.mediaVertical === true || c.mediaVertical === "true";
-      const heroMediaRaw = heroVideo ? <div data-sp-key="videoUrl" className="sp-video">{heroVideo.kind === "iframe" ? <iframe src={heroVideo.src} title="Vídeo do produto" allowFullScreen/> : <video src={heroVideo.src} controls playsInline/>}</div> : c.image || ctx.editable ? img("image", "Imagem do produto (opcional)") : c.showMediaPlaceholder ? <div data-sp-key="image" className="sp-ph">Foto ou vídeo do material</div> : null;
+      const heroMediaRaw = heroVideo ? <div data-sp-key="videoUrl" className={heroVideo.kind === "iframe" ? "sp-video sp-video-embed" : "sp-video"}>{heroVideo.kind === "iframe" ? <iframe src={heroVideo.src} title="Vídeo do produto" allowFullScreen/> : <video src={heroVideo.src} controls playsInline/>}</div> : c.image || ctx.editable ? img("image", "Imagem do produto (opcional)") : c.showMediaPlaceholder ? <div data-sp-key="image" className="sp-ph">Foto ou vídeo do material</div> : null;
       const heroMedia = vertical && heroMediaRaw ? <div data-sp-key="media" className="sp-media-vertical">{heroMediaRaw}{!heroVideo && !c.image && <span className="sp-play" aria-hidden="true">▶</span>}</div> : heroMediaRaw;
       const lineList = (v: unknown) => String(v || "").split("\n").filter(l => l.trim());
       body = (
@@ -232,7 +234,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
         <div style={{ maxWidth: 860, margin: "0 auto" }}>
           {title()}
           {v ? (
-            <div data-sp-key="videoUrl" className="sp-video">
+            <div data-sp-key="videoUrl" className={v.kind === "iframe" ? "sp-video sp-video-embed" : "sp-video"}>
               {v.kind === "iframe" ? <iframe src={v.src} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen title="vídeo" /> : <video src={v.src} controls playsInline />}
             </div>
           ) : ctx.editable ? (
@@ -449,7 +451,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
     const key = `custom:${el.id}`;
     if (el.type === "text" || el.type === "icon") return <div key={key}>{P(key, el.value, { as: "p" })}</div>;
     if (el.type === "image") return <div key={key} data-sp-key={key}>{el.value ? <img src={el.value} alt=""/> : <div className="sp-ph">Sua imagem</div>}</div>;
-    if (el.type === "video") { const v = videoEmbed(el.value); return <div key={key} data-sp-key={key} className="sp-video">{v?.kind === "video" ? <video src={v.src} controls playsInline/> : v ? <iframe src={v.src} title="Vídeo" allowFullScreen/> : <div className="sp-ph">Seu vídeo</div>}</div>; }
+    if (el.type === "video") { const v = videoEmbed(el.value); return <div key={key} data-sp-key={key} className={v?.kind === "iframe" ? "sp-video sp-video-embed" : "sp-video"}>{v?.kind === "video" ? <video src={v.src} controls playsInline/> : v ? <iframe src={v.src} title="Vídeo" allowFullScreen/> : <div className="sp-ph">Seu vídeo</div>}</div>; }
     const destination = buttonDestination(el.button ?? { id: el.id, text: el.value, url: "" }, ctx.sections);
     return <a key={key} data-sp-key={key} data-sp-popular={destination.popular || undefined} href={destination.href} target={destination.href.startsWith("#") ? undefined : "_top"} className="sp-btn" style={{ background: accent, color: btnColor }} onClick={ctx.editable || destination.warning ? e => e.preventDefault() : undefined}>{P(key, el.value)}</a>;
   });
