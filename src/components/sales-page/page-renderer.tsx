@@ -5,7 +5,7 @@ import { installPageInteractions } from "./section-interactions";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, GripVertical, Trash2, EyeOff } from "lucide-react";
 import { pageBackground, sectionButtons } from "@/lib/sales-page-layout";
-import { buttonDestination, elementCss } from "@/lib/sales-page-elements";
+import { announcementMode, buttonDestination, elementCss } from "@/lib/sales-page-elements";
 import { BLOCK_MAP, type PageSection, type PageSettings } from "@/lib/sales-page-types";
 
 /* Renderizador único: editor, página pública e exportação HTML usam o mesmo código.

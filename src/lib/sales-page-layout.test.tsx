@@ -98,7 +98,7 @@ describe("Sales page compatibility and output parity", () => {
   });
   it("exports safe editable badge text, independent purchase seals and announcement dates", () => {
     const hero = newSection("hero", { buttons: [{ id: "buy", text: "Buy", url: "#oferta", guarantee: { days: "30", variant: "navy", size: 88, topText: "<script>" } }] });
-    const html = buildPageHtml("Badge", DEFAULT_PAGE_SETTINGS, [hero, newSection("announcement", { showDate: true })]);
+    const html = buildPageHtml("Badge", DEFAULT_PAGE_SETTINGS, [hero, newSection("announcement", { mode: "date" })]);
     expect(html).toContain("&lt;script&gt;");
     expect(html).toContain("sp-badge-navy");
     expect(html).toContain("width:88px");

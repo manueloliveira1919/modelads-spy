@@ -546,7 +546,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     build: () => {
       const sequence: SectionType[] = ["announcement", "hero", "pains", "text", "textPhoto", "iconCards", "video", "steps", "printCarousel", "benefits", "steps", "bonusCards", "offer", "guarantee", "trustBadges", "faq", "finalCta", "footer"];
       const sections = sequence.map((type, i) => newSection(type, undefined, { bg: ["#ffffff", "#eef8ff", "#fff6dc", "#f6eeff"][i % 4] }));
-      sections[0] = newSection("announcement", { text: "Condição especial para começar hoje", showDate: true }, { bg: "#f9db69", color: "#203047", paddingY: 12 });
+      sections[0] = newSection("announcement", { text: "Condição especial para começar hoje", mode: "date" }, { bg: "#f9db69", color: "#203047", paddingY: 12 });
       sections[1] = newSection("hero", { eyebrow: "KIT DE ATIVIDADES EDUCATIVAS", title: "Aprender também pode ser uma grande brincadeira", subtitle: "Um kit digital com ideias criativas para explorar letras, números e novas descobertas no ritmo de cada criança.", miniBadges: "📥 Acesso imediato\n🖨️ Pronto para imprimir\n🛡️ 30 dias de garantia", buttonText: "QUERO CONHECER O KIT", buttonUrl: "#oferta", buttons: [{ id: uid(), text: "QUERO CONHECER O KIT", url: "#oferta", guarantee: { days: "30", size: 80, variant: "green" } }] }, { paddingY: 56, align: "left" });
       sections[2].content = { ...sections[2].content, title: "Faltam ideias para variar as atividades?", items: [{ text: "Você quer atividades simples de preparar" }, { text: "Busca momentos de aprendizado mais criativos" }, { text: "Precisa de materiais organizados em um só lugar" }] };
       sections[3].content = { title: "Conheça o seu kit de descobertas", body: "Atividades digitais para imprimir, explorar e adaptar à rotina. Este é um exemplo de apresentação: descreva aqui o conteúdo real do seu produto." };
@@ -567,7 +567,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
     build: () => {
       const sequence: SectionType[] = ["announcement", "hero", "benefitStrip", "embeddedQuiz", "iconCards", "iconCards", "checklistAccordion", "materialIndex", "bonusCards", "printCarousel", "countdown", "pricingPlans", "guarantee", "faq", "finalCta", "footer"];
       const sections = sequence.map(type => newSection(type));
-      sections[0] = newSection("announcement", { text: "Uma condição especial para o seu próximo passo", showDate: true }, { bg: "#302044", color: "#ffffff", paddingY: 12 });
+      sections[0] = newSection("announcement", { text: "Uma condição especial para o seu próximo passo", mode: "date" }, { bg: "#302044", color: "#ffffff", paddingY: 12 });
       sections[1] = newSection("hero", { eyebrow: "SEU MATERIAL DIGITAL", title: "Uma rotina mais leve começa com clareza", highlight: "leve", subtitle: "Organize suas ideias e transforme pequenos passos em uma rotina que faz sentido para você.", miniBadges: "🛡️ Garantia de 7 dias", buttons: [{ id: uid(), text: "QUERO COMEÇAR AGORA", url: "#oferta", radius: 40, guarantee: { days: "7", variant: "purple", size: 76 } }] }, { paddingY: 56, align: "left" });
       sections[2].content.items = [{ text: "Acesso imediato" }, { text: "Material digital" }, { text: "Garantia de 7 dias" }];
       sections[5].content.title = "Por que usar no seu dia a dia";
@@ -579,7 +579,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
   },
 
   {
-    key: "natural-recipes", name: "Receitas Naturais", emoji: "", description: "Receitas, benefícios, bônus, oferta, exemplos e garantia.",
+    key: "natural-recipes", name: "Receitas Naturais", emoji: "🌿", description: "Receitas, benefícios, bônus, oferta, exemplos e garantia.",
     settings: {
       font: "Nunito Sans", headingFont: "Fraunces", radius: 18, maxWidth: 1080,
       colors: { primary: "#3F6B2E", bg: "#F5F8EE", text: "#26301F", muted: "#55624A", surface: "#FFFFFF", buttonText: "#FFFFFF" },
@@ -623,7 +623,7 @@ export const PAGE_TEMPLATES: PageTemplate[] = [
   },
 
   {
-    key: "christmas-crafts", name: "Natal - Moldes e Lembrancinhas", emoji: "", description: "Aviso com contagem, passos, produtos, planos, garantia, FAQ e contagem até o Natal.",
+    key: "christmas-crafts", name: "Natal - Moldes e Lembrancinhas", emoji: "🎄", description: "Aviso com contagem, passos, produtos, planos, garantia, FAQ e contagem até o Natal.",
     settings: {
       font: "Nunito Sans", headingFont: "Outfit", radius: 16, maxWidth: 1080,
       colors: { primary: "#1F6B3A", bg: "#FFF6EA", text: "#2B1B14", muted: "#6B5A4A", surface: "#FFFFFF", buttonText: "#FFFFFF" },

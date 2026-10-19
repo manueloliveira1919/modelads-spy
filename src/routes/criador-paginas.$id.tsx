@@ -32,7 +32,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/lib/auth-context";
 import { DEFAULT_PAGE_BACKGROUND, newPageButton, sectionButtons, salesPageUrl } from "@/lib/sales-page-layout";
-import { parseDestination } from "@/lib/sales-page-elements";
+import { announcementMode, parseDestination } from "@/lib/sales-page-elements";
 import { cn } from "@/lib/utils";
 import { BackgroundPanel, Choice, ElementPanel, DestinationPanel, Numeric } from "@/components/sales-page/element-panel";
 import { PageRenderer } from "@/components/sales-page/page-renderer";
