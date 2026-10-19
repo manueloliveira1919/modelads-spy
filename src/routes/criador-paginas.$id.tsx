@@ -645,7 +645,7 @@ function SectionPanel({
         {def.fields.filter(f => {
           if (["buttonText", "buttonUrl"].includes(f.key)) return false;
           if (section.type !== "announcement") return true;
-          const mode = section.content.mode || "text";
+          const mode = announcementMode(section.content);
           if (["dateAutomatic", "dateText"].includes(f.key)) return mode === "date" && (f.key !== "dateText" || section.content.dateAutomatic === "false");
           if (["timerType", "endAt", "durationSeconds", "expiry", "expiredText"].includes(f.key)) return mode === "countdown" && (f.key !== "endAt" || section.content.timerType !== "duration") && (f.key !== "durationSeconds" || section.content.timerType === "duration");
           return true;
