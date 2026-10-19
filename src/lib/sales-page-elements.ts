@@ -61,7 +61,7 @@ export function buttonDestination(button: PageButton, sections: PageSection[]): 
 export function contentAt(section: PageSection, key: string): string {
   if (key.startsWith("custom:")) return section.customElements?.find(e => e.id === key.slice(7))?.value || "";
   if (key.startsWith("button:")) return section.content.buttons?.find((b: PageButton) => b.id === key.slice(7))?.text || section.content.buttonText || "";
-  const list = key.match(/^items\.(\d+)\.(features|checklist)\.(\d+)$/);
+  const list = key.match(/^items\.(\d+)\.(features|checklist|excluded)\.(\d+)$/);
   if (list) return (section.content.items?.[Number(list[1])]?.[list[2]] || "").split("\n")[Number(list[3])] || "";
   return key.split(".").reduce<any>((value, part) => value?.[part], section.content) ?? "";
 }
