@@ -1,3 +1,7 @@
+# Criador de Páginas — movimentação dos elementos
+- [ ] Corrigir setas e alça de arrastar em todos os grupos de elementos
+- [ ] Validar reordenação, histórico e paridade com exportação sem alterar páginas salvas
+
 # Planos — fallback e avisos de upgrade
 - [x] Garantir plano free e leitura autenticada do catálogo comercial
 - [x] Corrigir fallback, planos e mensagem de bloqueio sem liberar recursos
