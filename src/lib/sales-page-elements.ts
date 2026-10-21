@@ -2,6 +2,19 @@ import type { CSSProperties } from "react";
 import type { ElementStyle, PageButton, PageSection, PageSettings } from "./sales-page-types";
 import { pageBackground } from "./sales-page-layout";
 
+/** One visible sibling sequence is shared by rendering, arrows and dragging. */
+export function resolveElementOrder(available: string[], saved: string[] = []): string[] {
+  const keys = [...new Set(available)];
+  return [...new Set(saved)].filter(key => keys.includes(key)).concat(keys.filter(key => !saved.includes(key)));
+}
+
+export function moveElementOrder(keys: string[], key: string, target: string, after = false): string[] {
+  if (key === target || !keys.includes(key) || !keys.includes(target)) return keys;
+  const next = keys.filter(value => value !== key);
+  next.splice(next.indexOf(target) + (after ? 1 : 0), 0, key);
+  return next;
+}
+
 export function parseDestination(value: unknown): PageButton["destination"] {
   if (!value) return undefined;
   try { const parsed = typeof value === "string" ? JSON.parse(value) : value;
