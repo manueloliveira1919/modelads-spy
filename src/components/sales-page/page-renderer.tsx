@@ -1,11 +1,11 @@
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, Children, isValidElement, cloneElement } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, Children, Fragment, isValidElement, cloneElement } from "react";
 import { GuaranteeBadge } from "./guarantee-badge";
 import { ExtendedSection, EXTENDED_PAGE_CSS } from "./extended-sections";
 import { installPageInteractions } from "./section-interactions";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, GripVertical, Trash2, EyeOff } from "lucide-react";
 import { pageBackground, sectionButtons } from "@/lib/sales-page-layout";
-import { announcementMode, buttonDestination, elementCss } from "@/lib/sales-page-elements";
+import { announcementMode, buttonDestination, elementCss, resolveElementOrder, moveElementOrder } from "@/lib/sales-page-elements";
 import { BLOCK_MAP, type PageSection, type PageSettings } from "@/lib/sales-page-types";
 
 /* Renderizador único: editor, página pública e exportação HTML usam o mesmo código.
@@ -214,7 +214,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
         <div className="sp-hero" style={{ textAlign: align }}>
             {(c.mediaFirst === true || c.mediaFirst === "true") && heroMedia}
             {(c.eyebrow || ctx.editable) && P("eyebrow", c.eyebrow, { as: "p", className: "sp-p", style: { color: accent, fontWeight: 800, letterSpacing: ".12em", fontSize: 13, marginBottom: 12 } })}
-            {c.highlight && !ctx.editable && String(c.title).includes(c.highlight) ? <h2 className="sp-h" style={{ fontSize: ts, fontFamily: st.font || s.headingFont }}>{String(c.title).split(c.highlight).map((part, i) => <span key={i}>{i > 0 && <em style={{ color: accent, fontStyle: c.highlightItalic === false || c.highlightItalic === "false" ? "normal" : undefined }}>{c.highlight}</em>}{part}</span>)}</h2> : title()}
+            {c.highlight && !ctx.editable && String(c.title).includes(c.highlight) ? <h2 data-sp-key="title" className="sp-h" style={{ fontSize: ts, fontFamily: st.font || s.headingFont }}>{String(c.title).split(c.highlight).map((part, i) => <span key={i}>{i > 0 && <em style={{ color: accent, fontStyle: c.highlightItalic === false || c.highlightItalic === "false" ? "normal" : undefined }}>{c.highlight}</em>}{part}</span>)}</h2> : title()}
             {P("subtitle", c.subtitle, { as: "p", className: "sp-p", style: { fontSize: (st.textSize ?? 18) + 1, opacity: 0.85 } })}
             {c.proof && P("proof", c.proof, { as: "p", className: "sp-p sp-proof" })}
             {!(c.mediaFirst === true || c.mediaFirst === "true") && heroMedia}
@@ -456,23 +456,53 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
     return <a key={key} data-sp-key={key} data-sp-popular={destination.popular || undefined} href={destination.href} target={destination.href.startsWith("#") ? undefined : "_top"} className="sp-btn" style={{ background: accent, color: btnColor }} onClick={ctx.editable || destination.warning ? e => e.preventDefault() : undefined}>{P(key, el.value)}</a>;
   });
   body = <>{body}{custom}</>;
-  function decorate(node: React.ReactNode, parent = "root"): React.ReactNode {
-    const children = Children.toArray(node);
-    const entries = children.map((child, index) => {
+  const nodeKey = (node: React.ReactNode): string | undefined => {
+    if (!isValidElement<Record<string, any>>(node)) return undefined;
+    if (node.type !== E) return node.props["data-sp-key"];
+    const path: string = node.props.path;
+    const buttonIndex = path === "buttonText" ? 0 : /^buttons\.\d+\.text$/.test(path) ? Number(path.split(".")[1]) : undefined;
+    const targetButton = buttonIndex === undefined ? undefined : sectionButtons(section)[buttonIndex];
+    if (targetButton) return `button:${targetButton.id}`;
+    return path.replace(/^(items\.\d+)\.buttonText$/, "$1.button");
+  };
+  const descendantKeys = (node: React.ReactNode): string[] => {
+    const key = nodeKey(node);
+    if (key) return [key];
+    return isValidElement<Record<string, any>>(node) ? Children.toArray(node.props.children).flatMap(descendantKeys) : [];
+  };
+  function decorate(node: React.ReactNode, parent = "root", suppressed?: string, legacy = false): React.ReactNode {
+    // Fragments are not layout containers. Keep their old paths only for saved-order compatibility.
+    const flatten = (value: React.ReactNode, path: string): { child: React.ReactNode; path: string }[] => Children.toArray(value).flatMap((child, index) => {
+      const nextPath = `${path}.${index}`;
+      return isValidElement<Record<string, any>>(child) && child.type === Fragment ? flatten(child.props.children, nextPath) : [{ child, path: nextPath }];
+    });
+    const children = flatten(node, parent);
+    const entries = children.map(({ child, path }, index) => {
       if (!isValidElement<Record<string, any>>(child)) return { key: `static-${index}`, node: child };
       const p = child.props;
-      const key = child.type === E ? p.path : p["data-sp-key"] || (p.className === "sp-grid" || p.className === "sp-grid2" || p.className === "sp-flex-grid" ? "items" : child.type === Countdown ? "countdown" : p.className?.split(" ").includes("sp-card") || p.className === "sp-check" ? `${parent}.item.${index}` : undefined);
-      const group = key || `${parent}.${index}`;
-      let next = p.children && child.type !== E ? cloneElement(child, {}, decorate(p.children, group)) : child;
+      const descendants = descendantKeys(child);
+      const unique = [...new Set(descendants)];
+      const inferred = unique.length === 1 ? unique[0] : unique.length > 1 && children.length > 1 ? `${parent}.item.${index}` : undefined;
+      const candidate = nodeKey(child) || (p.className === "sp-grid" || p.className === "sp-grid2" || p.className === "sp-flex-grid" ? "items" : child.type === Countdown ? "countdown" : inferred);
+      const key = candidate === suppressed ? undefined : candidate;
+      const group = key && key !== inferred ? key : path;
+      const onlyChildKey = p.children ? [...new Set(Children.toArray(p.children).flatMap(descendantKeys))] : [];
+      const nestedSuppressed = key && onlyChildKey.length === 1 ? onlyChildKey[0] : key || suppressed;
+      let next = p.children && child.type !== E ? cloneElement(child, {}, decorate(p.children, group, nestedSuppressed)) : child;
       if (!key) return { key: `static-${index}`, node: next };
       const override = section.elementStyles?.[key];
       if (override?.hidden || override?.removed) return { key, node: null };
       if (child.type !== E) next = cloneElement(next, { style: { ...p.style, ...elementCss(override, s) } });
-      return { key, node: ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} group={parent} ctx={{ ...ctx, onOrder: (sid, order) => ctx.onOrder?.(sid, order, parent) }} order={() => entries.filter(e => !e.key.startsWith("static-")).map(e => e.key)}>{next}</SectionElement> : next };
+      return { key, node: ctx.editable ? <SectionElement key={key} sid={sid} elementKey={key} group={parent} ctx={{ ...ctx, onOrder: (sid, order) => ctx.onOrder?.(sid, order, legacy ? undefined : parent) }} order={() => ordered.filter(e => e.node !== null && !e.key.startsWith("static-")).map(e => e.key)}>{next}</SectionElement> : next };
     });
-    const order = section.groupOrders?.[parent] ?? (section.type === "hero" && parent === "root.0" ? section.groupOrders?.["root.0.0"] : undefined);
-    if (order) entries.sort((a, b) => (order.indexOf(a.key) < 0 ? 999 : order.indexOf(a.key)) - (order.indexOf(b.key) < 0 ? 999 : order.indexOf(b.key)));
-    return entries.map(e => e.node);
+    const saved = legacy ? section.elementOrder : section.groupOrders?.[parent] ?? (section.type === "hero" && parent === "root.0" ? section.groupOrders?.["root.0.0"] : undefined);
+    const movable = entries.filter(e => !e.key.startsWith("static-"));
+    const sequence = resolveElementOrder(movable.map(e => e.key), saved);
+    const sorted = sequence.map(key => movable.find(e => e.key === key)).filter((entry): entry is typeof entries[number] => entry !== undefined);
+    let cursor = 0;
+    // Static markup retains its position instead of jumping beneath every moved element.
+    const ordered = entries.map(entry => entry.key.startsWith("static-") ? entry : sorted[cursor++] ?? entry);
+    return ordered.map(e => e.node);
   }
   // Preserve the older explicitly flattened layout, while new nested ordering stays within its parent.
   let output: React.ReactNode;
@@ -485,7 +515,7 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
     });
     collect(body);
     const order = [...section.elementOrder.filter(k => slots.some(x => x.key === k)), ...slots.map(x => x.key).filter(k => !section.elementOrder?.includes(k))];
-    output = <div className="sp-ordered">{order.map(key => <div key={key}>{decorate(slots.find(x => x.key === key)?.node, "root")}</div>)}</div>;
+    output = <div className="sp-ordered">{decorate(order.map(key => slots.find(x => x.key === key)?.node), "root", undefined, true)}</div>;
   } else output = decorate(body);
   return (
     <section id={`sp-section-${sid}`}
@@ -513,6 +543,8 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
 function SectionElement({ sid, elementKey, group, ctx, order, children }: { sid: string; elementKey: string; group: string; ctx: Ctx; order: () => string[]; children: React.ReactNode }) {
   const selected = ctx.selectedElement === `${sid}:${elementKey}`;
   const [drop, setDrop] = useState<"before" | "after" | undefined>();
+  const keys = order();
+  const position = keys.indexOf(elementKey);
   const move = (delta: number) => {
     const keys = order(); const i = keys.indexOf(elementKey); const j = i + delta;
     if (i < 0 || j < 0 || j >= keys.length) return;
@@ -524,7 +556,7 @@ function SectionElement({ sid, elementKey, group, ctx, order, children }: { sid:
     onDragLeave={() => setDrop(undefined)} onDrop={e => {
       e.preventDefault(); e.stopPropagation(); setDrop(undefined);
       try { const from = JSON.parse(e.dataTransfer.getData("application/modelads-element")); if (from.sid !== sid || from.group !== group || from.key === elementKey) return;
-        const keys = order().filter(k => k !== from.key); const i = keys.indexOf(elementKey); keys.splice(i + (drop === "after" ? 1 : 0), 0, from.key); ctx.onOrder?.(sid, keys);
+        ctx.onOrder?.(sid, moveElementOrder(order(), from.key, elementKey, drop === "after"));
       } catch { /* Ignore foreign drags. */ }
     }}>
     {children}
@@ -547,14 +579,13 @@ function SectionElement({ sid, elementKey, group, ctx, order, children }: { sid:
         const finish = () => {
           clear(); window.removeEventListener('pointermove', track); window.removeEventListener('pointerup', finish); window.removeEventListener('pointercancel', cancel);
           if (!targetKey || !order().includes(targetKey)) return;
-          const keys = order().filter(k => k !== elementKey); const i = keys.indexOf(targetKey);
-          if (i >= 0) { keys.splice(i + (after ? 1 : 0), 0, elementKey); ctx.onOrder?.(sid, keys); }
+          ctx.onOrder?.(sid, moveElementOrder(order(), elementKey, targetKey, after));
         };
         const cancel = () => { targetKey = undefined; finish(); };
         window.addEventListener('pointermove', track); window.addEventListener('pointerup', finish, { once: true }); window.addEventListener('pointercancel', cancel, { once: true });
       }}><GripVertical size={14}/></Button>
-      <Button size="icon" variant="ghost" title="Subir elemento" aria-label="Subir elemento" onClick={() => move(-1)}><ArrowUp size={14}/></Button>
-      <Button size="icon" variant="ghost" title="Descer elemento" aria-label="Descer elemento" onClick={() => move(1)}><ArrowDown size={14}/></Button>
+      <Button size="icon" variant="ghost" title="Subir elemento" aria-label="Subir elemento" disabled={position <= 0} onClick={() => move(-1)}><ArrowUp size={14}/></Button>
+      <Button size="icon" variant="ghost" title="Descer elemento" aria-label="Descer elemento" disabled={position < 0 || position >= keys.length - 1} onClick={() => move(1)}><ArrowDown size={14}/></Button>
       <Button size="icon" variant="ghost" title="Ocultar elemento" aria-label="Ocultar elemento" onClick={() => ctx.onElementAction?.(sid, elementKey, "hidden")}><EyeOff size={14}/></Button>
       <Button size="icon" variant="ghost" title="Remover elemento" aria-label="Remover elemento" onClick={() => ctx.onElementAction?.(sid, elementKey, "removed")}><Trash2 size={14}/></Button>
     </div>}
