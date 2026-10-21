@@ -458,7 +458,12 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
   body = <>{body}{custom}</>;
   const nodeKey = (node: React.ReactNode): string | undefined => {
     if (!isValidElement<Record<string, any>>(node)) return undefined;
-    return node.type === E ? node.props.path : node.props["data-sp-key"];
+    if (node.type !== E) return node.props["data-sp-key"];
+    const path: string = node.props.path;
+    const buttonIndex = path === "buttonText" ? 0 : /^buttons\.\d+\.text$/.test(path) ? Number(path.split(".")[1]) : undefined;
+    const targetButton = buttonIndex === undefined ? undefined : sectionButtons(section)[buttonIndex];
+    if (targetButton) return `button:${targetButton.id}`;
+    return path.replace(/^(items\.\d+)\.buttonText$/, "$1.button");
   };
   const descendantKeys = (node: React.ReactNode): string[] => {
     const key = nodeKey(node);
@@ -480,8 +485,10 @@ function Section({ section, ctx }: { section: PageSection; ctx: Ctx }) {
       const inferred = unique.length === 1 ? unique[0] : unique.length > 1 && children.length > 1 ? `${parent}.item.${index}` : undefined;
       const candidate = nodeKey(child) || (p.className === "sp-grid" || p.className === "sp-grid2" || p.className === "sp-flex-grid" ? "items" : child.type === Countdown ? "countdown" : inferred);
       const key = candidate === suppressed ? undefined : candidate;
-      const group = key || path;
-      let next = p.children && child.type !== E ? cloneElement(child, {}, decorate(p.children, group, key || suppressed)) : child;
+      const group = key && key !== inferred ? key : path;
+      const onlyChildKey = p.children ? [...new Set(Children.toArray(p.children).flatMap(descendantKeys))] : [];
+      const nestedSuppressed = key && onlyChildKey.length === 1 ? onlyChildKey[0] : key || suppressed;
+      let next = p.children && child.type !== E ? cloneElement(child, {}, decorate(p.children, group, nestedSuppressed)) : child;
       if (!key) return { key: `static-${index}`, node: next };
       const override = section.elementStyles?.[key];
       if (override?.hidden || override?.removed) return { key, node: null };
