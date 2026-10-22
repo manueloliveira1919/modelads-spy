@@ -1,6 +1,6 @@
 # Criador de Páginas — movimentação dos elementos
-- [ ] Corrigir setas e alça de arrastar em todos os grupos de elementos
-- [ ] Validar reordenação, histórico e paridade com exportação sem alterar páginas salvas
+- [x] Corrigir setas e alça de arrastar em todos os grupos de elementos
+- [x] Validar reordenação, histórico e paridade com exportação sem alterar páginas salvas — sessão autenticada, cartões, grupos internos, setas, arrastar, desfazer/refazer, autosave/reload e HTML; página temporária removida
 
 # Planos — fallback e avisos de upgrade
 - [x] Garantir plano free e leitura autenticada do catálogo comercial
