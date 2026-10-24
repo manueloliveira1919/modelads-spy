@@ -420,6 +420,63 @@ export type Database = {
         }
         Relationships: []
       }
+      mcp_command_logs: {
+        Row: {
+          client_id: string | null
+          command: string
+          created_at: string
+          id: string
+          outcome: string
+          reason: string | null
+          review_path: string | null
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          command: string
+          created_at?: string
+          id?: string
+          outcome: string
+          reason?: string | null
+          review_path?: string | null
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          command?: string
+          created_at?: string
+          id?: string
+          outcome?: string
+          reason?: string | null
+          review_path?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      mcp_connections: {
+        Row: {
+          approved_at: string
+          client_id: string
+          client_name: string
+          revoked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string
+          client_id: string
+          client_name?: string
+          revoked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          approved_at?: string
+          client_id?: string
+          client_name?: string
+          revoked_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       meta_offers: {
         Row: {
           active_ads_count: number
@@ -1797,6 +1854,14 @@ export type Database = {
           id: string
           link_url: string
         }[]
+      }
+      mcp_execute: {
+        Args: { p_command: string; p_payload?: Json; p_test?: boolean }
+        Returns: Json
+      }
+      mcp_manage_connection: {
+        Args: { p_client_id: string; p_name?: string; p_revoke?: boolean }
+        Returns: Json
       }
       mining_cancel_run: { Args: { p_run_id: string }; Returns: undefined }
       mining_cleanup_run: { Args: { p_run_id: string }; Returns: undefined }

@@ -127,6 +127,13 @@
       "when": 1792362355947,
       "tag": "0017_free_plan_fallback_and_catalog_reads",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792845844149,
+      "tag": "0018_connect_ai_oauth_commands",
+      "breakpoints": true
     }
   ]
 }
