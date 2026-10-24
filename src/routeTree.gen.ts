@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BuscarRouteImport } from './routes/buscar'
+import { Route as ConectarIaRouteImport } from './routes/conectar-ia'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as CriadorAudiosRouteImport } from './routes/criador-audios'
 import { Route as CriadorCriativosRouteImport } from './routes/criador-criativos'
@@ -84,6 +85,11 @@ const AuthRoute = AuthRouteImport.update({
 const BuscarRoute = BuscarRouteImport.update({
   id: '/buscar',
   path: '/buscar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConectarIaRoute = ConectarIaRouteImport.update({
+  id: '/conectar-ia',
+  path: '/conectar-ia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
@@ -359,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
+  '/conectar-ia': typeof ConectarIaRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
@@ -416,6 +423,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
+  '/conectar-ia': typeof ConectarIaRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
@@ -473,6 +481,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
+  '/conectar-ia': typeof ConectarIaRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
@@ -533,6 +542,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/buscar'
+    | '/conectar-ia'
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
@@ -590,6 +600,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/buscar'
+    | '/conectar-ia'
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
@@ -646,6 +657,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/buscar'
+    | '/conectar-ia'
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
@@ -705,6 +717,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   BuscarRoute: typeof BuscarRoute
+  ConectarIaRoute: typeof ConectarIaRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   CriadorAudiosRoute: typeof CriadorAudiosRoute
   CriadorCriativosRoute: typeof CriadorCriativosRoute
@@ -770,6 +783,13 @@ declare module '@tanstack/react-router' {
       path: '/buscar'
       fullPath: '/buscar'
       preLoaderRoute: typeof BuscarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conectar-ia': {
+      id: '/conectar-ia'
+      path: '/conectar-ia'
+      fullPath: '/conectar-ia'
+      preLoaderRoute: typeof ConectarIaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracoes': {
@@ -1206,6 +1226,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   BuscarRoute: BuscarRoute,
+  ConectarIaRoute: ConectarIaRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   CriadorAudiosRoute: CriadorAudiosRoute,
   CriadorCriativosRoute: CriadorCriativosRoute,
