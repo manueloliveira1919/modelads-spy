@@ -5,7 +5,7 @@
  * Optional section logic is {targets:[{element:number,option:number,next:string}]} (zero-based).
  * No user, slug, session or lead data is transported. Unknown properties are stripped.
  */
-import { z } from "zod";
+import { z } from "zod/v3";
 import { DEFAULT_QUIZ_SETTINGS, makeElement, uid, type Quiz, type QuizSection, type QuizSettings } from "./quiz-types";
 import { QUIZ_FONTS, QUIZ_ANIMATIONS } from "./quiz-visual";
 import { hasCycle } from "./quiz-logic";

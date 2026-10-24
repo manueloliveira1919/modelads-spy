@@ -4,12 +4,13 @@ import { toast } from "sonner";
 import { Radar, Loader2, Eye, EyeOff, Mail, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { oauthReturnPath } from "@/lib/oauth-return-path";
 
 type AuthSearch = { redirect?: string; mode?: "signin" | "signup" | "forgot" };
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): AuthSearch => ({
-    redirect: typeof s.redirect === "string" ? s.redirect : undefined,
+    redirect: typeof s.redirect === "string" ? oauthReturnPath(s.redirect) : undefined,
     mode:
       s.mode === "signup" || s.mode === "forgot" || s.mode === "signin"
         ? s.mode
@@ -21,6 +22,8 @@ export const Route = createFileRoute("/auth")({
       { name: "description", content: "Acesse sua conta Modelads e continue minerando ofertas vencedoras." },
       { property: "og:title", content: "Entrar — Modelads" },
       { property: "og:description", content: "Acesse sua conta Modelads." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -61,7 +64,7 @@ function AuthPage() {
 
   useEffect(() => {
     if (!loading && user) {
-      const to = search.redirect && search.redirect.startsWith("/") ? search.redirect : "/";
+      const to = oauthReturnPath(search.redirect);
       navigate({ to, replace: true });
     }
   }, [loading, user, navigate, search.redirect]);
@@ -75,7 +78,7 @@ function AuthPage() {
       if (error) throw error;
       toast.success("Bem-vindo de volta!");
       await router.invalidate();
-      const to = search.redirect && search.redirect.startsWith("/") ? search.redirect : "/";
+      const to = oauthReturnPath(search.redirect);
       navigate({ to, replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao entrar");
@@ -105,7 +108,7 @@ function AuthPage() {
         email: email.trim(),
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: new URL(oauthReturnPath(search.redirect), window.location.origin).href,
           data: {
             first_name: firstName.trim(),
             last_name: lastName.trim(),
@@ -119,7 +122,7 @@ function AuthPage() {
       if (error) throw error;
       toast.success("Conta criada! Verifique seu e-mail se pedirmos confirmação.");
       await router.invalidate();
-      navigate({ to: "/", replace: true });
+      navigate({ to: oauthReturnPath(search.redirect), replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Falha ao criar conta");
     } finally {

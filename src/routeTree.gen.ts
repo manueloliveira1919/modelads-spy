@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BuscarRouteImport } from './routes/buscar'
+import { Route as ConectarIaRouteImport } from './routes/conectar-ia'
 import { Route as ConfiguracoesRouteImport } from './routes/configuracoes'
 import { Route as CriadorAudiosRouteImport } from './routes/criador-audios'
 import { Route as CriadorCriativosRouteImport } from './routes/criador-criativos'
@@ -22,6 +23,7 @@ import { Route as EmBreveRouteImport } from './routes/em-breve'
 import { Route as ExclusaoDeDadosRouteImport } from './routes/exclusao-de-dados'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as FerramentasRouteImport } from './routes/ferramentas'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as MinhaContaRouteImport } from './routes/minha-conta'
 import { Route as ModelaSpyAiRouteImport } from './routes/modela-spy-ai'
 import { Route as ModelarOfertaRouteImport } from './routes/modelar-oferta'
@@ -36,6 +38,7 @@ import { Route as SuporteRouteImport } from './routes/suporte'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as UpgradeRouteImport } from './routes/upgrade'
 import { Route as UtmRouteImport } from './routes/utm'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminBlacklistRouteImport } from './routes/admin.blacklist'
 import { Route as AdminCategoriasRouteImport } from './routes/admin.categorias'
@@ -55,6 +58,7 @@ import { Route as ModelarQuizGerarComIaRouteImport } from './routes/modelar-quiz
 import { Route as OfertaIdRouteImport } from './routes/oferta.$id'
 import { Route as PSlugRouteImport } from './routes/p.$slug'
 import { Route as QuizSlugRouteImport } from './routes/quiz.$slug'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicCaktoWebhookRouteImport } from './routes/api/public/cakto-webhook'
 import { Route as ModelarQuizLeadsIdRouteImport } from './routes/modelar-quiz.leads.$id'
 import { Route as ApiPublicExtensionStatusRouteImport } from './routes/api/public/extension/status'
@@ -81,6 +85,11 @@ const AuthRoute = AuthRouteImport.update({
 const BuscarRoute = BuscarRouteImport.update({
   id: '/buscar',
   path: '/buscar',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ConectarIaRoute = ConectarIaRouteImport.update({
+  id: '/conectar-ia',
+  path: '/conectar-ia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ConfiguracoesRoute = ConfiguracoesRouteImport.update({
@@ -126,6 +135,11 @@ const FavoritosRoute = FavoritosRouteImport.update({
 const FerramentasRoute = FerramentasRouteImport.update({
   id: '/ferramentas',
   path: '/ferramentas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MinhaContaRoute = MinhaContaRouteImport.update({
@@ -198,6 +212,12 @@ const UtmRoute = UtmRouteImport.update({
   path: '/utm',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -294,6 +314,11 @@ const QuizSlugRoute = QuizSlugRouteImport.update({
   path: '/quiz/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicCaktoWebhookRoute = ApiPublicCaktoWebhookRouteImport.update({
   id: '/api/public/cakto-webhook',
   path: '/api/public/cakto-webhook',
@@ -340,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
+  '/conectar-ia': typeof ConectarIaRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
@@ -349,6 +375,7 @@ export interface FileRoutesByFullPath {
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
+  '/mcp': typeof McpRoute
   '/minha-conta': typeof MinhaContaRoute
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
@@ -363,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/termos': typeof TermosRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/blacklist': typeof AdminBlacklistRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/clientes': typeof AdminClientesRoute
@@ -382,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/criador-paginas/': typeof CriadorPaginasIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/cakto-webhook': typeof ApiPublicCaktoWebhookRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
@@ -394,6 +423,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
+  '/conectar-ia': typeof ConectarIaRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
@@ -402,6 +432,7 @@ export interface FileRoutesByTo {
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
+  '/mcp': typeof McpRoute
   '/minha-conta': typeof MinhaContaRoute
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
@@ -415,6 +446,7 @@ export interface FileRoutesByTo {
   '/termos': typeof TermosRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/blacklist': typeof AdminBlacklistRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/clientes': typeof AdminClientesRoute
@@ -434,6 +466,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/criador-paginas': typeof CriadorPaginasIndexRoute
   '/modelar-quiz': typeof ModelarQuizIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/cakto-webhook': typeof ApiPublicCaktoWebhookRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
@@ -448,6 +481,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/auth': typeof AuthRoute
   '/buscar': typeof BuscarRoute
+  '/conectar-ia': typeof ConectarIaRoute
   '/configuracoes': typeof ConfiguracoesRoute
   '/criador-audios': typeof CriadorAudiosRoute
   '/criador-criativos': typeof CriadorCriativosRoute
@@ -457,6 +491,7 @@ export interface FileRoutesById {
   '/exclusao-de-dados': typeof ExclusaoDeDadosRoute
   '/favoritos': typeof FavoritosRoute
   '/ferramentas': typeof FerramentasRoute
+  '/mcp': typeof McpRoute
   '/minha-conta': typeof MinhaContaRoute
   '/modela-spy-ai': typeof ModelaSpyAiRoute
   '/modelar-oferta': typeof ModelarOfertaRoute
@@ -471,6 +506,7 @@ export interface FileRoutesById {
   '/termos': typeof TermosRoute
   '/upgrade': typeof UpgradeRoute
   '/utm': typeof UtmRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/admin/blacklist': typeof AdminBlacklistRoute
   '/admin/categorias': typeof AdminCategoriasRoute
   '/admin/clientes': typeof AdminClientesRoute
@@ -490,6 +526,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/criador-paginas/': typeof CriadorPaginasIndexRoute
   '/modelar-quiz/': typeof ModelarQuizIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/api/public/cakto-webhook': typeof ApiPublicCaktoWebhookRoute
   '/modelar-quiz/leads/$id': typeof ModelarQuizLeadsIdRoute
   '/api/public/extension/status': typeof ApiPublicExtensionStatusRoute
@@ -505,6 +542,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/buscar'
+    | '/conectar-ia'
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
@@ -514,6 +552,7 @@ export interface FileRouteTypes {
     | '/exclusao-de-dados'
     | '/favoritos'
     | '/ferramentas'
+    | '/mcp'
     | '/minha-conta'
     | '/modela-spy-ai'
     | '/modelar-oferta'
@@ -528,6 +567,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/upgrade'
     | '/utm'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/blacklist'
     | '/admin/categorias'
     | '/admin/clientes'
@@ -547,6 +587,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/criador-paginas/'
     | '/modelar-quiz/'
+    | '/.lovable/oauth/consent'
     | '/api/public/cakto-webhook'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
@@ -559,6 +600,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/buscar'
+    | '/conectar-ia'
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
@@ -567,6 +609,7 @@ export interface FileRouteTypes {
     | '/exclusao-de-dados'
     | '/favoritos'
     | '/ferramentas'
+    | '/mcp'
     | '/minha-conta'
     | '/modela-spy-ai'
     | '/modelar-oferta'
@@ -580,6 +623,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/upgrade'
     | '/utm'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/blacklist'
     | '/admin/categorias'
     | '/admin/clientes'
@@ -599,6 +643,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/criador-paginas'
     | '/modelar-quiz'
+    | '/.lovable/oauth/consent'
     | '/api/public/cakto-webhook'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
@@ -612,6 +657,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/buscar'
+    | '/conectar-ia'
     | '/configuracoes'
     | '/criador-audios'
     | '/criador-criativos'
@@ -621,6 +667,7 @@ export interface FileRouteTypes {
     | '/exclusao-de-dados'
     | '/favoritos'
     | '/ferramentas'
+    | '/mcp'
     | '/minha-conta'
     | '/modela-spy-ai'
     | '/modelar-oferta'
@@ -635,6 +682,7 @@ export interface FileRouteTypes {
     | '/termos'
     | '/upgrade'
     | '/utm'
+    | '/.well-known/oauth-protected-resource'
     | '/admin/blacklist'
     | '/admin/categorias'
     | '/admin/clientes'
@@ -654,6 +702,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/criador-paginas/'
     | '/modelar-quiz/'
+    | '/.lovable/oauth/consent'
     | '/api/public/cakto-webhook'
     | '/modelar-quiz/leads/$id'
     | '/api/public/extension/status'
@@ -668,6 +717,7 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRouteWithChildren
   AuthRoute: typeof AuthRoute
   BuscarRoute: typeof BuscarRoute
+  ConectarIaRoute: typeof ConectarIaRoute
   ConfiguracoesRoute: typeof ConfiguracoesRoute
   CriadorAudiosRoute: typeof CriadorAudiosRoute
   CriadorCriativosRoute: typeof CriadorCriativosRoute
@@ -677,6 +727,7 @@ export interface RootRouteChildren {
   ExclusaoDeDadosRoute: typeof ExclusaoDeDadosRoute
   FavoritosRoute: typeof FavoritosRoute
   FerramentasRoute: typeof FerramentasRoute
+  McpRoute: typeof McpRoute
   MinhaContaRoute: typeof MinhaContaRoute
   ModelaSpyAiRoute: typeof ModelaSpyAiRoute
   ModelarOfertaRoute: typeof ModelarOfertaRoute
@@ -691,9 +742,11 @@ export interface RootRouteChildren {
   TermosRoute: typeof TermosRoute
   UpgradeRoute: typeof UpgradeRoute
   UtmRoute: typeof UtmRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   OfertaIdRoute: typeof OfertaIdRoute
   PSlugRoute: typeof PSlugRoute
   QuizSlugRoute: typeof QuizSlugRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   ApiPublicCaktoWebhookRoute: typeof ApiPublicCaktoWebhookRoute
   ApiPublicExtensionStatusRoute: typeof ApiPublicExtensionStatusRoute
   ApiPublicExtensionSubmitRoute: typeof ApiPublicExtensionSubmitRoute
@@ -730,6 +783,13 @@ declare module '@tanstack/react-router' {
       path: '/buscar'
       fullPath: '/buscar'
       preLoaderRoute: typeof BuscarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/conectar-ia': {
+      id: '/conectar-ia'
+      path: '/conectar-ia'
+      fullPath: '/conectar-ia'
+      preLoaderRoute: typeof ConectarIaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/configuracoes': {
@@ -793,6 +853,13 @@ declare module '@tanstack/react-router' {
       path: '/ferramentas'
       fullPath: '/ferramentas'
       preLoaderRoute: typeof FerramentasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/minha-conta': {
@@ -891,6 +958,13 @@ declare module '@tanstack/react-router' {
       path: '/utm'
       fullPath: '/utm'
       preLoaderRoute: typeof UtmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/': {
@@ -1026,6 +1100,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuizSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/cakto-webhook': {
       id: '/api/public/cakto-webhook'
       path: '/api/public/cakto-webhook'
@@ -1145,6 +1226,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRouteWithChildren,
   AuthRoute: AuthRoute,
   BuscarRoute: BuscarRoute,
+  ConectarIaRoute: ConectarIaRoute,
   ConfiguracoesRoute: ConfiguracoesRoute,
   CriadorAudiosRoute: CriadorAudiosRoute,
   CriadorCriativosRoute: CriadorCriativosRoute,
@@ -1154,6 +1236,7 @@ const rootRouteChildren: RootRouteChildren = {
   ExclusaoDeDadosRoute: ExclusaoDeDadosRoute,
   FavoritosRoute: FavoritosRoute,
   FerramentasRoute: FerramentasRoute,
+  McpRoute: McpRoute,
   MinhaContaRoute: MinhaContaRoute,
   ModelaSpyAiRoute: ModelaSpyAiRoute,
   ModelarOfertaRoute: ModelarOfertaRoute,
@@ -1168,9 +1251,12 @@ const rootRouteChildren: RootRouteChildren = {
   TermosRoute: TermosRoute,
   UpgradeRoute: UpgradeRoute,
   UtmRoute: UtmRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   OfertaIdRoute: OfertaIdRoute,
   PSlugRoute: PSlugRoute,
   QuizSlugRoute: QuizSlugRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   ApiPublicCaktoWebhookRoute: ApiPublicCaktoWebhookRoute,
   ApiPublicExtensionStatusRoute: ApiPublicExtensionStatusRoute,
   ApiPublicExtensionSubmitRoute: ApiPublicExtensionSubmitRoute,
