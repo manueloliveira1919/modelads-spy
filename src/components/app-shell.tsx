@@ -18,6 +18,7 @@ import {
   Mic,
   Video,
   Lock,
+  Plug,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -57,6 +58,7 @@ const SECTIONS: { title?: string; items: NavItem[] }[] = [
     title: "Conta",
     items: [
       { to: "/minha-conta", label: "Minha Conta", icon: User },
+      { to: "/conectar-ia", label: "Conectar IA", icon: Plug, pro: true },
       { to: "/suporte", label: "Suporte", icon: LifeBuoy },
       { to: "/configuracoes", label: "Configurações", icon: Settings },
     ],
