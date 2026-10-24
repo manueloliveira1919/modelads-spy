@@ -1,3 +1,10 @@
+# Conectar IA
+- [ ] Recuperar compatibilidade de importação/exportação do Quiz
+- [ ] Ativar autorização OAuth independente da extensão
+- [ ] Implementar nove ferramentas, rascunhos, limites, isolamento e histórico
+- [ ] Menu, aprovação e página de conexão
+- [ ] Testes de segurança, navegador, catálogo MCP e prévia sem erros
+
 # Criador de Páginas — movimentação dos elementos
 - [x] Corrigir setas e alça de arrastar em todos os grupos de elementos
 - [x] Validar reordenação, histórico e paridade com exportação sem alterar páginas salvas — sessão autenticada, cartões, grupos internos, setas, arrastar, desfazer/refazer, autosave/reload e HTML; página temporária removida
